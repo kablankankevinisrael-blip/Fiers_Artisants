@@ -1,0 +1,26 @@
+# ══════════════════════════════════════════════════════════════════════
+# Fiers Artisans — Override Développement Local
+# Usage : docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ⚠️ Ne JAMAIS utiliser en production
+# ══════════════════════════════════════════════════════════════════════
+
+services:
+
+  api:
+    build:
+      target: development
+    volumes:
+      - ../backend/src:/app/src
+    environment:
+      - NODE_ENV=development
+    command: npm run start:dev
+
+  minio:
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+
+  # Désactiver Nginx en dev (accès direct à l'API sur le port 3000)
+  nginx:
+    profiles:
+      - prod-only
