@@ -1474,3 +1474,449 @@ services:
 | **Phase 6 — Admin & Launch** | 3 – 4 semaines | Panel Admin Next.js (sous-domaine séparé), tests complets, CI/CD GitHub Actions, déploiement VPS |
 | **Phase 7 — HA** | Après lancement | Warm standby PostgreSQL + MongoDB Replica Set + Redis Sentinel sur VPS secondaire |
 | **Phase 8 — Extensions** | Future | Orange Money, MTN MoMo, RDV, devis en ligne, migration Docker Swarm/K8s si nécessaire |
+
+---
+
+## 21. Design System & UX — Fiers Artisans
+
+### 21.1 Vision Design
+
+> **"Pro, fluide, vivant."** — Un design qui inspire confiance, met en valeur le savoir-faire des artisans,
+> et offre une expérience premium adaptée au contexte africain (mobile-first, réseau variable, soleil en plein écran).
+
+---
+
+### 21.2 Thèmes — Dark Mode & Light Mode
+
+Le choix du thème est proposé **dès l'écran de splash/onboarding**, avant même l'inscription ou la connexion. Il est persisté localement (`shared_preferences`) et modifiable à tout moment dans les paramètres.
+
+#### Palette Dark Theme (par défaut recommandé)
+
+| Rôle | Token | Hex | Usage |
+|------|-------|-----|-------|
+| **Background principal** | `colorBackground` | `#0D0D0F` | Fond global de l'app |
+| **Surface carte** | `colorSurface` | `#1A1A1E` | Cards, modals, bottom sheets |
+| **Surface élevée** | `colorSurfaceElevated` | `#242428` | Bottom nav, App bar |
+| **Accent principal** | `colorPrimary` | `#E8A020` | Or chaud — boutons principaux, badges |
+| **Accent secondaire** | `colorSecondary` | `#C87D2A` | Or foncé — hover states, gradients |
+| **Texte principal** | `colorOnBackground` | `#F5F5F5` | Corps de texte |
+| **Texte secondaire** | `colorOnSurfaceMuted` | `#9E9EA8` | Sous-titres, placeholders |
+| **Succès** | `colorSuccess` | `#2ECC71` | Statut actif, paiement validé |
+| **Erreur** | `colorError` | `#E74C3C` | Erreurs, rejets |
+| **Warning** | `colorWarning` | `#F39C12` | Expirations, alertes |
+| **Divider** | `colorDivider` | `#2A2A2E` | Séparateurs |
+| **Ombre** | `shadowColor` | `rgba(0,0,0,0.6)` | Ombres des cartes |
+
+#### Palette Light Theme
+
+| Rôle | Token | Hex | Usage |
+|------|-------|-----|-------|
+| **Background principal** | `colorBackground` | `#F7F7F9` | Fond global |
+| **Surface carte** | `colorSurface` | `#FFFFFF` | Cards, modals |
+| **Surface élevée** | `colorSurfaceElevated` | `#EFEFEF` | App bar, bottom nav |
+| **Accent principal** | `colorPrimary` | `#C87D2A` | Or foncé — boutons principaux |
+| **Accent secondaire** | `colorSecondary` | `#E8A020` | Or clair — hover, gradients |
+| **Texte principal** | `colorOnBackground` | `#1A1A1E` | Corps de texte |
+| **Texte secondaire** | `colorOnSurfaceMuted` | `#6B6B75` | Sous-titres, placeholders |
+| **Succès / Erreur / Warning** | — | Identiques | Même valeurs que dark |
+| **Divider** | `colorDivider` | `#E0E0E6` | Séparateurs |
+| **Ombre** | `shadowColor` | `rgba(0,0,0,0.08)` | Ombres légères |
+
+```dart
+// lib/config/theme.dart
+
+class AppTheme {
+  static const _gold = Color(0xFFE8A020);
+  static const _goldDark = Color(0xFFC87D2A);
+
+  static ThemeData dark() => ThemeData(
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: const Color(0xFF0D0D0F),
+    colorScheme: const ColorScheme.dark(
+      primary: _gold,
+      secondary: _goldDark,
+      surface: Color(0xFF1A1A1E),
+      background: Color(0xFF0D0D0F),
+      onBackground: Color(0xFFF5F5F5),
+      onSurface: Color(0xFFF5F5F5),
+    ),
+    fontFamily: 'Inter',
+    // ... extensions design tokens
+  );
+
+  static ThemeData light() => ThemeData(
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: const Color(0xFFF7F7F9),
+    colorScheme: const ColorScheme.light(
+      primary: _goldDark,
+      secondary: _gold,
+      surface: Color(0xFFFFFFFF),
+      background: Color(0xFFF7F7F9),
+      onBackground: Color(0xFF1A1A1E),
+      onSurface: Color(0xFF1A1A1E),
+    ),
+    fontFamily: 'Inter',
+  );
+}
+```
+
+#### Sélecteur de thème (dès le Splash Screen)
+
+```dart
+// Affiché dès l'onboarding — avant l'inscription
+Row(
+  children: [
+    ThemeToggleCard(
+      icon: Icons.dark_mode,
+      label: context.tr('theme.dark'),   // "Sombre" / "Dark"
+      isSelected: theme == AppTheme.dark,
+      onTap: () => ref.read(themeProvider.notifier).setDark(),
+    ),
+    ThemeToggleCard(
+      icon: Icons.light_mode,
+      label: context.tr('theme.light'),  // "Clair" / "Light"
+      isSelected: theme == AppTheme.light,
+      onTap: () => ref.read(themeProvider.notifier).setLight(),
+    ),
+  ],
+)
+```
+
+---
+
+### 21.3 Typographie
+
+| Rôle | Famille | Poids | Taille |
+|------|---------|-------|--------|
+| **Display / Titre hero** | `Inter` | Bold 700 | 28–32 sp |
+| **Heading** | `Inter` | SemiBold 600 | 20–24 sp |
+| **Subheading** | `Inter` | Medium 500 | 16–18 sp |
+| **Body** | `Inter` | Regular 400 | 14–16 sp |
+| **Caption / Label** | `Inter` | Regular 400 | 11–13 sp |
+| **Bouton** | `Inter` | SemiBold 600 | 15 sp |
+
+> Police de secours : `Roboto` (intégrée Flutter par défaut).
+> `Inter` est chargée via `google_fonts` ou embarquée dans les assets.
+
+---
+
+### 21.4 Iconographie & Assets
+
+| Élément | Source | Format |
+|---------|--------|--------|
+| **Icônes UI** | `Lucide Icons` (via `lucide_flutter`) | Vecteur — cohérent, minimaliste |
+| **Icônes catégories artisans** | SVG custom (fichiers dans `assets/icons/categories/`) | SVG → `flutter_svg` |
+| **Illustrations onboarding** | Lottie JSON (animations légères) | `.json` → `lottie` package |
+| **Logo Fiers Artisans** | SVG + PNG 1x/2x/3x | Dans `assets/images/` |
+| **Avatars par défaut** | Initiales colorées générées dynamiquement | Widget `AvatarInitials` |
+
+---
+
+### 21.5 Animations & Effets — Catalogue complet
+
+#### Transitions de navigation
+
+```dart
+// Transition slide + fade entre les écrans (GoRouter)
+CustomTransitionPage(
+  transitionDuration: const Duration(milliseconds: 350),
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero)
+          .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
+    );
+  },
+)
+```
+
+#### Animations sur les composants
+
+| Composant | Effet | Package | Durée |
+|-----------|-------|---------|-------|
+| **ArtisanCard** | Scale 0.97 au tap (press feedback) + ombre dynamique | `GestureDetector` + `AnimatedContainer` | 120ms |
+| **Bouton principal** | Shimmer doré au chargement + ripple personnalisé | `shimmer` + `InkWell` | — |
+| **Avatar artisan** | Fade-in avec blur → net à l'apparition | `AnimatedOpacity` + `ImageFiltered` | 400ms |
+| **Badge Vérifié / Certifié** | Pulse doré subtil en boucle | `AnimationController` + `ScaleTransition` | 2s loop |
+| **Barre de recherche** | Expansion animée au focus | `AnimatedContainer` | 250ms |
+| **Bottom Navigation Bar** | Indicateur liquide qui glisse entre les onglets | `AnimatedPositioned` | 300ms |
+| **Chips de catégories** | Scale + couleur au sélection | `AnimatedContainer` | 200ms |
+| **Pull-to-refresh** | Animation Lottie custom (marteau d'artisan) | `lottie` | — |
+| **Chargement initial** | Skeleton shimmer sur les cartes | `shimmer` package | — |
+| **Toast / Snackbar** | Slide-up + fade-in depuis le bas | Custom `OverlayEntry` | 300ms |
+| **Rating stars** | Stars se remplissent une à une avec spring | `TweenSequence` | 500ms |
+| **Splash Screen** | Logo + tagline fade-in + légère translation | `AnimatedOpacity` + `SlideTransition` | 800ms |
+| **Sélecteur de thème** | Flip card 3D au changement dark/light | `AnimatedSwitcher` + `Transform` | 400ms |
+| **Map / Marqueurs GPS** | Pop-in des marqueurs avec spring bounce | `AnimationController` + `ElasticOut` | 600ms |
+| **Chat messages** | Slide-in depuis la droite (envoyé) / gauche (reçu) | `SlideTransition` | 200ms |
+| **Portfolio images** | Hero transition vers plein écran | `Hero` widget | Système Flutter |
+
+#### Effets visuels globaux
+
+```dart
+// Glassmorphism sur les modals et bottom sheets
+ClipRRect(
+  borderRadius: BorderRadius.circular(24),
+  child: BackdropFilter(
+    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+    child: Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: content,
+    ),
+  ),
+)
+
+// Gradient doré sur les boutons principaux
+LinearGradient(
+  colors: [Color(0xFFE8A020), Color(0xFFC87D2A)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+)
+```
+
+---
+
+### 21.6 Composants UI — Bibliothèque interne
+
+```
+lib/presentation/common/
+├── app_button.dart             # Bouton principal (gradient doré + shimmer)
+├── app_button_secondary.dart   # Bouton outline
+├── app_text_field.dart         # TextField avec animation focus + bordure animée
+├── app_bottom_sheet.dart       # Bottom sheet glassmorphism + drag handle
+├── artisan_card.dart           # Card artisan avec press animation + ombre
+├── badge_verified.dart         # Badge Vérifié / Certifié avec pulse
+├── category_chip.dart          # Chip avec scale animation
+├── rating_stars.dart           # Stars animées
+├── avatar_initials.dart        # Avatar dynamique avec gradient coloré
+├── skeleton_loader.dart        # Skeleton shimmer générique
+├── loading_overlay.dart        # Overlay de chargement avec Lottie
+├── theme_toggle_button.dart    # Bouton Dark/Light flip 3D
+├── app_snackbar.dart           # Toast custom slide-up
+└── empty_state.dart            # Écran vide avec illustration Lottie
+```
+
+---
+
+### 21.7 Internationalisation — Bilingue FR / EN
+
+#### Stack i18n
+
+| Outil | Rôle |
+|-------|------|
+| `flutter_localizations` | Support multilingue Flutter natif |
+| `intl` | Formatage dates, monnaies, pluriels |
+| `easy_localization` | Chargement fichiers JSON, changement de langue à chaud |
+
+#### Structure des fichiers de traduction
+
+```
+assets/translations/
+├── fr.json     # Français (langue par défaut)
+└── en.json     # English
+```
+
+```json
+// assets/translations/fr.json
+{
+  "app.name": "Fiers Artisans",
+  "theme.dark": "Sombre",
+  "theme.light": "Clair",
+  "language.fr": "Français",
+  "language.en": "English",
+  "auth.welcome": "Bienvenue sur Fiers Artisans",
+  "auth.phone": "Numéro de téléphone",
+  "auth.otp.title": "Entrez votre code",
+  "auth.otp.sent": "Code envoyé sur WhatsApp au {phone}",
+  "auth.otp.resend": "Renvoyer le code",
+  "auth.otp.unavailable": "Service actuellement indisponible. Veuillez réessayer plus tard.",
+  "search.placeholder": "Plombier, Électricien...",
+  "search.radius": "Rayon : {km} km",
+  "search.no_results": "Aucun artisan trouvé dans ce rayon",
+  "artisan.verified": "Vérifié",
+  "artisan.certified": "Certifié",
+  "artisan.available": "Disponible",
+  "artisan.contact.whatsapp": "Contacter sur WhatsApp",
+  "artisan.contact.call": "Appeler",
+  "artisan.contact.chat": "Envoyer un message",
+  "subscription.title": "Abonnement mensuel",
+  "subscription.amount": "5 000 FCFA / mois",
+  "subscription.pay": "Payer avec Wave",
+  "subscription.expires_in": "Expire dans {days} jours",
+  "review.leave": "Laisser un avis",
+  "review.already_done": "Vous avez déjà laissé un avis pour cet artisan.",
+  "error.generic": "Une erreur est survenue. Veuillez réessayer.",
+  "error.no_internet": "Pas de connexion internet.",
+  "settings.language": "Langue",
+  "settings.theme": "Thème",
+  "settings.logout": "Se déconnecter"
+}
+```
+
+```json
+// assets/translations/en.json
+{
+  "app.name": "Fiers Artisans",
+  "theme.dark": "Dark",
+  "theme.light": "Light",
+  "language.fr": "Français",
+  "language.en": "English",
+  "auth.welcome": "Welcome to Fiers Artisans",
+  "auth.phone": "Phone number",
+  "auth.otp.title": "Enter your code",
+  "auth.otp.sent": "Code sent on WhatsApp to {phone}",
+  "auth.otp.resend": "Resend code",
+  "auth.otp.unavailable": "Service currently unavailable. Please try again later.",
+  "search.placeholder": "Plumber, Electrician...",
+  "search.radius": "Radius: {km} km",
+  "search.no_results": "No craftsmen found in this area",
+  "artisan.verified": "Verified",
+  "artisan.certified": "Certified",
+  "artisan.available": "Available",
+  "artisan.contact.whatsapp": "Contact on WhatsApp",
+  "artisan.contact.call": "Call",
+  "artisan.contact.chat": "Send a message",
+  "subscription.title": "Monthly subscription",
+  "subscription.amount": "5,000 FCFA / month",
+  "subscription.pay": "Pay with Wave",
+  "subscription.expires_in": "Expires in {days} days",
+  "review.leave": "Leave a review",
+  "review.already_done": "You have already reviewed this craftsman.",
+  "error.generic": "An error occurred. Please try again.",
+  "error.no_internet": "No internet connection.",
+  "settings.language": "Language",
+  "settings.theme": "Theme",
+  "settings.logout": "Log out"
+}
+```
+
+#### Gestion de la langue (Riverpod)
+
+```dart
+// providers/locale_provider.dart
+final localeProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {
+  return LocaleNotifier();
+});
+
+class LocaleNotifier extends StateNotifier<Locale> {
+  LocaleNotifier() : super(const Locale('fr'));
+
+  void setFrench() {
+    state = const Locale('fr');
+    EasyLocalization.of(context)!.setLocale(state);
+    SharedPreferences.getInstance().then((p) => p.setString('locale', 'fr'));
+  }
+
+  void setEnglish() {
+    state = const Locale('en');
+    EasyLocalization.of(context)!.setLocale(state);
+    SharedPreferences.getInstance().then((p) => p.setString('locale', 'en'));
+  }
+}
+```
+
+#### Changement de langue accessible depuis partout
+
+- **Onboarding** → sélecteur FR / EN dès le premier écran
+- **Écran de connexion** → icône globe en haut à droite
+- **Paramètres utilisateur** → section "Langue / Language"
+- Le changement est **instantané** (pas de redémarrage de l'app)
+
+---
+
+### 21.8 Comportements UX Pro
+
+| Comportement | Implémentation |
+|--------------|----------------|
+| **Haptic feedback** | `HapticFeedback.lightImpact()` sur les boutons principaux |
+| **Scroll physique** | `BouncingScrollPhysics()` sur iOS, `ClampingScrollPhysics()` sur Android |
+| **Lazy loading** | Pagination infinie avec `flutter_infinite_scroll_pagination` |
+| **Image progressive** | `CachedNetworkImage` avec placeholder blur-hash |
+| **Mode hors-ligne** | `connectivity_plus` — bannière animée "Pas de connexion" slide-down |
+| **Keyboard safe area** | `resizeToAvoidBottomInset: true` + scroll auto sur les forms |
+| **Safe area** | `SafeArea` systématique — encoche, Dynamic Island, barre Android |
+| **Status bar** | Adaptée au thème (icônes claires sur dark, sombres sur light) |
+
+---
+
+### 21.9 Packages Flutter — Design & Animation
+
+```yaml
+# pubspec.yaml — Dépendances design
+
+dependencies:
+  # Thème & Internationalisation
+  easy_localization: ^3.0.7
+  intl: ^0.19.0
+  shared_preferences: ^2.3.0
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # State Management
+  flutter_riverpod: ^2.5.0
+  riverpod_annotation: ^2.3.0
+
+  # Animations
+  lottie: ^3.1.0               # Animations Lottie (onboarding, loading)
+  shimmer: ^3.0.0              # Skeleton loading
+
+  # Images
+  cached_network_image: ^3.4.0 # Cache + placeholder progressif
+  flutter_svg: ^2.0.0          # Icônes SVG catégories
+  blurhash_dart: ^2.0.0        # Blur placeholder images
+
+  # UI
+  lucide_icons: ^0.0.5         # Iconographie Lucide
+  google_fonts: ^6.2.0         # Inter font
+
+  # Réseau & UX
+  connectivity_plus: ^6.0.0    # Détection hors-ligne
+  infinite_scroll_pagination: ^4.0.0  # Pagination lazy
+
+  # Stockage sécurisé
+  flutter_secure_storage: ^9.2.0
+```
+
+---
+
+### 21.10 Écran de démarrage — Flux Design complet
+
+```
+┌─────────────────────────────────────────────┐
+│          SPLASH SCREEN (800ms)              │
+│                                              │
+│    🔨 Logo Fiers Artisans (fade-in)          │
+│    "La confiance, c'est leur métier"         │
+│                                              │
+└──────────────────┬──────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────┐
+│         ONBOARDING SCREEN 1/3               │
+│                                              │
+│  ┌─────────────────────────────────────┐    │
+│  │  🌙 SOMBRE    |    ☀️  CLAIR        │    │ ← Sélecteur thème (flip 3D)
+│  └─────────────────────────────────────┘    │
+│                                              │
+│  ┌──────────┐  ┌──────────┐                 │
+│  │  🇫🇷 FR  │  │  🇬🇧 EN  │                 │ ← Sélecteur langue
+│  └──────────┘  └──────────┘                 │
+│                                              │
+│  [Animation Lottie — artisan au travail]     │
+│                                              │
+│  Titre : "Trouvez l'artisan qu'il vous faut" │
+│  Sous-titre : "Vérifiés, certifiés, proches" │
+│                                              │
+│         ◉  ○  ○   [Suivant →]               │
+└─────────────────────────────────────────────┘
+```
+
+> Le thème et la langue choisis ici sont **immédiatement appliqués** à l'ensemble de l'onboarding, à la connexion, à l'inscription, et conservés pour toute la durée de la session.
