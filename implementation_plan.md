@@ -119,6 +119,19 @@ graph TB
 | **Monitoring** | Prometheus + Grafana | Métriques, alertes, tableaux de bord |
 | **Logs** | Loki + Grafana | Centralisation des logs Docker |
 
+### 2.3 Organisation de l'équipe par domaine technique
+
+Chaque domaine de base de données est assigné à une équipe dédiée pour éviter les conflits et garantir la cohérence cross-bases.
+
+| Domaine | Base de données | Responsabilité équipe |
+|---------|-----------------|----------------------|
+| Auth, Users, Subscriptions, Payments, Reviews, Verification | **PostgreSQL** | Équipe Backend-Core |
+| Chat, Portfolio, Notifications, Analytics | **MongoDB** | Équipe Backend-Realtime |
+| OTP, Sessions, Pub/Sub WebSocket | **Redis** | Équipe Backend-Core |
+| Fichiers (photos, documents) | **MinIO** | Équipe Backend-Media |
+
+**Règle de cohérence cross-bases :** Toute référence à un UUID PostgreSQL dans MongoDB (ex: `artisanProfileId` dans `portfolio_items`) doit être validée par le backend avant insertion — MongoDB ne peut pas vérifier les FK par lui-même. Cette validation est de la responsabilité du service métier côté NestJS.
+
 ---
 
 ## 3. Base de Données Hybride
@@ -405,6 +418,48 @@ Ce code expire dans 5 minutes. Ne le partagez jamais.
 |---------|------|
 | 0 – 1 000 conversations / mois | **Gratuit** (quota Meta) |
 | Au-delà de 1 000 | ~0,01 $ (~6 FCFA) / conversation |
+
+### 4.6 Fallback SMS — Feature Flag (Non bloquant)
+
+Un fallback SMS est prévu comme **filet de sécurité** si WhatsApp Business API est indisponible.
+
+**Comportement de cascade :**
+
+```
+WhatsApp OK                          → OTP envoyé via WhatsApp ✅
+WhatsApp KO + SMS provider configuré → OTP envoyé via SMS ✅
+WhatsApp KO + SMS non configuré      → Notification in-app 🔔
+WhatsApp KO + SMS KO                 → Notification in-app 🔔
+```
+
+> 💬 Message affiché : *"Service d'envoi de code actuellement indisponible. Veuillez réessayer dans quelques instants."*
+
+Le fallback est **entièrement non bloquant** : aucune erreur fatale, aucun crash applicatif.
+
+```typescript
+// config/otp-providers.config.ts
+
+export const OTP_PROVIDERS = {
+  WHATSAPP: {
+    enabled: true,              // ✅ ACTIF — Provider principal
+    priority: 1,
+  },
+  SMS_TWILIO: {
+    enabled: false,             // 🔒 Désactivé — Activer si TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN configurés
+    priority: 2,
+    // TODO : Renseigner les variables Twilio dans .env pour activer
+  },
+  SMS_ORANGE: {
+    enabled: false,             // 🔒 Désactivé — Activer si Orange SMS API disponible
+    priority: 3,
+  },
+};
+```
+
+**Logique dans `otp.service.ts` :**
+- Itère sur les providers actifs par ordre de priorité
+- En cas d'échec sur un provider → passe au suivant
+- Si aucun provider ne répond → retourne un message utilisateur gracieux (pas d'exception levée)
 
 ---
 
@@ -921,7 +976,10 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
       - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
-    ports: ["9000:9000", "9001:9001"]
+    # ⚠️ SÉCURITÉ PRODUCTION : Aucun port exposé — MinIO interne Docker uniquement.
+    # Les fichiers sont servis via signed URLs générées par le backend NestJS.
+    # Console MinIO accessible uniquement via tunnel SSH : ssh -L 9001:minio:9001 user@vps
+    # ── Voir docker-compose.dev.yml pour l'override local (ports exposés pour les tests) ──
 
   # ── Nginx — Reverse Proxy ──────────────────────────────────────────
   nginx:
@@ -1043,3 +1101,376 @@ infrastructure/
 > **Prochaine étape :** Validation de cette architecture v2.0.
 > Une fois approuvée → **Phase 1** : mise en place de Docker avec PostgreSQL + MongoDB + Redis,
 > puis implémentation de l'Auth avec OTP WhatsApp Business Cloud API.
+
+---
+
+## 15. Panel Admin — Architecture
+
+### 15.1 Décision d'architecture
+
+| Composant | Technologie | Hébergement |
+|-----------|-------------|-------------|
+| **Backend Admin** | NestJS (partagé avec l'app) — module `/admin` + guards RBAC | VPS (Docker) |
+| **Frontend Admin** | Next.js 14 (App Router, TypeScript) | Vercel / Netlify / VPS sous-domaine |
+| **Frontend Mobile** | Flutter (iOS + Android) | Stores (App Store / Play Store) |
+| **API commune** | `/api/v1/` — routes admin protégées par `ADMIN` role guard | VPS (Docker) |
+
+> ✅ **Cette architecture est cohérente, sécurisée et scalable.** Un seul backend sert les deux frontends. Les routes admin sont protégées par double couche : JWT valide + rôle `ADMIN`. Le frontend admin peut être restreint par IP whitelist Nginx sans impacter l'app mobile.
+
+### 15.2 Schéma d'architecture Admin
+
+```mermaid
+graph TB
+    subgraph "📱 Frontend Mobile"
+        FLUTTER["Flutter App<br/>iOS + Android<br/>Hébergé sur les Stores"]
+    end
+
+    subgraph "🖥️ Frontend Admin"
+        NEXTJS["Next.js 14 Admin Panel<br/>TypeScript + shadcn/ui<br/>admin.fierartisans.ci<br/>Hébergé sur Vercel / Netlify"]
+    end
+
+    subgraph "🌐 VPS — Docker (services conteneurisés)"
+        NGINX["Nginx<br/>Reverse Proxy + SSL<br/>Routing par sous-domaine"]
+        API["NestJS API<br/>api.fierartisans.ci<br/>Port 3000"]
+
+        subgraph "Modules NestJS"
+            AUTH_MOD["auth/"]
+            USER_MOD["users/"]
+            SEARCH_MOD["search/"]
+            CHAT_MOD["chat/"]
+            ADMIN_MOD["admin/<br/>🔒 ADMIN role guard"]
+            VERIF_MOD["verification/"]
+            SUB_MOD["subscription/"]
+        end
+
+        PG["PostgreSQL + PostGIS"]
+        MONGO["MongoDB"]
+        REDIS["Redis"]
+        MINIO["MinIO<br/>Réseau interne Docker"]
+    end
+
+    FLUTTER -->|"HTTPS → api.fierartisans.ci"| NGINX
+    NEXTJS -->|"HTTPS → api.fierartisans.ci/admin"| NGINX
+    NGINX --> API
+    API --> AUTH_MOD & USER_MOD & SEARCH_MOD & CHAT_MOD & ADMIN_MOD & VERIF_MOD & SUB_MOD
+    AUTH_MOD & USER_MOD & VERIF_MOD & SUB_MOD --> PG
+    CHAT_MOD --> MONGO & REDIS
+    ADMIN_MOD --> PG & MONGO
+    API -->|"Signed URLs internes"| MINIO
+```
+
+### 15.3 Fonctionnalités du Panel Admin (Next.js)
+
+| Section | Fonctionnalités |
+|---------|-----------------|
+| **Dashboard** | KPIs : artisans actifs, revenus du mois, nouvelles inscriptions, documents en attente |
+| **Vérifications** | Liste des documents soumis, visualisation CNI/diplômes (signed URL MinIO), Approuver / Rejeter avec motif |
+| **Artisans** | Recherche, visualisation profil, suspension/réactivation de compte |
+| **Clients** | Gestion des comptes clients signalés |
+| **Abonnements** | Historique des paiements, statuts Wave, remboursements |
+| **Avis** | Modération des avis signalés |
+| **Analytics** | Graphiques Recharts : inscriptions, paiements, recherches par zone géo |
+| **Logs** | Consultation des `activity_logs` MongoDB |
+
+### 15.4 Sécurité Admin
+
+```typescript
+// Nginx — restriction IP optionnelle pour le sous-domaine admin
+// server { server_name admin.fierartisans.ci; allow 41.X.X.X; deny all; }
+
+// NestJS — Guard double couche
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
+@Controller('admin')
+export class AdminController { ... }
+```
+
+### 15.5 Stack Frontend Admin
+
+| Outil | Usage |
+|-------|-------|
+| **Next.js 14** (App Router) | Framework React SSR/SSG |
+| **TypeScript** | Typage complet |
+| **shadcn/ui** ou **Tremor** | Composants UI Dashboard |
+| **TanStack Query** | Fetching & cache API |
+| **Recharts** | Graphiques analytics |
+| **next-auth** | Session admin sécurisée (wrapper JWT) |
+
+---
+
+## 16. Haute Disponibilité (HA) — Warm Standby
+
+### 16.1 Concept
+
+Architecture **warm standby avec failover automatique** : un VPS secondaire répliqué tourne en veille et prend le relais automatiquement si le VPS primaire tombe.
+
+```
+VPS Primaire (ACTIF)          VPS Secondaire (STANDBY)
+┌─────────────────────┐       ┌──────────────────────────┐
+│  NestJS API         │       │  NestJS API (idle)        │
+│  PostgreSQL PRIMARY │──────▶│  PostgreSQL STANDBY       │ streaming replication
+│  MongoDB PRIMARY    │──────▶│  MongoDB SECONDARY        │ replica set
+│  Redis MASTER       │──────▶│  Redis REPLICA            │ Redis Sentinel
+│  MinIO PRIMARY      │──────▶│  MinIO MIRROR             │ mc mirror
+│  Nginx              │       │  Nginx (standby)          │
+└─────────────────────┘       └──────────────────────────┘
+         │                                │
+         └──────────┐ ┌──────────────────┘
+                    ▼ ▼
+         ┌────────────────────┐
+         │  Keepalived /      │
+         │  Floating IP       │  ← bascule automatique <30s
+         └────────────────────┘
+                    │
+                    ▼
+         api.fierartisans.ci
+```
+
+### 16.2 Technologies de réplication par service
+
+| Service | Technologie HA | Comportement en cas de panne |
+|---------|---------------|------------------------------|
+| **PostgreSQL** | Streaming Replication (async) | Le standby devient primary automatiquement via `pg_promote()` |
+| **MongoDB** | Replica Set (1 primary + 1 secondary + 1 arbiter) | Election automatique d'un nouveau primary (<10s) |
+| **Redis** | Redis Sentinel (1 master + 1 replica + sentinel) | Sentinel promeut le replica si le master est down |
+| **MinIO** | `mc mirror --watch` en continu | Bascule manuelle ou script de failover |
+| **NestJS API** | Image Docker identique sur les deux VPS | Démarré par keepalived au failover |
+| **IP publique** | Hetzner Floating IP ou Keepalived VRRP | Rebascule vers VPS2 en cas de panne VPS1 |
+
+### 16.3 Quand activer
+
+| Phase | Stratégie HA |
+|-------|-------------|
+| **Phase 1** | Backups automatiques quotidiens uniquement (restauration <1h acceptable) |
+| **Phase 2-3** | Warm standby PostgreSQL + MongoDB Replica Set |
+| **Phase 4+** | Full HA (tous services répliqués + Floating IP) |
+| **Futur** | Migration vers Docker Swarm ou Kubernetes si trafic > 10 000 artisans |
+
+> ✅ Cette stratégie est **cohérente avec le projet**, **scalable** (migration vers K8s sans refactoring applicatif), et **économique** (un second VPS Hetzner CX22 ≈ 5-7€/mois).
+
+---
+
+## 17. Stratégie de Tests
+
+### 17.1 Niveaux de tests
+
+| Niveau | Outil | Cible | Coverage minimum |
+|--------|-------|-------|-----------------|
+| **Tests unitaires** | Jest (NestJS) | Services, Guards, Providers | 70% |
+| **Tests d'intégration** | Supertest + Jest | Endpoints REST critiques | Tous les endpoints auth, paiement, vérification |
+| **Tests Flutter** | `flutter_test` | Widgets, Providers Riverpod | Composants réutilisables |
+| **Tests E2E Flutter** | `integration_test` | Parcours complets (inscription, recherche, paiement) | Parcours artisan + parcours client |
+
+### 17.2 Modules prioritaires à tester en premier
+
+```
+🔴 Critique (tests avant tout autre développement) :
+  - auth.service.ts          → OTP, JWT, refresh token
+  - otp.service.ts           → Génération, vérification, TTL, anti-brute-force
+  - subscription.service.ts  → Initiation paiement, webhook Wave, idempotence
+  - wave.provider.ts         → Vérification signature HMAC-SHA256
+
+🟠 Important :
+  - verification.service.ts  → Workflow de validation documents
+  - search.service.ts        → Requêtes PostGIS (rayon, tri par distance)
+  - review.service.ts        → Contrainte un avis par client par artisan
+
+🟡 Standard :
+  - Tous les autres modules
+```
+
+### 17.3 Idempotence du webhook Wave
+
+```typescript
+// subscription.service.ts — Protection contre les doublons webhook
+async handleWaveWebhook(payload: WaveWebhookDto): Promise<void> {
+  // 1. Vérifier signature HMAC-SHA256 en premier (sécurité)
+  this.verifyWaveSignature(payload);
+
+  // 2. Idempotence : ignorer si déjà traité
+  const existing = await this.paymentRepository.findOne({
+    where: { wave_transaction_id: payload.transaction_id }
+  });
+  if (existing?.status === PaymentStatus.SUCCESS) {
+    return; // Webhook déjà traité — ne pas retraiter
+  }
+
+  // 3. Traitement normal
+  await this.markPaymentSuccess(payload);
+}
+```
+
+---
+
+## 18. Pipeline CI/CD — GitHub Actions
+
+```yaml
+# .github/workflows/deploy.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, staging]
+
+jobs:
+  # ── 1. Lint & Type Check ─────────────────────────────────────────
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npm run lint && npm run type-check
+
+  # ── 2. Tests ─────────────────────────────────────────────────────
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+      mongo:
+        image: mongo:7
+      redis:
+        image: redis:7-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npm run test:cov
+
+  # ── 3. Build Image Docker ────────────────────────────────────────
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t fierartisans-api:${{ github.sha }} .
+      - run: docker push ghcr.io/${{ github.repository }}/api:${{ github.sha }}
+
+  # ── 4. Deploy sur VPS ───────────────────────────────────────────
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        run: |
+          ssh user@vps "
+            cd /opt/fierartisans &&
+            docker compose pull api &&
+            docker compose up -d --no-deps api &&
+            docker image prune -f
+          "
+```
+
+### 18.1 Environnements
+
+| Branche | Environnement | VPS |
+|---------|--------------|-----|
+| `develop` | Local / Tests | Docker local |
+| `staging` | Staging | VPS secondaire (standby) |
+| `main` | Production | VPS primaire |
+
+---
+
+## 19. Gestion des Erreurs & Zones d'ombre résolues
+
+### 19.1 Format de réponse d'erreur unifié (API)
+
+```typescript
+// Toutes les erreurs de l'API retournent ce format :
+{
+  "statusCode": 400,
+  "error": "BAD_REQUEST",
+  "message": "Le numéro de téléphone est invalide.",
+  "timestamp": "2025-01-15T10:30:00.000Z",
+  "path": "/api/v1/auth/send-otp"
+}
+```
+
+### 19.2 Intégrité des avis
+
+```typescript
+// Règle : un seul avis par client par artisan
+// reviews.service.ts
+async createReview(clientId: string, artisanId: string, dto: CreateReviewDto) {
+  const existing = await this.reviewRepository.findOne({
+    where: { client_id: clientId, artisan_id: artisanId }
+  });
+  if (existing) {
+    throw new ConflictException('Vous avez déjà laissé un avis pour cet artisan.');
+  }
+  // Créer l'avis + recalculer rating_avg sur artisan_profile
+}
+```
+
+### 19.3 Localisation artisan — Clarification
+
+| Question | Décision |
+|----------|---------|
+| Position stockée | **Adresse fixe** de l'artisan (commune/quartier), pas de tracking GPS temps réel |
+| Ce que voit le client | **Distance en km** uniquement (ex: "à 2,3 km") — jamais la position exacte |
+| Mise à jour | L'artisan met à jour sa localisation depuis ses paramètres |
+
+### 19.4 Expiration d'abonnement
+
+| Événement | Action |
+|-----------|--------|
+| **J-7 avant expiration** | Notification push + WhatsApp de rappel à l'artisan |
+| **J-3 avant expiration** | 2ème rappel |
+| **J0 (expiration)** | `is_subscription_active = false` → profil invisible dans les recherches |
+| **Période de grâce** | 48h — le profil reste visible, aucun nouveau paiement n'est bloqué |
+| **Après 48h** | Désactivation définitive jusqu'au prochain paiement |
+
+### 19.5 Compression des images (pipeline média)
+
+```typescript
+// media.service.ts — Pipeline de traitement avec Sharp
+import * as sharp from 'sharp';
+
+async processAndUpload(file: Express.Multer.File, bucket: string) {
+  const optimized = await sharp(file.buffer)
+    .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80, progressive: true })
+    .toBuffer();
+
+  const thumbnail = await sharp(file.buffer)
+    .resize(300, 300, { fit: 'cover' })
+    .jpeg({ quality: 70 })
+    .toBuffer();
+
+  // Upload original compressé + thumbnail vers MinIO
+  await this.minioService.putObject(bucket, `${uuid}.jpg`, optimized);
+  await this.minioService.putObject(bucket, `${uuid}_thumb.jpg`, thumbnail);
+
+  // Retourner une signed URL via le backend (jamais l'URL MinIO directe)
+  return this.generateSignedUrl(bucket, `${uuid}.jpg`);
+}
+```
+
+### 19.6 Override Docker Compose pour développement local
+
+```yaml
+# docker-compose.dev.yml — Override LOCAL uniquement
+# Usage : docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  minio:
+    ports:
+      - "9000:9000"   # API MinIO — accessible en local pour tester
+      - "9001:9001"   # Console MinIO — accessible en local sur http://localhost:9001
+```
+
+> ⚠️ Ce fichier **ne doit jamais être utilisé en production**. En production, MinIO est entièrement interne au réseau Docker.
+
+---
+
+## 20. Mise à jour du Planning
+
+| Phase | Durée estimée | Livrables — Mis à jour |
+|-------|--------------|----------------------|
+| **Phase 1 — Fondations** | 2 – 3 semaines | Docker Compose (dev + prod), PostgreSQL + MongoDB + Redis + MinIO interne, Auth OTP WhatsApp + fallback SMS feature flag |
+| **Phase 2 — Core Features** | 3 – 4 semaines | Profils, Vérification, Catégories, Portfolio (MongoDB), Recherche géo (PostGIS), pipeline Sharp images |
+| **Phase 3 — Monétisation** | 1 – 2 semaines | Abonnement Wave + webhook idempotent, activation compte, rappels expiration |
+| **Phase 4 — Communication** | 2 – 3 semaines | Chat temps réel (MongoDB + WebSocket), Notifications push, contact WhatsApp |
+| **Phase 5 — Mobile** | 4 – 6 semaines | App Flutter complète — parcours client + artisan, gestion offline gracieux |
+| **Phase 6 — Admin & Launch** | 3 – 4 semaines | Panel Admin Next.js (sous-domaine séparé), tests complets, CI/CD GitHub Actions, déploiement VPS |
+| **Phase 7 — HA** | Après lancement | Warm standby PostgreSQL + MongoDB Replica Set + Redis Sentinel sur VPS secondaire |
+| **Phase 8 — Extensions** | Future | Orange Money, MTN MoMo, RDV, devis en ligne, migration Docker Swarm/K8s si nécessaire |
