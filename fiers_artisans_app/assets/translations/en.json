@@ -1,0 +1,170 @@
+{
+  "app": {
+    "name": "Fiers Artisans",
+    "tagline": "Trust is their craft"
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "select": "Choose your theme"
+  },
+  "language": {
+    "fr": "Français",
+    "en": "English",
+    "select": "Choose your language"
+  },
+  "onboarding": {
+    "step1_title": "Find the right craftsman",
+    "step1_subtitle": "Verified, certified and near you",
+    "step2_title": "Contact directly",
+    "step2_subtitle": "Chat, call or WhatsApp — instant communication",
+    "step3_title": "Trust the reviews",
+    "step3_subtitle": "Real ratings from real clients",
+    "next": "Next",
+    "skip": "Skip",
+    "get_started": "Get Started"
+  },
+  "auth": {
+    "welcome": "Welcome to Fiers Artisans",
+    "login": "Log in",
+    "register": "Sign up",
+    "phone": "Phone number",
+    "password": "Password",
+    "confirm_password": "Confirm password",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "email": "Email (optional)",
+    "city": "City",
+    "commune": "District",
+    "forgot_password": "Forgot password?",
+    "no_account": "Don't have an account?",
+    "has_account": "Already have an account?",
+    "register_as": "Register as",
+    "artisan": "Craftsman",
+    "client": "Client",
+    "profession": "Profession",
+    "experience_years": "Years of experience",
+    "description": "Description",
+    "otp": {
+      "title": "Verification",
+      "subtitle": "Enter the code sent to {phone}",
+      "sent": "Code sent on WhatsApp to {phone}",
+      "resend": "Resend code",
+      "resend_in": "Resend in {seconds}s",
+      "verify": "Verify",
+      "unavailable": "Service currently unavailable. Please try again later."
+    }
+  },
+  "home": {
+    "greeting": "Hello, {name} 👋",
+    "search_hint": "Plumber, Electrician...",
+    "categories": "Categories",
+    "nearby": "Nearby craftsmen",
+    "top_rated": "Top rated",
+    "see_all": "See all"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Plumber, Electrician...",
+    "radius": "Radius: {km} km",
+    "results": "{count} craftsman(s) found",
+    "no_results": "No craftsmen found in this area",
+    "filter": "Filter",
+    "sort_by": "Sort by",
+    "distance": "Distance",
+    "rating": "Rating",
+    "verified_only": "Verified only"
+  },
+  "artisan": {
+    "verified": "Verified",
+    "certified": "Certified",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "portfolio": "Portfolio",
+    "reviews": "Reviews",
+    "about": "About",
+    "experience": "{years} years of experience",
+    "contact": {
+      "whatsapp": "Contact on WhatsApp",
+      "call": "Call",
+      "chat": "Send a message"
+    },
+    "verification": {
+      "title": "Verification",
+      "upload_id": "Upload your ID",
+      "upload_diploma": "Upload your diplomas",
+      "pending": "Pending verification",
+      "approved": "Verified ✓",
+      "rejected": "Rejected — please resubmit"
+    }
+  },
+  "portfolio": {
+    "title": "My Portfolio",
+    "add": "Add a project",
+    "item_title": "Title",
+    "item_description": "Description",
+    "item_price": "Price (FCFA)",
+    "item_images": "Photos",
+    "empty": "Your portfolio is empty. Add your projects!"
+  },
+  "subscription": {
+    "title": "Subscription",
+    "amount": "5,000 FCFA / month",
+    "pay": "Pay with Wave",
+    "active": "Active subscription",
+    "expires_in": "Expires in {days} days",
+    "expired": "Subscription expired",
+    "renew": "Renew"
+  },
+  "review": {
+    "title": "Reviews",
+    "leave": "Leave a review",
+    "your_rating": "Your rating",
+    "your_comment": "Your comment",
+    "submit": "Submit",
+    "already_done": "You have already reviewed this craftsman.",
+    "empty": "No reviews yet"
+  },
+  "chat": {
+    "title": "Messages",
+    "empty": "No conversations",
+    "type_message": "Type a message...",
+    "send": "Send",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "profile": "My profile",
+    "about": "About",
+    "logout": "Log out",
+    "logout_confirm": "Are you sure you want to log out?",
+    "version": "Version {version}"
+  },
+  "error": {
+    "generic": "An error occurred. Please try again.",
+    "no_internet": "No internet connection.",
+    "timeout": "Request timed out.",
+    "unauthorized": "Session expired. Please log in again.",
+    "server": "Server error. Please try again later.",
+    "validation": "Please check the entered information."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK"
+  }
+}

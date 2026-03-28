@@ -1,0 +1,60 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/models/subscription_model.dart';
+import '../data/repositories/subscription_repository.dart';
+
+class SubscriptionState {
+  final SubscriptionModel? subscription;
+  final bool isLoading;
+  final String? error;
+
+  const SubscriptionState({
+    this.subscription,
+    this.isLoading = false,
+    this.error,
+  });
+
+  SubscriptionState copyWith({
+    SubscriptionModel? subscription,
+    bool? isLoading,
+    String? error,
+  }) {
+    return SubscriptionState(
+      subscription: subscription ?? this.subscription,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+final subscriptionProvider =
+    StateNotifierProvider<SubscriptionNotifier, SubscriptionState>((ref) {
+  return SubscriptionNotifier();
+});
+
+class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
+  final SubscriptionRepository _repo = SubscriptionRepository();
+
+  SubscriptionNotifier() : super(const SubscriptionState());
+
+  Future<void> loadStatus() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final sub = await _repo.getStatus();
+      state = state.copyWith(subscription: sub, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<Map<String, dynamic>?> initiatePayment() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final data = await _repo.initiatePayment();
+      state = state.copyWith(isLoading: false);
+      return data;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return null;
+    }
+  }
+}
