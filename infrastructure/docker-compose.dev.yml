@@ -1,6 +1,8 @@
 # ══════════════════════════════════════════════════════════════════════
 # Fiers Artisans — Override Développement Local
-# Usage : docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ══════════════════════════════════════════════════════════════════════
+# Usage depuis infrastructure/ :
+#   docker compose --env-file ../.env -f docker-compose.yml -f docker-compose.dev.yml up -d
 # ⚠️ Ne JAMAIS utiliser en production
 # ══════════════════════════════════════════════════════════════════════
 
@@ -14,6 +16,15 @@ services:
     environment:
       - NODE_ENV=development
     command: npm run start:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
 
   minio:
     ports:
