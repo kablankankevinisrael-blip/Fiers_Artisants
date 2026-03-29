@@ -11,7 +11,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { SubscriptionService } from './subscription.service';
 import { CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { RolesGuard, PhoneVerifiedGuard } from '../../common/guards';
 
 interface RawBodyRequest extends Request {
   rawBody?: Buffer;
@@ -22,7 +22,7 @@ export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
   @Post('initiate')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard, RolesGuard)
   @Roles('ARTISAN')
   initiatePayment(@CurrentUser('id') userId: string) {
     return this.subscriptionService.initiatePayment(userId);
@@ -40,7 +40,7 @@ export class SubscriptionController {
   }
 
   @Get('status')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard, RolesGuard)
   @Roles('ARTISAN')
   getStatus(@CurrentUser('id') userId: string) {
     return this.subscriptionService.getStatus(userId);

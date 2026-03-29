@@ -45,7 +45,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         context.go('/client');
       }
     } else if (mounted) {
-      final error = ref.read(authProvider).error;
+      final authState = ref.read(authProvider);
+      if (authState.otpRequired && authState.otpPhone != null) {
+        context.push('/otp', extra: authState.otpPhone);
+        return;
+      }
+      final error = authState.error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error ?? 'error.generic'.tr()),

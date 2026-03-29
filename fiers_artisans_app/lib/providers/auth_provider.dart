@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/storage/secure_storage.dart';
 import '../data/models/user_model.dart';
@@ -11,18 +12,30 @@ class AuthState {
   final AuthStatus status;
   final UserModel? user;
   final String? error;
+  final bool otpRequired;
+  final String? otpPhone;
 
   const AuthState({
     this.status = AuthStatus.initial,
     this.user,
     this.error,
+    this.otpRequired = false,
+    this.otpPhone,
   });
 
-  AuthState copyWith({AuthStatus? status, UserModel? user, String? error}) {
+  AuthState copyWith({
+    AuthStatus? status,
+    UserModel? user,
+    String? error,
+    bool? otpRequired,
+    String? otpPhone,
+  }) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
       error: error,
+      otpRequired: otpRequired ?? false,
+      otpPhone: otpPhone,
     );
   }
 }
@@ -43,8 +56,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (isLoggedIn) {
       try {
         final user = await _repo.getProfile();
+        if (!user.isPhoneVerified) {
+          debugPrint('[Auth] checkAuth: phone not verified → OTP required');
+          await SecureStorage.clearAll();
+          state = const AuthState(status: AuthStatus.unauthenticated);
+          return;
+        }
         state = AuthState(status: AuthStatus.authenticated, user: user);
-      } catch (_) {
+      } catch (e) {
+        if (_isOtpRequired(e)) {
+          debugPrint('[Auth] checkAuth: 403 OTP_REQUIRED from backend');
+        }
         await SecureStorage.clearAll();
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
@@ -57,18 +79,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
       final data = await _repo.login(phone: phone, password: password);
+      final tokens = _extractTokens(data);
       await SecureStorage.saveTokens(
-        accessToken: data['accessToken'] ?? data['access_token'] ?? '',
-        refreshToken: data['refreshToken'] ?? data['refresh_token'] ?? '',
+        accessToken: tokens.$1,
+        refreshToken: tokens.$2,
       );
-      final userId = data['user']?['id']?.toString() ?? '';
-      final role = (data['user']?['role'] ?? 'CLIENT').toString();
-      await SecureStorage.saveUserInfo(userId: userId, role: role);
+      final userMap = data['user'] as Map<String, dynamic>? ?? {};
+      final role = (userMap['role'] ?? '').toString();
+      debugPrint('[Auth] login role from backend: "$role"');
+      if (role.isEmpty) {
+        debugPrint('[Auth] ⚠️ role is empty — check backend response structure');
+      }
+      final userId = userMap['id']?.toString() ?? '';
+      await SecureStorage.saveUserInfo(userId: userId, role: role.toLowerCase());
 
-      final user = UserModel.fromJson(data['user'] ?? {});
+      final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
       return true;
     } catch (e) {
+      // Détecter 403 OTP_REQUIRED
+      if (_isOtpRequired(e)) {
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          otpRequired: true,
+          otpPhone: phone,
+        );
+        return false;
+      }
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
         error: _extractError(e),
@@ -105,14 +142,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         experienceYears: experienceYears,
         categoryId: categoryId,
       );
+      final tokens = _extractTokens(data);
       await SecureStorage.saveTokens(
-        accessToken: data['accessToken'] ?? data['access_token'] ?? '',
-        refreshToken: data['refreshToken'] ?? data['refresh_token'] ?? '',
+        accessToken: tokens.$1,
+        refreshToken: tokens.$2,
       );
-      final userId = data['user']?['id']?.toString() ?? '';
-      await SecureStorage.saveUserInfo(userId: userId, role: 'artisan');
+      final userMap = data['user'] as Map<String, dynamic>? ?? {};
+      final role = (userMap['role'] ?? 'ARTISAN').toString();
+      debugPrint('[Auth] registerArtisan role from backend: "$role"');
+      final userId = userMap['id']?.toString() ?? '';
+      await SecureStorage.saveUserInfo(userId: userId, role: role.toLowerCase());
 
-      final user = UserModel.fromJson(data['user'] ?? {});
+      final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
       return true;
     } catch (e) {
@@ -144,14 +185,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         commune: commune,
         email: email,
       );
+      final tokens = _extractTokens(data);
       await SecureStorage.saveTokens(
-        accessToken: data['accessToken'] ?? data['access_token'] ?? '',
-        refreshToken: data['refreshToken'] ?? data['refresh_token'] ?? '',
+        accessToken: tokens.$1,
+        refreshToken: tokens.$2,
       );
-      final userId = data['user']?['id']?.toString() ?? '';
-      await SecureStorage.saveUserInfo(userId: userId, role: 'client');
+      final userMap = data['user'] as Map<String, dynamic>? ?? {};
+      final role = (userMap['role'] ?? 'CLIENT').toString();
+      debugPrint('[Auth] registerClient role from backend: "$role"');
+      final userId = userMap['id']?.toString() ?? '';
+      await SecureStorage.saveUserInfo(userId: userId, role: role.toLowerCase());
 
-      final user = UserModel.fromJson(data['user'] ?? {});
+      final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
       return true;
     } catch (e) {
@@ -186,14 +231,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
+  /// Détecte une réponse 403 OTP_REQUIRED du backend.
+  bool _isOtpRequired(dynamic e) {
+    if (e is DioException && e.response?.statusCode == 403) {
+      var data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        if (data.containsKey('data') && data.containsKey('statusCode')) {
+          data = data['data'];
+        }
+        final message = data is Map ? data['message'] : null;
+        if (message == 'OTP_REQUIRED' || message == 'Forbidden') {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Extrait access_token et refresh_token depuis la réponse backend (déjà unwrappée).
+  (String, String) _extractTokens(Map<String, dynamic> data) {
+    final access = data['access_token']?.toString() ??
+        data['accessToken']?.toString() ??
+        '';
+    final refresh = data['refresh_token']?.toString() ??
+        data['refreshToken']?.toString() ??
+        '';
+    if (access.isEmpty) {
+      debugPrint('[Auth] ⚠️ access_token is empty in response: ${data.keys}');
+    }
+    return (access, refresh);
+  }
+
   String _extractError(dynamic e) {
     if (e is DioException) {
-      // Extraire le message du backend si disponible
-      final data = e.response?.data;
+      // Extraire le message du backend (peut être dans l'enveloppe ou direct)
+      var data = e.response?.data;
       if (data is Map<String, dynamic>) {
-        final message = data['message'];
-        if (message is List) return message.join(', ');
-        if (message is String) return message;
+        // Unwrap l'enveloppe si présente
+        if (data.containsKey('data') && data.containsKey('statusCode')) {
+          data = data['data'];
+        }
+        if (data is Map<String, dynamic>) {
+          final message = data['message'];
+          if (message is List) return message.join(', ');
+          if (message is String) return message;
+        }
       }
       // Messages réseau détaillés
       switch (e.type) {
@@ -220,6 +302,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         case DioExceptionType.badResponse:
           final code = e.response?.statusCode;
           if (code == 401) return 'Identifiants incorrects.';
+          if (code == 403) return 'Accès refusé. Veuillez vérifier votre téléphone.';
           if (code == 409) return 'Ce compte existe déjà.';
           if (code == 400) return 'Données invalides. Vérifiez les champs.';
           if (code == 500) return 'Erreur interne du serveur. Réessayez.';

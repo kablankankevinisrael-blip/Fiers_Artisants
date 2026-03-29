@@ -12,11 +12,11 @@ import { UsersService } from './users.service';
 import { UpdateArtisanProfileDto } from './dto/update-artisan-profile.dto';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { CurrentUser } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { RolesGuard, PhoneVerifiedGuard } from '../../common/guards';
 import { Roles } from '../../common/decorators';
 
 @Controller()
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -38,11 +38,6 @@ export class UsersController {
     return this.usersService.updateArtisanProfile(userId, dto);
   }
 
-  @Get('artisan/:id')
-  getArtisanPublicProfile(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.getArtisanPublicProfile(id);
-  }
-
   // ── Client Profile ──────────────────────────────────────────────
   @Get('client/profile')
   @UseGuards(RolesGuard)
@@ -59,5 +54,15 @@ export class UsersController {
     @Body() dto: UpdateClientProfileDto,
   ) {
     return this.usersService.updateClientProfile(userId, dto);
+  }
+}
+
+@Controller('artisan')
+export class PublicArtisanController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get(':id')
+  getArtisanPublicProfile(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.getArtisanPublicProfile(id);
   }
 }

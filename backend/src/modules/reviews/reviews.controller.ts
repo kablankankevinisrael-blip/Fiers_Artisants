@@ -11,10 +11,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { RolesGuard, PhoneVerifiedGuard } from '../../common/guards';
 
 @Controller('reviews')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard)
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 

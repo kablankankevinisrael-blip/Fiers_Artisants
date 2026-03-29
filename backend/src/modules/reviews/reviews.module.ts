@@ -5,10 +5,11 @@ import { ReviewsController, ArtisanReviewsController } from './reviews.controlle
 import { Review } from './entities/review.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { ClientProfile } from '../users/entities/client-profile.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Review, ArtisanProfile, ClientProfile]),
+    TypeOrmModule.forFeature([Review, ArtisanProfile, ClientProfile, User]),
   ],
   controllers: [ReviewsController, ArtisanReviewsController],
   providers: [ReviewsService],

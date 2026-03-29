@@ -11,9 +11,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
 import { CurrentUser } from '../../common/decorators';
+import { PhoneVerifiedGuard } from '../../common/guards';
 
 @Controller('media')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard)
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 

@@ -11,10 +11,10 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { PortfolioService } from './portfolio.service';
 import { CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { RolesGuard, PhoneVerifiedGuard } from '../../common/guards';
 
 @Controller('portfolio')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard, RolesGuard)
 @Roles('ARTISAN')
 export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) {}

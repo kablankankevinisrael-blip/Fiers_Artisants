@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -138,6 +139,16 @@ export class AuthService {
       throw new UnauthorizedException('Compte désactivé.');
     }
 
+    // Si téléphone non vérifié → envoyer OTP et bloquer
+    if (!user.is_phone_verified) {
+      try {
+        await this.otpService.sendOtp(user.phone_number);
+      } catch (e) {
+        this.logger.warn(`OTP send failed during login for ${user.phone_number}: ${e.message}`);
+      }
+      throw new ForbiddenException('OTP_REQUIRED');
+    }
+
     return this.generateTokens(user);
   }
 
@@ -173,6 +184,7 @@ export class AuthService {
         id: user.id,
         phone_number: user.phone_number,
         role: user.role,
+        is_phone_verified: user.is_phone_verified,
         verification_status: user.verification_status,
       },
     };

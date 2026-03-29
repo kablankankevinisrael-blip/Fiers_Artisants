@@ -23,6 +23,7 @@ class ApiClient {
 
     _dio.interceptors.addAll([
       _AuthInterceptor(),
+      _UnwrapInterceptor(),
       if (kDebugMode) _LoggingInterceptor(),
     ]);
   }
@@ -88,6 +89,24 @@ class ApiClient {
   }
 }
 
+// ──────────── Unwrap Backend Envelope ────────────
+// Le backend encapsule toutes les réponses dans {statusCode, data, timestamp}.
+// Cet intercepteur extrait response.data['data'] pour que les repositories
+// lisent directement le payload métier.
+class _UnwrapInterceptor extends Interceptor {
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final body = response.data;
+    if (body is Map<String, dynamic> &&
+        body.containsKey('data') &&
+        body.containsKey('statusCode') &&
+        body.containsKey('timestamp')) {
+      response.data = body['data'];
+    }
+    handler.next(response);
+  }
+}
+
 // ──────────── Auth Interceptor ────────────
 class _AuthInterceptor extends Interceptor {
   @override
@@ -136,10 +155,16 @@ class _AuthInterceptor extends Interceptor {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
+        // Unwrap l'enveloppe backend {statusCode, data, timestamp}
+        var data = response.data;
+        if (data is Map<String, dynamic> &&
+            data.containsKey('data') &&
+            data.containsKey('statusCode')) {
+          data = data['data'];
+        }
         await SecureStorage.saveTokens(
-          accessToken: data['access_token'] ?? data['accessToken'],
-          refreshToken: data['refresh_token'] ?? data['refreshToken'],
+          accessToken: data['access_token'] ?? data['accessToken'] ?? '',
+          refreshToken: data['refresh_token'] ?? data['refreshToken'] ?? '',
         );
         return true;
       }

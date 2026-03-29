@@ -54,7 +54,8 @@
       "verify": "Vérifier",
       "invalid": "Code invalide. Veuillez réessayer.",
       "expired": "Code expiré. Veuillez en demander un nouveau.",
-      "unavailable": "Service actuellement indisponible. Veuillez réessayer plus tard."
+      "unavailable": "Service actuellement indisponible. Veuillez réessayer plus tard.",
+      "verified_login": "Téléphone vérifié ! Reconnectez-vous."
     }
   },
   "home": {

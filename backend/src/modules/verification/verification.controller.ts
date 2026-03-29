@@ -13,10 +13,10 @@ import { VerificationService } from './verification.service';
 import { SubmitDocumentDto } from './dto/submit-document.dto';
 import { ReviewDocumentDto } from './dto/review-document.dto';
 import { CurrentUser, Roles } from '../../common/decorators';
-import { RolesGuard } from '../../common/guards';
+import { RolesGuard, PhoneVerifiedGuard } from '../../common/guards';
 
 @Controller('verification')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard)
 export class VerificationController {
   constructor(private readonly verificationService: VerificationService) {}
 

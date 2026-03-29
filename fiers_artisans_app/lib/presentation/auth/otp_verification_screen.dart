@@ -74,11 +74,26 @@ class _OtpVerificationScreenState
     setState(() => _isLoading = false);
 
     if (success && mounted) {
-      final role = ref.read(authProvider).user?.role.toLowerCase();
-      if (role == 'artisan') {
-        context.go('/artisan');
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        // Flux inscription: l'utilisateur a déjà des tokens
+        final role = user.role.toLowerCase();
+        if (role == 'artisan') {
+          context.go('/artisan');
+        } else {
+          context.go('/client');
+        }
       } else {
-        context.go('/client');
+        // Flux login 403: pas de tokens, l'utilisateur doit se reconnecter
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('auth.otp.verified_login'.tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.go('/login');
+        }
       }
     } else if (mounted) {
       // Effacer les champs pour une nouvelle saisie
