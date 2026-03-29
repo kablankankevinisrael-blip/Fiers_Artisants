@@ -6,17 +6,17 @@ class ApiEndpoints {
   static const String registerArtisan = '/auth/register/artisan';
   static const String registerClient = '/auth/register/client';
   static const String refreshToken = '/auth/refresh';
-  static const String sendOtp = '/auth/otp/send';
-  static const String verifyOtp = '/auth/otp/verify';
+  static const String sendOtp = '/auth/send-otp';
+  static const String verifyOtp = '/auth/verify-otp';
 
-  // Users
-  static const String profile = '/users/me';
-  static const String updateProfile = '/users/me';
-  static String userById(String id) => '/users/$id';
+  // Profiles
+  static const String artisanProfile = '/artisan/profile';
+  static const String clientProfile = '/client/profile';
+  static String artisanById(String id) => '/artisan/$id';
 
   // Categories
   static const String categories = '/categories';
-  static String categoryById(String id) => '/categories/$id';
+  static String categoryBySlug(String slug) => '/categories/$slug';
 
   // Search
   static const String search = '/search/artisans';
@@ -24,20 +24,20 @@ class ApiEndpoints {
   // Reviews
   static const String reviews = '/reviews';
   static String reviewsByArtisan(String artisanId) =>
-      '/reviews/artisan/$artisanId';
+      '/artisan/$artisanId/reviews';
 
   // Portfolio
   static const String portfolio = '/portfolio';
   static String portfolioByArtisan(String artisanId) =>
-      '/portfolio/artisan/$artisanId';
+      '/artisan/$artisanId/portfolio';
 
   // Subscription
-  static const String subscription = '/subscription';
+  static const String subscriptionInitiate = '/subscription/initiate';
   static const String subscriptionStatus = '/subscription/status';
 
   // Verification
-  static const String verification = '/verification';
   static const String verificationSubmit = '/verification/submit';
+  static const String verificationStatus = '/verification/status';
 
   // Chat
   static const String conversations = '/chat/conversations';
@@ -46,9 +46,6 @@ class ApiEndpoints {
 
   // Media
   static const String upload = '/media/upload';
-
-  // Notifications
-  static const String notifications = '/notifications';
 
   // Health
   static const String health = '/health';

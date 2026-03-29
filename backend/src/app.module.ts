@@ -31,6 +31,7 @@ import { MediaModule } from './modules/media/media.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './modules/health/health.module';
+import { DevModule } from './modules/dev/dev.module';
 
 @Module({
   imports: [
@@ -99,6 +100,12 @@ import { HealthModule } from './modules/health/health.module';
     MediaModule,
     AnalyticsModule,
     AdminModule,
+
+    // ── Dev Tools (uniquement en développement) ───────────────────
+    // Conditionnel : chargé seulement si NODE_ENV=development + OTP_DEV_INSPECTOR=true
+    ...(process.env.NODE_ENV === 'development' && process.env.OTP_DEV_INSPECTOR === 'true'
+      ? [DevModule]
+      : []),
   ],
 })
 export class AppModule {}

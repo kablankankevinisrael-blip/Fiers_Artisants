@@ -130,14 +130,16 @@ class _AuthInterceptor extends Interceptor {
         BaseOptions(baseUrl: AppConfig.apiBaseUrl),
       ).post(
         ApiEndpoints.refreshToken,
-        data: {'refreshToken': refreshToken},
+        options: Options(headers: {
+          'Authorization': 'Bearer $refreshToken',
+        }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         await SecureStorage.saveTokens(
-          accessToken: data['accessToken'] ?? data['access_token'],
-          refreshToken: data['refreshToken'] ?? data['refresh_token'],
+          accessToken: data['access_token'] ?? data['accessToken'],
+          refreshToken: data['refresh_token'] ?? data['refreshToken'],
         );
         return true;
       }

@@ -1,0 +1,281 @@
+PS C:\Users\melly\Fiers-Artisans\fiers_artisans_app> flutter run
+Launching lib\main.dart on TECNO KM4 in debug mode...
+Running Gradle task 'assembleDebug'...                            187,3s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           9,7s
+D/FlutterJNI(17459): Beginning load of flutter...
+D/FlutterJNI(17459): flutter (null) was loaded normally!
+I/flutter (17459): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+D/FlutterGeolocator(17459): Attaching Geolocator to activity
+D/FlutterRenderer(17459): Width is zero. 0,0
+D/FlutterRenderer(17459): Width is zero. 0,0
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Localization initialized
+D/FlutterGeolocator(17459): Creating service.
+D/FlutterGeolocator(17459): Binding to location service.
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Start
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Init state
+I/flutter (17459): [🌎 Easy Localization] [INFO] Saved locale loaded fr
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Build
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Init Localization Delegate
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Init provider
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Load Localization Delegate
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Load asset from assets/translations
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Build
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Init Localization Delegate
+I/flutter (17459): [🌎 Easy Localization] [DEBUG] Init provider
+D/FlutterGeolocator(17459): Geolocator foreground service connected
+D/FlutterGeolocator(17459): Initializing Geolocator services
+D/FlutterGeolocator(17459): Flutter engine connected. Connected engine count 1
+I/Choreographer(17459): Skipped 149 frames!  The application may be doing too much work on its main thread.
+D/mali_gralloc(17459): register: id=2a2000093a2, handle=0xb400006e5edde0e0, importpid=17459
+I/HWUI    (17459): Davey! duration=2555ms; Flags=1, FrameTimelineVsyncId=19494327, IntendedVsync=86565003292334, Vsync=86567486625717, InputEventId=0, HandleInputStart=86567496730118, AnimationStart=86567496733003, PerformTraversalsStart=86567496734195, DrawStart=86567505935503, FrameDeadline=86565032625668, FrameInterval=86567496245926, FrameStartTime=16666667, SyncQueued=86567518208926, SyncStart=86567518283849, IssueDrawCommandsStart=86567519031195, SwapBuffers=86567557286772, FrameCompleted=86567558522888, DequeueBufferDuration=2464885, QueueBufferDuration=414385, GpuCompleted=86567558522888, SwapBuffersCompleted=86567557943503, DisplayPresentTime=468281725569, CommandSubmissionCompleted=86567557286772,
+D/ProfileInstaller(17459): Installing profile for com.fiersartisans.fiers_artisans_app
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+W/WindowOnBackDispatcher(17459): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(17459): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+D/os.LiceInfo(17459): instance successfully. com.transsion.message.bank.v1.MessageBankLice@aaf0a69 from com.transsion.message.bank.IMessageBankLice
+D/TextSelection(17459): call hasMessage cause invalidateCache
+W/rs_artisans_app(17459): userfaultfd: MOVE ioctl seems unsupported: Try again
+D/os.SingleLice(17459): instance successfully. com.transsion.dragdrop.v1.DragDropLice@ea4e425 from com.transsion.dragdrop.DragDropLiceFactory
+D/os.SingleLiceFactory(17459): instance successfully. com.transsion.dragdrop.v1.DragDropLice@ea4e425 from android.view.IViewLice
+D/os.LiceInfo(17459): instance successfully. com.transsion.view.ViewLice@35699fa from android.view.IViewLice
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+W/WindowOnBackDispatcher(17459): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(17459): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+Syncing files to device TECNO KM4...                               15,2s
+
+Flutter run key commands.
+r Hot reload.
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on TECNO KM4 is available at: http://127.0.0.1:57943/BEusadOcPNE=/
+The Flutter DevTools debugger and profiler on TECNO KM4 is available at:
+http://127.0.0.1:57943/BEusadOcPNE=/devtools/?uri=ws://127.0.0.1:57943/BEusadOcPNE=/ws
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:1fbbb41e: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/TranClassInfo(17459): instance successfully. com.transsion.hubcore.internal.latency.TranLatencyTrackerImpl@edd159b from com.transsion.hubcore.internal.latency.ITranLatencyTracker
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F....ID 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/mali_gralloc(17459): register: id=2a2000093a3, handle=0xb400006f83cf78e0, importpid=17459
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+W/InteractionJankMonitor(17459): Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.fiersartisans.fiers_artisans_app
+D/TranClassInfo(17459): instance successfully. com.transsion.hubcore.internal.jank.TranFrameTrackerImpl@336db50 from com.transsion.hubcore.internal.jank.ITranFrameTracker
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/mali_gralloc(17459): register: id=2a2000093a8, handle=0xb400006f83cf7fe0, importpid=17459
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:1fbbb41e: onShown
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+D/InsetsController(17459): hide(ime(), fromIme=true)
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:59bd4085: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+I/ImeTracker(17459): com.google.android.inputmethod.latin:4332f563: onHidden
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+W/WindowOnBackDispatcher(17459): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(17459): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:1c1fc09e: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/TextSelection(17459): onUseCache cache=false
+W/WindowOnBackDispatcher(17459): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(17459): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:445f952c: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:445f952c: onShown
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:3e5c4043: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:3e5c4043: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:309963fb: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:309963fb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:6e33c8eb: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:6e33c8eb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:854f5709: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:b8f3d98f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:854f5709: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:b8f3d98f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:528cc4e1: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:7917b12f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:528cc4e1: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:7917b12f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:25f70f63: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:849da512: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:25f70f63: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:849da512: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:ad56b69d: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:35864427: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InputMethodManager(17459): showSoftInput() view=io.flutter.embedding.android.FlutterView{bb4cd4d VFE...... .F...... 0,0-720,1600 #1 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:ad56b69d: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring on
+D/InsetsController(17459): show(ime(), fromIme=true)
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:35864427: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/TextSelection(17459): onUseCache cache=false
+D/TextSelection(17459): onUseCache cache=false
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~JDQb_Kn27RJ9-ixemhLDNg==/com.google.android.marvin.talkback-wJ_usONHQLLByeyZ3Of-lg==/base.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~JDQb_Kn27RJ9-ixemhLDNg==/com.google.android.marvin.talkback-wJ_usONHQLLByeyZ3Of-lg==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /tr_preload/operator/app/Notepad/Notepad.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /tr_preload/operator/app/HiTranslate/HiTranslate.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/base.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/split_config.fr.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/split_config.xhdpi.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/base.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.fr.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.xhdpi.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/app/AiWriting/AiWriting.apk' with 1 weak references
+I/flutter (17459): → POST http://192.168.1.3:3000/api/v1/auth/register/client
+I/flutter (17459): ← 201 http://192.168.1.3:3000/api/v1/auth/register/client
+W/WindowOnBackDispatcher(17459): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(17459): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:107b23d3: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InputConnectionAdaptor(17459): The input method toggled cursor monitoring off
+D/InsetsController(17459): hide(ime(), fromIme=true)
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /tr_preload/operator/app/HiTranslate/HiTranslate.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/base.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/split_config.fr.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~amQ3ow99QkHnq4xIolgBmg==/com.openai.chatgpt-kcB3W_rtjk9k4Kl4ckiQXA==/split_config.xhdpi.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~JDQb_Kn27RJ9-ixemhLDNg==/com.google.android.marvin.talkback-wJ_usONHQLLByeyZ3Of-lg==/base.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~JDQb_Kn27RJ9-ixemhLDNg==/com.google.android.marvin.talkback-wJ_usONHQLLByeyZ3Of-lg==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /tr_preload/operator/app/Notepad/Notepad.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/app/AiWriting/AiWriting.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/base.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.fr.apk' with 1 weak references
+W/rs_artisans_app(17459): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.xhdpi.apk' with 1 weak references
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+I/flutter (17459): → POST http://192.168.1.3:3000/api/v1/auth/send-otp
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:95e0fe2e: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+I/ImeTracker(17459): com.fiersartisans.fiers_artisans_app:107b23d3: onHidden
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+D/FlutterJNI(17459): Sending viewport metrics to the engine.
+I/flutter (17459): ← 201 http://192.168.1.3:3000/api/v1/auth/send-otp

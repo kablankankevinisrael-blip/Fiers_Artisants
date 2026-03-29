@@ -50,6 +50,7 @@ export class AuthService {
       phone_number: dto.phone_number,
       password_hash,
       role: UserRole.ARTISAN,
+      email: dto.email,
       whatsapp_number: dto.whatsapp_number || dto.phone_number,
     });
     const savedUser = await this.userRepository.save(user);
@@ -67,7 +68,7 @@ export class AuthService {
     await this.artisanProfileRepository.save(profile);
 
     this.logger.log(`Artisan registered: ${savedUser.id}`);
-    return { user_id: savedUser.id, role: UserRole.ARTISAN };
+    return this.generateTokens(savedUser);
   }
 
   async registerClient(dto: RegisterClientDto) {
@@ -83,6 +84,7 @@ export class AuthService {
       phone_number: dto.phone_number,
       password_hash,
       role: UserRole.CLIENT,
+      email: dto.email,
       whatsapp_number: dto.phone_number,
     });
     const savedUser = await this.userRepository.save(user);
@@ -97,7 +99,7 @@ export class AuthService {
     await this.clientProfileRepository.save(profile);
 
     this.logger.log(`Client registered: ${savedUser.id}`);
-    return { user_id: savedUser.id, role: UserRole.CLIENT };
+    return this.generateTokens(savedUser);
   }
 
   async sendOtp(phoneNumber: string) {

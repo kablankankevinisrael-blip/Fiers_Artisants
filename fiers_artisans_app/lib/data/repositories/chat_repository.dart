@@ -32,9 +32,9 @@ class ChatRepository {
   }
 
   Future<WebSocketChannel> connectWebSocket() async {
-    final token = await SecureStorage.getAccessToken();
+    final userId = await SecureStorage.getUserId();
     final uri = Uri.parse(
-        '${AppConfig.wsBaseUrl}/chat?token=$token');
+        '${AppConfig.wsBaseUrl}/ws/chat?userId=$userId');
     _channel = WebSocketChannel.connect(uri);
     return _channel!;
   }

@@ -23,10 +23,12 @@ class MessageModel {
       conversationId: json['conversationId']?.toString() ?? '',
       senderId: json['senderId']?.toString() ?? '',
       content: json['content'] ?? '',
-      type: json['type'] ?? 'text',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      type: (json['type'] ?? 'TEXT').toString().toLowerCase(),
+      createdAt: json['sentAt'] != null
+          ? DateTime.parse(json['sentAt'])
+          : json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
       isRead: json['isRead'] ?? false,
     );
   }

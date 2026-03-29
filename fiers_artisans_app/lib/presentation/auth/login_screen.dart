@@ -38,7 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (success && mounted) {
-      final role = ref.read(authProvider).user?.role;
+      final role = ref.read(authProvider).user?.role.toLowerCase();
       if (role == 'artisan') {
         context.go('/artisan');
       } else {

@@ -4,6 +4,7 @@ import {
   IsPhoneNumber,
   MinLength,
   IsOptional,
+  IsEmail,
 } from 'class-validator';
 import { UserRole } from '../../users/entities/user.entity';
 
@@ -36,6 +37,10 @@ export class RegisterArtisanDto {
   @IsOptional()
   @IsString()
   whatsapp_number?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 export class RegisterClientDto {
@@ -59,6 +64,10 @@ export class RegisterClientDto {
   @IsOptional()
   @IsString()
   commune?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 export class SendOtpDto {

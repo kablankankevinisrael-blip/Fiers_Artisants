@@ -3,7 +3,7 @@ class UserModel {
   final String phone;
   final String firstName;
   final String lastName;
-  final String role; // 'artisan' | 'client' | 'admin'
+  final String role;
   final String? email;
   final bool isPhoneVerified;
   final bool isActive;
@@ -23,30 +23,32 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] ?? '',
-      phone: json['phone'] ?? '',
-      firstName: json['firstName'] ?? json['first_name'] ?? '',
-      lastName: json['lastName'] ?? json['last_name'] ?? '',
-      role: json['role'] ?? 'client',
+      id: json['id']?.toString() ?? '',
+      phone: json['phone_number'] ?? json['phone'] ?? '',
+      firstName: json['first_name'] ?? json['firstName'] ?? '',
+      lastName: json['last_name'] ?? json['lastName'] ?? '',
+      role: (json['role'] ?? 'CLIENT').toString().toLowerCase(),
       email: json['email'],
       isPhoneVerified:
-          json['isPhoneVerified'] ?? json['is_phone_verified'] ?? false,
-      isActive: json['isActive'] ?? json['is_active'] ?? true,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+          json['is_phone_verified'] ?? json['isPhoneVerified'] ?? false,
+      isActive: json['is_active'] ?? json['isActive'] ?? true,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'phone': phone,
-        'firstName': firstName,
-        'lastName': lastName,
+        'phone_number': phone,
+        'first_name': firstName,
+        'last_name': lastName,
         'role': role,
         'email': email,
-        'isPhoneVerified': isPhoneVerified,
-        'isActive': isActive,
+        'is_phone_verified': isPhoneVerified,
+        'is_active': isActive,
       };
 
   String get fullName => '$firstName $lastName';

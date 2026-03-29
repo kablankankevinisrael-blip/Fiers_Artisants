@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/storage/secure_storage.dart';
 import '../data/models/user_model.dart';
@@ -61,7 +62,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         refreshToken: data['refreshToken'] ?? data['refresh_token'] ?? '',
       );
       final userId = data['user']?['id']?.toString() ?? '';
-      final role = data['user']?['role'] ?? 'client';
+      final role = (data['user']?['role'] ?? 'CLIENT').toString();
       await SecureStorage.saveUserInfo(userId: userId, role: role);
 
       final user = UserModel.fromJson(data['user'] ?? {});
@@ -186,15 +187,50 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   String _extractError(dynamic e) {
-    if (e is Exception) {
-      final msg = e.toString();
-      // Try to extract DioException message
-      if (msg.contains('message')) {
-        final match = RegExp(r'"message"\s*:\s*"([^"]+)"').firstMatch(msg);
-        if (match != null) return match.group(1) ?? msg;
+    if (e is DioException) {
+      // Extraire le message du backend si disponible
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        final message = data['message'];
+        if (message is List) return message.join(', ');
+        if (message is String) return message;
       }
-      return msg.replaceAll('Exception: ', '');
+      // Messages réseau détaillés
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+          return 'Le serveur met trop de temps à répondre. '
+              'Vérifiez que le backend est démarré sur le port 3000.';
+        case DioExceptionType.receiveTimeout:
+          return 'Réponse du serveur trop lente. Réessayez.';
+        case DioExceptionType.connectionError:
+          final msg = e.error?.toString() ?? '';
+          if (msg.contains('Connection refused') ||
+              msg.contains('ECONNREFUSED')) {
+            return 'Serveur indisponible (connexion refusée). '
+                'Vérifiez que le backend et les services Docker sont lancés.';
+          }
+          if (msg.contains('Network is unreachable') ||
+              msg.contains('SocketException')) {
+            return 'Réseau inaccessible. Vérifiez votre Wi-Fi '
+                'et que le téléphone est sur le même réseau que le PC.';
+          }
+          return 'Impossible de joindre le serveur. '
+              'Vérifiez votre connexion réseau.';
+        case DioExceptionType.badResponse:
+          final code = e.response?.statusCode;
+          if (code == 401) return 'Identifiants incorrects.';
+          if (code == 409) return 'Ce compte existe déjà.';
+          if (code == 400) return 'Données invalides. Vérifiez les champs.';
+          if (code == 500) return 'Erreur interne du serveur. Réessayez.';
+          return 'Erreur serveur ($code).';
+        default:
+          return e.message ?? 'Erreur réseau inattendue.';
+      }
     }
-    return 'Une erreur est survenue';
+    if (e is Exception) {
+      return e.toString().replaceAll('Exception: ', '');
+    }
+    return 'Une erreur est survenue.';
   }
 }

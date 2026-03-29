@@ -20,15 +20,20 @@ class SubscriptionModel {
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
     return SubscriptionModel(
       id: json['id']?.toString() ?? '',
-      artisanId: json['artisanId']?.toString() ?? '',
-      status: json['status'] ?? 'expired',
-      startDate: json['startDate'] != null
-          ? DateTime.tryParse(json['startDate'])
-          : null,
-      endDate:
-          json['endDate'] != null ? DateTime.tryParse(json['endDate']) : null,
-      amountFcfa: json['amount'] ?? json['amountFcfa'] ?? 5000,
-      paymentMethod: json['paymentMethod'],
+      artisanId: json['artisan_profile_id']?.toString() ?? json['artisanId']?.toString() ?? '',
+      status: (json['status'] ?? 'EXPIRED').toString().toLowerCase(),
+      startDate: json['starts_at'] != null
+          ? DateTime.tryParse(json['starts_at'])
+          : json['startDate'] != null
+              ? DateTime.tryParse(json['startDate'])
+              : null,
+      endDate: json['expires_at'] != null
+          ? DateTime.tryParse(json['expires_at'])
+          : json['endDate'] != null
+              ? DateTime.tryParse(json['endDate'])
+              : null,
+      amountFcfa: json['amount_fcfa'] ?? json['amount'] ?? json['amountFcfa'] ?? 5000,
+      paymentMethod: json['payment_method'] ?? json['paymentMethod'],
     );
   }
 

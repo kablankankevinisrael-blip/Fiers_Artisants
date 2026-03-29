@@ -26,6 +26,15 @@ services:
       - ../.env
     environment:
       - NODE_ENV=${NODE_ENV:-development}
+      # Overrides pour Docker — les services sont accessibles via leur nom de service
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
     networks:
       - fiers-network
     healthcheck:

@@ -8,7 +8,7 @@ class ArtisanRepository {
   final ApiClient _api = ApiClient();
 
   Future<ArtisanModel> getArtisan(String userId) async {
-    final response = await _api.get(ApiEndpoints.userById(userId));
+    final response = await _api.get(ApiEndpoints.artisanById(userId));
     return ArtisanModel.fromJson(response.data);
   }
 
@@ -26,14 +26,13 @@ class ArtisanRepository {
     required int rating,
     String? comment,
   }) async {
-    await _api.post(
-      ApiEndpoints.reviews,
-      data: {
-        'artisanId': artisanId,
-        'rating': rating,
-        'comment': ?comment,
-      },
-    );
+    final body = <String, dynamic>{
+      'artisan_id': artisanId,
+      'rating': rating,
+    };
+    if (comment != null) body['comment'] = comment;
+
+    await _api.post(ApiEndpoints.reviews, data: body);
   }
 
   Future<List<PortfolioModel>> getPortfolio(String artisanId) async {
@@ -48,14 +47,13 @@ class ArtisanRepository {
     double? price,
     required List<String> imageUrls,
   }) async {
-    await _api.post(
-      ApiEndpoints.portfolio,
-      data: {
-        'title': title,
-        'description': ?description,
-        'price': ?price,
-        'imageUrls': imageUrls,
-      },
-    );
+    final body = <String, dynamic>{
+      'title': title,
+      'imageUrls': imageUrls,
+    };
+    if (description != null) body['description'] = description;
+    if (price != null) body['priceFcfa'] = price.toInt();
+
+    await _api.post(ApiEndpoints.portfolio, data: body);
   }
 }

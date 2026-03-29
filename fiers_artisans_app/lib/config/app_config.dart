@@ -3,8 +3,10 @@ class AppConfig {
   static const String appVersion = '1.0.0';
 
   // API Configuration
-  static const String apiBaseUrl = 'http://10.0.2.2:3000/api/v1';
-  static const String wsBaseUrl = 'ws://10.0.2.2:3000';
+  // Pour émulateur Android : 10.0.2.2
+  // Pour téléphone physique : utiliser l'IP locale du PC (Wi-Fi)
+  static const String apiBaseUrl = 'http://192.168.1.4:3000/api/v1';
+  static const String wsBaseUrl = 'ws://192.168.1.4:3000';
 
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 15);

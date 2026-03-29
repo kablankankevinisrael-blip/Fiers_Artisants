@@ -80,7 +80,7 @@ export class OtpService {
         this.logger.debug(`[DEV] OTP code for ${phoneNumber}: ${code}`);
         return {
           sent: true,
-          message: `[DEV] Code OTP : ${code}`,
+          message: 'Code envoyé. Consultez l\'inspecteur OTP dev pour obtenir le code.',
         };
       }
 

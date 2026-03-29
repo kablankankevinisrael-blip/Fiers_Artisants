@@ -1,5 +1,6 @@
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/storage/secure_storage.dart';
 import '../models/user_model.dart';
 
 class AuthRepository {
@@ -11,7 +12,7 @@ class AuthRepository {
   }) async {
     final response = await _api.post(
       ApiEndpoints.login,
-      data: {'phone': phone, 'password': password},
+      data: {'phone_number': phone, 'password': password},
     );
     return response.data;
   }
@@ -29,21 +30,20 @@ class AuthRepository {
     int? experienceYears,
     String? categoryId,
   }) async {
+    final body = <String, dynamic>{
+      'phone_number': phone,
+      'password': password,
+      'first_name': firstName,
+      'last_name': lastName,
+      'business_name': profession,
+      'city': city,
+      'commune': commune,
+    };
+    if (email != null) body['email'] = email;
+
     final response = await _api.post(
       ApiEndpoints.registerArtisan,
-      data: {
-        'phone': phone,
-        'password': password,
-        'firstName': firstName,
-        'lastName': lastName,
-        'profession': profession,
-        'city': city,
-        'commune': commune,
-        'email': ?email,
-        'description': ?description,
-        'experienceYears': ?experienceYears,
-        'categoryId': ?categoryId,
-      },
+      data: body,
     );
     return response.data;
   }
@@ -57,23 +57,25 @@ class AuthRepository {
     required String commune,
     String? email,
   }) async {
+    final body = <String, dynamic>{
+      'phone_number': phone,
+      'password': password,
+      'first_name': firstName,
+      'last_name': lastName,
+      'city': city,
+      'commune': commune,
+    };
+    if (email != null) body['email'] = email;
+
     final response = await _api.post(
       ApiEndpoints.registerClient,
-      data: {
-        'phone': phone,
-        'password': password,
-        'firstName': firstName,
-        'lastName': lastName,
-        'city': city,
-        'commune': commune,
-        'email': ?email,
-      },
+      data: body,
     );
     return response.data;
   }
 
   Future<void> sendOtp(String phone) async {
-    await _api.post(ApiEndpoints.sendOtp, data: {'phone': phone});
+    await _api.post(ApiEndpoints.sendOtp, data: {'phone_number': phone});
   }
 
   Future<Map<String, dynamic>> verifyOtp({
@@ -82,7 +84,7 @@ class AuthRepository {
   }) async {
     final response = await _api.post(
       ApiEndpoints.verifyOtp,
-      data: {'phone': phone, 'code': code},
+      data: {'phone_number': phone, 'code': code},
     );
     return response.data;
   }
@@ -90,13 +92,17 @@ class AuthRepository {
   Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
     final response = await _api.post(
       ApiEndpoints.refreshToken,
-      data: {'refreshToken': refreshToken},
+      data: {'refresh_token': refreshToken},
     );
     return response.data;
   }
 
   Future<UserModel> getProfile() async {
-    final response = await _api.get(ApiEndpoints.profile);
+    final role = await SecureStorage.getUserRole();
+    final endpoint = (role ?? '').toUpperCase() == 'ARTISAN'
+        ? ApiEndpoints.artisanProfile
+        : ApiEndpoints.clientProfile;
+    final response = await _api.get(endpoint);
     return UserModel.fromJson(response.data);
   }
 }

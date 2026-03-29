@@ -15,7 +15,7 @@ class SubscriptionRepository {
   }
 
   Future<Map<String, dynamic>> initiatePayment() async {
-    final response = await _api.post(ApiEndpoints.subscription);
+    final response = await _api.post(ApiEndpoints.subscriptionInitiate);
     return response.data;
   }
 }

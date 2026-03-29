@@ -74,16 +74,21 @@ class _OtpVerificationScreenState
     setState(() => _isLoading = false);
 
     if (success && mounted) {
-      final role = ref.read(authProvider).user?.role;
+      final role = ref.read(authProvider).user?.role.toLowerCase();
       if (role == 'artisan') {
         context.go('/artisan');
       } else {
         context.go('/client');
       }
     } else if (mounted) {
+      // Effacer les champs pour une nouvelle saisie
+      for (var c in _controllers) {
+        c.clear();
+      }
+      _focusNodes[0].requestFocus();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Code invalide'),
+          content: Text('auth.otp.invalid'.tr()),
           backgroundColor: AppTheme.error,
         ),
       );

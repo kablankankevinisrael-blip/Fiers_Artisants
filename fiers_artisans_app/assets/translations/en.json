@@ -52,6 +52,8 @@
       "resend": "Resend code",
       "resend_in": "Resend in {seconds}s",
       "verify": "Verify",
+      "invalid": "Invalid code. Please try again.",
+      "expired": "Code expired. Please request a new one.",
       "unavailable": "Service currently unavailable. Please try again later."
     }
   },

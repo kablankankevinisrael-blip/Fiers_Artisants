@@ -1,3 +1,7 @@
+// Charger .env AVANT tout import de modules NestJS
+// pour que process.env soit peuplé quand les décorateurs @Module s'évaluent
+import './load-env.js';
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

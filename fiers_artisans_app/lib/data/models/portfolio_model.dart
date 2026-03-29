@@ -20,17 +20,19 @@ class PortfolioModel {
   factory PortfolioModel.fromJson(Map<String, dynamic> json) {
     return PortfolioModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
-      artisanId: json['artisanId']?.toString() ?? '',
+      artisanId: json['artisanProfileId']?.toString() ?? json['artisanId']?.toString() ?? '',
       title: json['title'] ?? '',
       description: json['description'],
       imageUrls: (json['imageUrls'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
-      price: (json['price'] as num?)?.toDouble(),
+      price: (json['priceFcfa'] as num?)?.toDouble() ?? (json['price'] as num?)?.toDouble(),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'])
-          : null,
+          : json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'])
+              : null,
     );
   }
 }

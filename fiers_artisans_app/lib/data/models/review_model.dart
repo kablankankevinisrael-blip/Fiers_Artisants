@@ -20,14 +20,16 @@ class ReviewModel {
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
     return ReviewModel(
       id: json['id']?.toString() ?? '',
-      clientId: json['clientId']?.toString() ?? json['client_id']?.toString() ?? '',
-      artisanId: json['artisanId']?.toString() ?? json['artisan_id']?.toString() ?? '',
-      clientName: json['clientName'] ?? json['client']?['firstName'],
+      clientId: json['client_id']?.toString() ?? json['clientId']?.toString() ?? '',
+      artisanId: json['artisan_id']?.toString() ?? json['artisanId']?.toString() ?? '',
+      clientName: json['client']?['first_name'] ?? json['clientName'] ?? json['client']?['firstName'],
       rating: json['rating'] ?? 0,
       comment: json['comment'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 }
