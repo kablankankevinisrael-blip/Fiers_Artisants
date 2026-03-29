@@ -1,0 +1,80 @@
+Voici le schéma cohérent que je te propose, aligné avec ton plan produit et l’état réel du code actuel.
+
+Constat rapide basé sur le projet:
+
+Le client a déjà une base solide de découverte: client_dashboard.dart, search_screen.dart, artisan_profile_screen.dart.
+L’artisan a un dashboard existant mais encore “léger” métier: artisan_dashboard.dart, avec des écrans encore partiellement TODO (portfolio_screen.dart, verification_screen.dart).
+Ton implementation_plan.md pousse clairement vers un dashboard artisan orienté pilotage business (ex: “demandes reçues, note moyenne, zones, abonnement, vérification”).
+Schéma cible (produit)
+
+
+Client Space:
+Découvrir des artisans
+Comparerprofils/portfolio/notes
+Contacter et suivre
+
+Artisan Space:
+Piloter visibilité et profil pro
+Gérer portfolio,abonnement, vérification
+Traiter messages etdemandes
+
+Profil Public Artisan:
+Vitrine visible côté client
+Preuves de confiance(badges, avis, disponibilité)
+
+1) Dashboard Client (à conserver + légère amélioration)
+
+Rôle principal: explorer et choisir.
+Sections cœur:
+Recherche rapide + catégories + filtres rayon.
+Résultats pertinents (proximité, note, disponibilité).
+Accès profil artisan complet (portfolio, avis, CTA contact).
+Légères améliorations recommandées:
+“Recherches récentes”.
+“Artisans vus récemment”.
+“Favoris”.
+“Mode urgence” (artisan disponible maintenant).
+Ce dashboard reste orienté découverte et conversion contact.
+2) Dashboard Artisan (à renforcer nettement)
+
+Rôle principal: piloter son activité.
+Sections cœur:
+Statut du compte: abonnement actif/expiré, vérification (pending/approved/rejected), complétude profil.
+Performance: vues profil, messages reçus, note moyenne, total avis.
+Actions business:
+Gérer portfolio (ajout, édition, suppression).
+Gérer disponibilité.
+Mettre à jour zone d’intervention/localisation.
+Vérification documents (suivi du workflow).
+Abonnement/paiement Wave.
+Inbox métier:
+Conversations récentes.
+Nouvelles demandes client.
+Notifications critiques (expiration abonnement, doc rejeté, nouveau message).
+Ce dashboard doit être orienté pilotage, pas découverte.
+3) Distinction fondamentale à respecter
+
+Client = “Je cherche le meilleur artisan”.
+Artisan = “Je rends mon profil visible et je convertis des demandes”.
+Même style UI possible, mais pas le même contenu métier.
+4) Schéma navigation recommandé
+
+Client:
+/client -> découverte
+/client/search -> recherche
+/client/artisan/:id -> profil public artisan
+/client/review/:artisanId -> avis
+Artisan:
+/artisan -> cockpit activité
+/artisan/portfolio -> réalisations
+/artisan/verification -> conformité
+/artisan/subscription -> monétisation
+/chat -> traitement demandes/messages
+/settings -> réglages compte
+5) Cibles UX concrètes (artisan)
+
+En 5 secondes, l’artisan doit voir:
+“Suis-je visible ?”
+“Ai-je des demandes/messages ?”
+“Que dois-je faire maintenant ?”
+Chaque carte du dashboard doit mener à une action immédiate utile.

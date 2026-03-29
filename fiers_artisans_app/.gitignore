@@ -3,6 +3,9 @@
 *.log
 *.pyc
 *.swp
+
+# Environment (IP locale, ne pas committer)
+.env
 .DS_Store
 .atom/
 .build/

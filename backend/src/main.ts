@@ -12,6 +12,28 @@ import { GlobalExceptionFilter } from './common/filters';
 import { LoggingInterceptor, TransformInterceptor } from './common/interceptors';
 
 async function bootstrap() {
+  // ── Fail-fast: vérifier les secrets obligatoires ────────────────
+  const requiredSecrets = [
+    'POSTGRES_PASSWORD',
+    'REDIS_PASSWORD',
+    'JWT_SECRET',
+    'JWT_REFRESH_SECRET',
+  ];
+  const missing = requiredSecrets.filter((k) => !process.env[k] || process.env[k]?.startsWith('change_me'));
+  if (missing.length > 0 && process.env.NODE_ENV === 'production') {
+    Logger.error(
+      `Missing or insecure required secrets: ${missing.join(', ')}. Refusing to start in production.`,
+      'Bootstrap',
+    );
+    process.exit(1);
+  }
+  if (missing.length > 0) {
+    Logger.warn(
+      `⚠️  Secrets with default values detected: ${missing.join(', ')}. Update .env before deploying.`,
+      'Bootstrap',
+    );
+  }
+
   const app = await NestFactory.create(AppModule, {
     rawBody: true, // Pour la vérification HMAC du webhook Wave
   });

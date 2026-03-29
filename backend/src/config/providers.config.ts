@@ -1,7 +1,7 @@
 // OTP Provider configuration avec fallback non-bloquant
 export const OTP_PROVIDERS = {
   WHATSAPP: {
-    enabled: true,
+    enabled: process.env.WHATSAPP_PROVIDER_ENABLED !== 'false',
     priority: 1,
     label: 'WhatsApp Business Cloud API',
   },

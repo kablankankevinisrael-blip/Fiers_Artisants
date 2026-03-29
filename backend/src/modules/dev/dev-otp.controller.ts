@@ -34,7 +34,11 @@ export class DevOtpController {
       port: this.configService.get<number>('redis.port'),
       password: this.configService.get<string>('redis.password'),
     });
-    this.devKey = this.configService.get<string>('OTP_DEV_KEY') || 'fiers_dev_2025';
+    const key = this.configService.get<string>('OTP_DEV_KEY');
+    if (!key) {
+      this.logger.error('OTP_DEV_KEY is not set in .env — dev inspector will reject all requests');
+    }
+    this.devKey = key || '';
   }
 
   @Get('otp/latest')

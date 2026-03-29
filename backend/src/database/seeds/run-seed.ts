@@ -14,7 +14,7 @@ async function run() {
     host: process.env.POSTGRES_HOST || 'localhost',
     port: parseInt(process.env.POSTGRES_PORT || '5434', 10),
     username: process.env.POSTGRES_USER || 'fiers_artisans',
-    password: process.env.POSTGRES_PASSWORD || 'fiers_dev_2025',
+    password: process.env.POSTGRES_PASSWORD || 'change_me_postgres',
     database: process.env.POSTGRES_DB || 'fiers_artisans',
     entities: [Category, Subcategory],
   });

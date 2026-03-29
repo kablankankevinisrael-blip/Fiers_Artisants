@@ -65,6 +65,25 @@
     "top_rated": "Les mieux notés",
     "see_all": "Voir tout"
   },
+  "dashboard": {
+    "artisan": {
+      "subtitle": "Tableau de bord artisan",
+      "performance": "Performance",
+      "profile_views": "Vues du profil",
+      "unread_messages": "Messages non lus",
+      "avg_rating": "Note moyenne",
+      "total_reviews": "Total avis",
+      "quick_actions": "Actions rapides",
+      "inbox": "Messagerie"
+    },
+    "client": {
+      "urgent_mode": "Mode urgence ⚡",
+      "urgent_subtitle": "Artisans disponibles à proximité",
+      "favorites": "Mes favoris",
+      "favorites_empty": "Ajoutez des artisans en favoris pour les retrouver facilement.",
+      "recently_viewed": "Consultés récemment"
+    }
+  },
   "search": {
     "title": "Recherche",
     "placeholder": "Plombier, Électricien...",

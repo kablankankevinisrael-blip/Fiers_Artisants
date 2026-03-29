@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/app_config.dart';
 import '../data/models/artisan_model.dart';
 import '../data/repositories/search_repository.dart';
 
@@ -83,7 +84,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         results: results,
         isLoading: false,
         page: 1,
-        hasMore: results.length >= 20,
+        hasMore: results.length >= AppConfig.defaultPageSize,
       );
     } catch (e) {
       state = state.copyWith(
@@ -114,7 +115,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         results: [...state.results, ...results],
         isLoading: false,
         page: nextPage,
-        hasMore: results.length >= 20,
+        hasMore: results.length >= AppConfig.defaultPageSize,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

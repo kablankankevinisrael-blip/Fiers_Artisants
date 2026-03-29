@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Fiers Artisans — Network Security Config
+  Fiers Artisans — Network Security Config (debug/dev)
   Autorise le trafic HTTP cleartext vers les serveurs de développement local.
-  En production, remplacer par des connexions HTTPS uniquement.
+
+  ⚠️ Ajouter ici l'IP de votre PC si vous changez de réseau.
+     Exemple : si votre PC est sur 192.168.0.50, ajouter :
+     <domain includeSubdomains="true">192.168.0.50</domain>
+
+  En production (HTTPS), ce fichier doit être remplacé par une config
+  sans cleartextTrafficPermitted ou n'autorisant que le domaine prod.
 -->
 <network-security-config>
-    <!-- Domaines de développement autorisés en cleartext -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">10.0.2.2</domain>
-        <domain includeSubdomains="true">192.168.1.4</domain>
+        <domain includeSubdomains="true">192.168.110.58</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
     </domain-config>

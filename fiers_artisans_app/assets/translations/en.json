@@ -65,6 +65,25 @@
     "top_rated": "Top rated",
     "see_all": "See all"
   },
+  "dashboard": {
+    "artisan": {
+      "subtitle": "Craftsman dashboard",
+      "performance": "Performance",
+      "profile_views": "Profile views",
+      "unread_messages": "Unread messages",
+      "avg_rating": "Average rating",
+      "total_reviews": "Total reviews",
+      "quick_actions": "Quick actions",
+      "inbox": "Inbox"
+    },
+    "client": {
+      "urgent_mode": "Urgent mode ⚡",
+      "urgent_subtitle": "Available craftsmen nearby",
+      "favorites": "My favorites",
+      "favorites_empty": "Add craftsmen to favorites to find them easily.",
+      "recently_viewed": "Recently viewed"
+    }
+  },
   "search": {
     "title": "Search",
     "placeholder": "Plumber, Electrician...",

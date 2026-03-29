@@ -80,8 +80,8 @@ import { DevModule } from './modules/dev/dev.module';
     // ── Rate Limiting ─────────────────────────────────────────────
     ThrottlerModule.forRoot([
       {
-        ttl: 60000,
-        limit: 30,
+        ttl: parseInt(process.env.THROTTLE_TTL_MS || '60000', 10),
+        limit: parseInt(process.env.THROTTLE_LIMIT || '30', 10),
       },
     ]),
 

@@ -59,6 +59,7 @@ dependencies:
   url_launcher: ^6.3.1
   permission_handler: ^11.4.0
   flutter_animate: ^4.5.2
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/translations/
     - assets/images/
     - assets/icons/

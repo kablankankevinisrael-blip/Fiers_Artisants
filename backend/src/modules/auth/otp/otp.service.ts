@@ -7,10 +7,10 @@ import { WhatsappOtpProvider } from './whatsapp-otp.provider';
 export class OtpService {
   private readonly logger = new Logger(OtpService.name);
   private readonly redis: Redis;
-  private readonly OTP_TTL = 300; // 5 minutes
-  private readonly MAX_ATTEMPTS = 5;
-  private readonly MAX_SENDS_PER_HOUR = 3;
-  private readonly BLOCK_DURATION = 900; // 15 minutes
+  private readonly OTP_TTL: number;
+  private readonly MAX_ATTEMPTS: number;
+  private readonly MAX_SENDS_PER_HOUR: number;
+  private readonly BLOCK_DURATION: number;
 
   constructor(
     private readonly configService: ConfigService,
@@ -21,6 +21,10 @@ export class OtpService {
       port: this.configService.get<number>('redis.port'),
       password: this.configService.get<string>('redis.password'),
     });
+    this.OTP_TTL = parseInt(process.env.OTP_TTL_SECONDS || '300', 10);
+    this.MAX_ATTEMPTS = parseInt(process.env.OTP_MAX_ATTEMPTS || '5', 10);
+    this.MAX_SENDS_PER_HOUR = parseInt(process.env.OTP_MAX_SENDS_PER_HOUR || '3', 10);
+    this.BLOCK_DURATION = parseInt(process.env.OTP_BLOCK_DURATION_SECONDS || '900', 10);
   }
 
   async sendOtp(phoneNumber: string): Promise<{ sent: boolean; message: string }> {
