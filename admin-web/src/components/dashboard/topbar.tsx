@@ -23,10 +23,8 @@ export function Topbar() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card px-4 md:px-6">
       {/* Mobile menu */}
       <Sheet>
-        <SheetTrigger>
-          <button className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-muted md:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
+        <SheetTrigger className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-muted md:hidden">
+          <Menu className="h-5 w-5" />
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-64">
           <MobileSidebar />
@@ -48,14 +46,12 @@ export function Topbar() {
 
       {/* User menu */}
       <DropdownMenu>
-        <DropdownMenuTrigger>
-          <button className="inline-flex items-center justify-center rounded-full h-8 w-8 hover:bg-muted">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                AD
-              </AvatarFallback>
-            </Avatar>
-          </button>
+        <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-full h-8 w-8 hover:bg-muted">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+              AD
+            </AvatarFallback>
+          </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <div className="px-2 py-1.5">

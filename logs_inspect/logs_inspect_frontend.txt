@@ -1,0 +1,89 @@
+## Error Type
+Console Error
+
+## Error Message
+In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <SegmentViewNode type="layout" pagePath="(dashboard...">
+      <SegmentTrieNode>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <ClientSegmentRoot Component={function DashboardLayout} slots={{...}} serverProvidedParams={{params:{}, ...}}>
+        <DashboardLayout params={Promise}>
+          <div className="flex h-scr...">
+            <Sidebar>
+            <div className="flex-1 fle...">
+              <Topbar>
+                <header className="sticky top...">
+                  <Sheet>
+                    <DialogRoot data-slot="sheet">
+                      <SheetTrigger>
+                        <DialogTrigger data-slot="sheet-trigger">
+>                         <button
+>                           type="button"
+>                           onClick={function onClick}
+>                           onMouseDown={function onMouseDown}
+>                           onKeyDown={function}
+>                           onKeyUp={function onKeyUp}
+>                           onPointerDown={function onPointerDown}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_2_"
+>                           data-slot="sheet-trigger"
+>                           ref={function}
+>                         >
+>                           <button
+>                             className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-muted md:..."
+>                           >
+                      ...
+                  ...
+              ...
+
+
+
+    at button (<anonymous>:null:null)
+    at Topbar (src/components/dashboard/topbar.tsx:27:11)
+    at DashboardLayout (src/app/(dashboard)/layout.tsx:37:9)
+
+## Code Frame
+  25 |       <Sheet>
+  26 |         <SheetTrigger>
+> 27 |           <button className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-muted md:hidd...
+     |           ^
+  28 |             <Menu className="h-5 w-5" />
+  29 |           </button>
+  30 |         </SheetTrigger>
+
+Next.js version: 16.2.1 (Turbopack)
+////////   ## Error Type
+Console Error
+
+## Error Message
+<button> cannot contain a nested <button>.
+See this log for the ancestor stack trace.
+
+
+    at button (<anonymous>:null:null)
+    at SheetTrigger (src/components/ui/sheet.tsx:15:10)
+    at Topbar (src/components/dashboard/topbar.tsx:26:9)
+    at DashboardLayout (src/app/(dashboard)/layout.tsx:37:9)
+
+## Code Frame
+  13 |
+  14 | function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
+> 15 |   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
+     |          ^
+  16 | }
+  17 |
+  18 | function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
+
+Next.js version: 16.2.1 (Turbopack)
+ //// 
