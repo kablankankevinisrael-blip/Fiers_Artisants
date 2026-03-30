@@ -1,32 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-
-type Messages = Record<string, Record<string, string>>;
-
-let cachedMessages: Messages | null = null;
-let cachedLocale: string | null = null;
-
-async function loadMessages(locale: string): Promise<Messages> {
-  if (cachedMessages && cachedLocale === locale) return cachedMessages;
-  const mod = await import(`@/messages/${locale}.json`);
-  cachedMessages = mod.default;
-  cachedLocale = locale;
-  return cachedMessages!;
-}
+import { useCallback } from 'react';
+import { useLocaleContext } from '@/providers/locale-provider';
 
 export function useTranslations(namespace?: string) {
-  const [locale, setLocaleState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('admin_locale') || process.env.NEXT_PUBLIC_DEFAULT_LOCALE || 'fr';
-    }
-    return process.env.NEXT_PUBLIC_DEFAULT_LOCALE || 'fr';
-  });
-  const [messages, setMessages] = useState<Messages | null>(null);
-
-  useEffect(() => {
-    loadMessages(locale).then(setMessages);
-  }, [locale]);
+  const { locale, messages, setLocale } = useLocaleContext();
 
   const t = useCallback(
     (key: string): string => {
@@ -46,11 +24,6 @@ export function useTranslations(namespace?: string) {
     [messages, namespace]
   );
 
-  const setLocale = useCallback((newLocale: string) => {
-    localStorage.setItem('admin_locale', newLocale);
-    cachedMessages = null;
-    setLocaleState(newLocale);
-  }, []);
-
   return { t, locale, setLocale };
 }
+
