@@ -172,8 +172,8 @@ export default function ArtisansPage() {
                       <TableCell>
                         <span className="flex items-center gap-1">
                           <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                          {a.rating_average?.toFixed(1) || '—'}
-                          <span className="text-xs text-muted-foreground">({a.rating_count})</span>
+                          {a.rating_avg?.toFixed(1) || '—'}
+                          <span className="text-xs text-muted-foreground">({a.total_reviews})</span>
                         </span>
                       </TableCell>
                       <TableCell>{subBadge(a.subscription?.status)}</TableCell>

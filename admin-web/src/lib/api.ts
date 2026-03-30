@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type {
   AuthResponse,
   DashboardStats,
@@ -38,6 +38,70 @@ api.interceptors.request.use((config) => {
     }
   }
   return config;
+});
+
+// Auto-refresh on 401
+let isRefreshing = false;
+let pendingRequests: ((token: string) => void)[] = [];
+
+function onRefreshed(token: string) {
+  pendingRequests.forEach((cb) => cb(token));
+  pendingRequests = [];
+}
+
+api.interceptors.response.use(undefined, async (error: AxiosError) => {
+  const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+  if (!originalRequest || error.response?.status !== 401 || originalRequest._retry) {
+    return Promise.reject(error);
+  }
+
+  // Don't refresh on login or refresh endpoint itself
+  if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
+    return Promise.reject(error);
+  }
+
+  if (isRefreshing) {
+    return new Promise((resolve) => {
+      pendingRequests.push((token: string) => {
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        resolve(api(originalRequest));
+      });
+    });
+  }
+
+  originalRequest._retry = true;
+  isRefreshing = true;
+
+  try {
+    const refreshToken = localStorage.getItem('admin_refresh_token');
+    if (!refreshToken) throw new Error('No refresh token');
+
+    const { data } = await axios.post(`${API_URL}/auth/refresh`, {}, {
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    });
+
+    const newToken = data?.data?.access_token || data?.access_token;
+    if (!newToken) throw new Error('Invalid refresh response');
+
+    localStorage.setItem('admin_token', newToken);
+    if (data?.data?.refresh_token || data?.refresh_token) {
+      localStorage.setItem('admin_refresh_token', data?.data?.refresh_token || data?.refresh_token);
+    }
+
+    originalRequest.headers.Authorization = `Bearer ${newToken}`;
+    onRefreshed(newToken);
+    return api(originalRequest);
+  } catch {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_refresh_token');
+    localStorage.removeItem('admin_user');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  } finally {
+    isRefreshing = false;
+  }
 });
 
 // Auth

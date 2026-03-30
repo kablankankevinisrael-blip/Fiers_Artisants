@@ -48,10 +48,17 @@ export class UsersService {
   }
 
   async getArtisanPublicProfile(artisanId: string): Promise<ArtisanProfile> {
-    const profile = await this.artisanProfileRepository.findOne({
+    // Try by profile ID first, then by user ID (mobile sends userId)
+    let profile = await this.artisanProfileRepository.findOne({
       where: { id: artisanId, is_subscription_active: true },
       relations: ['category', 'user'],
     });
+    if (!profile) {
+      profile = await this.artisanProfileRepository.findOne({
+        where: { user: { id: artisanId }, is_subscription_active: true },
+        relations: ['category', 'user'],
+      });
+    }
     if (!profile) {
       throw new NotFoundException('Artisan non trouvé ou non actif.');
     }

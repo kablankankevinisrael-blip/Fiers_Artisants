@@ -132,7 +132,7 @@ export default function VerificationsPage() {
                     <TableCell className="font-medium">{doc.document_type}</TableCell>
                     <TableCell>{doc.user?.phone_number || doc.user_id.slice(0, 8)}</TableCell>
                     <TableCell>
-                      {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                      {new Date(doc.submitted_at).toLocaleDateString('fr-FR')}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">PENDING</Badge>

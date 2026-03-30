@@ -40,7 +40,13 @@ export class SearchService {
       );
 
     if (category) {
-      qb = qb.andWhere('c.slug = :category', { category });
+      // Accept both category slug and UUID id from mobile
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
+      if (isUuid) {
+        qb = qb.andWhere('c.id = :category', { category });
+      } else {
+        qb = qb.andWhere('c.slug = :category', { category });
+      }
     }
 
     if (query) {

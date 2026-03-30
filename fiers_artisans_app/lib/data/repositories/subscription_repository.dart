@@ -8,7 +8,14 @@ class SubscriptionRepository {
   Future<SubscriptionModel?> getStatus() async {
     try {
       final response = await _api.get(ApiEndpoints.subscriptionStatus);
-      return SubscriptionModel.fromJson(response.data);
+      final data = response.data;
+      // Backend returns { subscription: {...}, is_active: bool }
+      if (data is Map<String, dynamic> && data.containsKey('subscription')) {
+        final sub = data['subscription'] as Map<String, dynamic>? ?? {};
+        sub['is_active'] = data['is_active'];
+        return SubscriptionModel.fromJson(sub);
+      }
+      return SubscriptionModel.fromJson(data);
     } catch (_) {
       return null;
     }

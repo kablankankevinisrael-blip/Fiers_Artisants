@@ -28,11 +28,11 @@ export interface VerificationDocument {
   id: string;
   user_id: string;
   document_type: string;
-  document_url: string;
+  file_url: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   rejection_reason?: string;
   reviewed_by?: string;
-  created_at: string;
+  submitted_at: string;
   updated_at: string;
   user?: User;
 }
@@ -47,8 +47,8 @@ export interface ArtisanProfile {
   commune: string;
   whatsapp_number: string;
   bio?: string;
-  rating_average: number;
-  rating_count: number;
+  rating_avg: number;
+  total_reviews: number;
   is_available: boolean;
   created_at: string;
   user?: User;
