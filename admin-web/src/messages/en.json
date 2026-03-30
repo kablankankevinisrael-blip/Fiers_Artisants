@@ -1,0 +1,91 @@
+{
+  "app": {
+    "title": "Fiers Artisans — Admin",
+    "logout": "Logout",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "search": "Search...",
+    "no_data": "No data",
+    "language": "Language"
+  },
+  "login": {
+    "title": "Administration",
+    "subtitle": "Sign in to access the dashboard",
+    "phone": "Phone number",
+    "phone_placeholder": "07 XX XX XX XX",
+    "password": "Password",
+    "submit": "Sign in",
+    "error_credentials": "Invalid credentials",
+    "error_role": "Admin access only",
+    "error_generic": "Connection error"
+  },
+  "nav": {
+    "overview": "Overview",
+    "verifications": "Verifications",
+    "artisans": "Artisans",
+    "analytics": "Analytics"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "total_users": "Users",
+    "total_artisans": "Artisans",
+    "active_subscriptions": "Active subscriptions",
+    "total_revenue": "Revenue (FCFA)",
+    "pending_verifications": "Pending verifications",
+    "quick_actions": "Quick actions",
+    "view_pending": "View pending documents",
+    "view_artisans": "Manage artisans"
+  },
+  "verifications": {
+    "title": "Verifications",
+    "subtitle": "Documents pending review",
+    "document_type": "Type",
+    "submitted_by": "Submitted by",
+    "submitted_at": "Date",
+    "status": "Status",
+    "actions": "Actions",
+    "approve": "Approve",
+    "reject": "Reject",
+    "reject_reason": "Rejection reason",
+    "reject_reason_placeholder": "Explain the reason for rejection...",
+    "reject_reason_required": "Reason is required",
+    "approved_success": "Document approved",
+    "rejected_success": "Document rejected",
+    "no_pending": "No pending documents",
+    "confirm_approve": "Confirm approval of this document?",
+    "confirm_reject": "Confirm rejection of this document?"
+  },
+  "artisans": {
+    "title": "Artisans",
+    "subtitle": "Registered artisans list",
+    "name": "Name",
+    "business": "Business",
+    "city": "City",
+    "category": "Category",
+    "subscription": "Subscription",
+    "verification": "Verification",
+    "rating": "Rating",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "no_artisans": "No artisans found",
+    "filter_all": "All",
+    "filter_city": "Filter by city",
+    "filter_status": "Filter by status"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Last 30 days statistics",
+    "searches": "Searches",
+    "profile_views": "Profile views",
+    "contacts": "Contacts",
+    "logins": "Logins",
+    "activity_chart": "Activity"
+  }
+}

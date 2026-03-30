@@ -1,13 +1,9 @@
-# ══════════════════════════════════════════════════════════════════════
-# Fiers Artisans — Override Développement Local
-# ══════════════════════════════════════════════════════════════════════
+# Fiers Artisans - Override Developpement Local
 # Usage depuis infrastructure/ :
 #   docker compose --env-file ../.env -f docker-compose.yml -f docker-compose.dev.yml up -d
-# ⚠️ Ne JAMAIS utiliser en production
-# ══════════════════════════════════════════════════════════════════════
+# Ne JAMAIS utiliser en production
 
 services:
-
   api:
     build:
       target: development
@@ -16,6 +12,10 @@ services:
     environment:
       - NODE_ENV=development
     command: npm run start:dev
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,7 +31,7 @@ services:
       - "9002:9000"
       - "9003:9001"
 
-  # Désactiver Nginx en dev (accès direct à l'API sur le port 3000)
+  # Desactiver Nginx en dev (acces direct a l'API sur le port 3000)
   nginx:
     profiles:
       - prod-only

@@ -232,19 +232,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Détecte une réponse 403 OTP_REQUIRED du backend.
+  /// Le GlobalExceptionFilter peut renvoyer message comme String ou List.
   bool _isOtpRequired(dynamic e) {
     if (e is DioException && e.response?.statusCode == 403) {
       var data = e.response?.data;
       if (data is Map<String, dynamic>) {
+        // Unwrap enveloppe {statusCode, data, timestamp} si présente
         if (data.containsKey('data') && data.containsKey('statusCode')) {
           data = data['data'];
         }
-        final message = data is Map ? data['message'] : null;
-        if (message == 'OTP_REQUIRED' || message == 'Forbidden') {
-          return true;
+        if (data is Map) {
+          if (_messageContains(data['message'], 'OTP_REQUIRED')) return true;
+          // Fallback: error == 'Forbidden' + message contient OTP_REQUIRED
+          if (data['error'] == 'Forbidden' &&
+              _messageContains(data['message'], 'OTP_REQUIRED')) {
+            return true;
+          }
         }
       }
     }
+    return false;
+  }
+
+  /// Vérifie si [message] (String ou List) contient la valeur cible.
+  bool _messageContains(dynamic message, String target) {
+    if (message is String) return message == target;
+    if (message is List) return message.any((m) => m.toString() == target);
     return false;
   }
 

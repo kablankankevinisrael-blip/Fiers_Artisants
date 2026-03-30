@@ -1,0 +1,91 @@
+{
+  "app": {
+    "title": "Fiers Artisans — Admin",
+    "logout": "Déconnexion",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "search": "Rechercher...",
+    "no_data": "Aucune donnée",
+    "language": "Langue"
+  },
+  "login": {
+    "title": "Administration",
+    "subtitle": "Connectez-vous pour accéder au tableau de bord",
+    "phone": "Numéro de téléphone",
+    "phone_placeholder": "07 XX XX XX XX",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "error_credentials": "Identifiants incorrects",
+    "error_role": "Accès réservé aux administrateurs",
+    "error_generic": "Erreur de connexion"
+  },
+  "nav": {
+    "overview": "Vue d'ensemble",
+    "verifications": "Vérifications",
+    "artisans": "Artisans",
+    "analytics": "Analytics"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "total_users": "Utilisateurs",
+    "total_artisans": "Artisans",
+    "active_subscriptions": "Abonnements actifs",
+    "total_revenue": "Revenus (FCFA)",
+    "pending_verifications": "Vérifications en attente",
+    "quick_actions": "Actions rapides",
+    "view_pending": "Voir les documents en attente",
+    "view_artisans": "Gérer les artisans"
+  },
+  "verifications": {
+    "title": "Vérifications",
+    "subtitle": "Documents en attente de revue",
+    "document_type": "Type",
+    "submitted_by": "Soumis par",
+    "submitted_at": "Date",
+    "status": "Statut",
+    "actions": "Actions",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "reject_reason": "Motif du rejet",
+    "reject_reason_placeholder": "Expliquez la raison du rejet...",
+    "reject_reason_required": "Le motif est obligatoire",
+    "approved_success": "Document approuvé",
+    "rejected_success": "Document rejeté",
+    "no_pending": "Aucun document en attente",
+    "confirm_approve": "Confirmer l'approbation de ce document ?",
+    "confirm_reject": "Confirmer le rejet de ce document ?"
+  },
+  "artisans": {
+    "title": "Artisans",
+    "subtitle": "Liste des artisans inscrits",
+    "name": "Nom",
+    "business": "Activité",
+    "city": "Ville",
+    "category": "Catégorie",
+    "subscription": "Abonnement",
+    "verification": "Vérification",
+    "rating": "Note",
+    "status": "Statut",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "available": "Disponible",
+    "unavailable": "Indisponible",
+    "no_artisans": "Aucun artisan trouvé",
+    "filter_all": "Tous",
+    "filter_city": "Filtrer par ville",
+    "filter_status": "Filtrer par statut"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Statistiques des 30 derniers jours",
+    "searches": "Recherches",
+    "profile_views": "Vues profil",
+    "contacts": "Contacts",
+    "logins": "Connexions",
+    "activity_chart": "Activité"
+  }
+}
