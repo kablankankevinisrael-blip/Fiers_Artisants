@@ -4,6 +4,11 @@
 *.pyc
 *.swp
 
+# Firebase config files (sensitive — do NOT commit)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
 # Environment (IP locale, ne pas committer)
 .env
 .DS_Store
