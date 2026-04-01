@@ -5,11 +5,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Subscription, SubscriptionStatus } from './entities/subscription.entity';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { WaveProvider, WaveCheckoutSession } from './providers/wave.provider';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -23,6 +25,7 @@ export class SubscriptionService {
     @InjectRepository(ArtisanProfile)
     private readonly artisanProfileRepository: Repository<ArtisanProfile>,
     private readonly waveProvider: WaveProvider,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   async initiatePayment(userId: string): Promise<WaveCheckoutSession> {
@@ -54,6 +57,13 @@ export class SubscriptionService {
     await this.paymentRepository.save(payment);
 
     // Créer la session Wave
+    this.analyticsService.logActivity({
+      actorId: userId,
+      action: 'PAYMENT_ATTEMPT',
+      targetId: subscription.id,
+      metadata: { amount: 5000 },
+    }).catch(() => {});
+
     return this.waveProvider.createCheckoutSession(subscription.id, 5000);
   }
 
@@ -154,5 +164,36 @@ export class SubscriptionService {
         id: key,
         label: config.label,
       }));
+  }
+
+  /**
+   * Cron: every day at 2 AM — deactivate expired subscriptions.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  async handleExpiredSubscriptions(): Promise<void> {
+    const now = new Date();
+
+    const expired = await this.subscriptionRepository.find({
+      where: {
+        status: SubscriptionStatus.ACTIVE,
+        expires_at: LessThan(now),
+      },
+    });
+
+    if (expired.length === 0) {
+      this.logger.log('Cron: aucun abonnement expiré.');
+      return;
+    }
+
+    for (const sub of expired) {
+      await this.subscriptionRepository.update(sub.id, {
+        status: SubscriptionStatus.EXPIRED,
+      });
+      await this.artisanProfileRepository.update(sub.artisan_profile_id, {
+        is_subscription_active: false,
+      });
+    }
+
+    this.logger.log(`Cron: ${expired.length} abonnement(s) désactivé(s).`);
   }
 }

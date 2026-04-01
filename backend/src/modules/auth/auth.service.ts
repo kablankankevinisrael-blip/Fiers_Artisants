@@ -19,6 +19,7 @@ import {
   RegisterClientDto,
   LoginDto,
 } from './dto/auth.dto';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly otpService: OtpService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   async registerArtisan(dto: RegisterArtisanDto) {
@@ -69,6 +71,7 @@ export class AuthService {
     await this.artisanProfileRepository.save(profile);
 
     this.logger.log(`Artisan registered: ${savedUser.id}`);
+    this.analyticsService.logActivity({ actorId: savedUser.id, action: 'REGISTRATION', metadata: { role: 'ARTISAN' } });
     return this.generateTokens(savedUser);
   }
 
@@ -100,6 +103,7 @@ export class AuthService {
     await this.clientProfileRepository.save(profile);
 
     this.logger.log(`Client registered: ${savedUser.id}`);
+    this.analyticsService.logActivity({ actorId: savedUser.id, action: 'REGISTRATION', metadata: { role: 'CLIENT' } });
     return this.generateTokens(savedUser);
   }
 
@@ -149,6 +153,7 @@ export class AuthService {
       throw new ForbiddenException('OTP_REQUIRED');
     }
 
+    this.analyticsService.logActivity({ actorId: user.id, action: 'LOGIN', metadata: { role: user.role } });
     return this.generateTokens(user);
   }
 

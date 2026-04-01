@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // Config
 import {
@@ -84,6 +85,9 @@ import { DevModule } from './modules/dev/dev.module';
         limit: parseInt(process.env.THROTTLE_LIMIT || '30', 10),
       },
     ]),
+
+    // ── Scheduled Tasks ───────────────────────────────────────────
+    ScheduleModule.forRoot(),
 
     // ── Feature Modules ───────────────────────────────────────────
     HealthModule,

@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { SearchArtisansDto } from './dto/search-artisans.dto';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class SearchService {
   constructor(
     @InjectRepository(ArtisanProfile)
     private readonly artisanProfileRepository: Repository<ArtisanProfile>,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   async searchArtisans(dto: SearchArtisansDto) {
@@ -61,6 +63,13 @@ export class SearchService {
       .skip(offset)
       .take(limit)
       .getManyAndCount();
+
+    // Fire-and-forget analytics
+    this.analyticsService.logActivity({
+      actorId: 'anonymous',
+      action: 'SEARCH',
+      metadata: { category, query, lat, lng, results: total },
+    }).catch(() => {});
 
     return {
       data: results,

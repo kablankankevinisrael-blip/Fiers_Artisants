@@ -6,6 +6,7 @@ import { ArtisanProfile } from './entities/artisan-profile.entity';
 import { ClientProfile } from './entities/client-profile.entity';
 import { UpdateArtisanProfileDto } from './dto/update-artisan-profile.dto';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +17,7 @@ export class UsersService {
     private readonly artisanProfileRepository: Repository<ArtisanProfile>,
     @InjectRepository(ClientProfile)
     private readonly clientProfileRepository: Repository<ClientProfile>,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   async findById(id: string): Promise<User> {
@@ -62,6 +64,13 @@ export class UsersService {
     if (!profile) {
       throw new NotFoundException('Artisan non trouvé ou non actif.');
     }
+
+    this.analyticsService.logActivity({
+      actorId: 'anonymous',
+      action: 'PROFILE_VIEW',
+      targetId: profile.id,
+    }).catch(() => {});
+
     return profile;
   }
 

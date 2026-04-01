@@ -12,6 +12,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { User } from '../users/entities/user.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { ClientProfile } from '../users/entities/client-profile.entity';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ClientProfile } from '../users/entities/client-profile.entity';
       }),
     }),
     TypeOrmModule.forFeature([User, ArtisanProfile, ClientProfile]),
+    AnalyticsModule,
   ],
   controllers: [AuthController],
   providers: [

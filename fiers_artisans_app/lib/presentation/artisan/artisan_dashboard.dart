@@ -457,25 +457,25 @@ class _VerificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // TODO: Wire to actual verification status from backend
-    const status = 'pending';
+    final rawStatus = user?.verificationStatus as String?;
+    final status = rawStatus?.toUpperCase() ?? '';
 
     final (Color statusColor, String statusText, IconData statusIcon) =
         switch (status) {
-      'approved' => (
+      'VERIFIED' || 'CERTIFIED' => (
           AppTheme.success,
           'artisan.verification.approved'.tr(),
           Icons.check_circle_outline,
         ),
-      'rejected' => (
-          AppTheme.error,
-          'artisan.verification.rejected'.tr(),
-          Icons.cancel_outlined,
-        ),
-      _ => (
+      'PENDING' => (
           AppTheme.warning,
           'artisan.verification.pending'.tr(),
           Icons.schedule_outlined,
+        ),
+      _ => (
+          AppTheme.error,
+          'artisan.verification.not_submitted'.tr(),
+          Icons.cancel_outlined,
         ),
     };
 

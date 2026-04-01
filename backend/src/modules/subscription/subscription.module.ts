@@ -7,10 +7,12 @@ import { Payment } from './entities/payment.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { User } from '../users/entities/user.entity';
 import { WaveProvider } from './providers/wave.provider';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Subscription, Payment, ArtisanProfile, User]),
+    AnalyticsModule,
   ],
   controllers: [SubscriptionController],
   providers: [SubscriptionService, WaveProvider],

@@ -5,9 +5,10 @@ import { UsersController, PublicArtisanController } from './users.controller';
 import { User } from './entities/user.entity';
 import { ArtisanProfile } from './entities/artisan-profile.entity';
 import { ClientProfile } from './entities/client-profile.entity';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, ArtisanProfile, ClientProfile])],
+  imports: [TypeOrmModule.forFeature([User, ArtisanProfile, ClientProfile]), AnalyticsModule],
   controllers: [UsersController, PublicArtisanController],
   providers: [UsersService],
   exports: [UsersService],

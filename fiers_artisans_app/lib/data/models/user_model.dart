@@ -7,6 +7,7 @@ class UserModel {
   final String? email;
   final bool isPhoneVerified;
   final bool isActive;
+  final String? verificationStatus;
   final DateTime createdAt;
 
   UserModel({
@@ -18,6 +19,7 @@ class UserModel {
     this.email,
     this.isPhoneVerified = false,
     this.isActive = true,
+    this.verificationStatus,
     required this.createdAt,
   });
 
@@ -32,7 +34,9 @@ class UserModel {
       isPhoneVerified:
           json['is_phone_verified'] ?? json['isPhoneVerified'] ?? false,
       isActive: json['is_active'] ?? json['isActive'] ?? true,
-      createdAt: json['created_at'] != null
+      verificationStatus: json['verification_status'] ??
+          json['verificationStatus'],
+      createdAt:json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : json['createdAt'] != null
               ? DateTime.parse(json['createdAt'])
@@ -49,6 +53,7 @@ class UserModel {
         'email': email,
         'is_phone_verified': isPhoneVerified,
         'is_active': isActive,
+        'verification_status': verificationStatus,
       };
 
   String get fullName => '$firstName $lastName';
@@ -59,6 +64,7 @@ class UserModel {
     String? lastName,
     String? email,
     bool? isPhoneVerified,
+    String? verificationStatus,
   }) {
     return UserModel(
       id: id,
@@ -69,6 +75,7 @@ class UserModel {
       email: email ?? this.email,
       isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
       isActive: isActive,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
       createdAt: createdAt,
     );
   }
