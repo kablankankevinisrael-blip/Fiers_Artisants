@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../config/theme.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -17,6 +18,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -36,17 +38,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
 
     _controller.forward();
+  }
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        final onboardingDone = ref.read(onboardingCompletedProvider);
-        if (onboardingDone) {
-          context.go('/login');
-        } else {
-          context.go('/onboarding');
-        }
+  void _navigate(AuthState authState) {
+    if (_navigated || !mounted) return;
+    if (authState.status == AuthStatus.initial ||
+        authState.status == AuthStatus.loading) {
+      return;
+    }
+
+    _navigated = true;
+
+    if (authState.status == AuthStatus.authenticated) {
+      final role = authState.user?.role.toLowerCase() ?? '';
+      if (role == 'artisan') {
+        context.go('/artisan');
+      } else {
+        context.go('/client');
       }
-    });
+    } else {
+      final onboardingDone = ref.read(onboardingCompletedProvider);
+      if (onboardingDone) {
+        context.go('/login');
+      } else {
+        context.go('/onboarding');
+      }
+    }
   }
 
   @override
@@ -58,6 +75,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+
+    // Listen to auth state changes and navigate once resolved
+    ref.listen<AuthState>(authProvider, (_, next) {
+      // Small delay to show splash animation
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        _navigate(next);
+      });
+    });
 
     return Scaffold(
       body: Container(
@@ -78,7 +103,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo placeholder — golden hammer icon
                 Container(
                   width: 100,
                   height: 100,
