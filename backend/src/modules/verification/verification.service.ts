@@ -96,7 +96,10 @@ export class VerificationService {
       (d) => d.document_type === 'CNI' || d.document_type === 'PASSPORT',
     );
     const hasDiploma = docs.some(
-      (d) => d.document_type === 'DIPLOME' || d.document_type === 'CERTIFICAT',
+      (d) =>
+        d.document_type === 'DIPLOME' ||
+        d.document_type === 'CERTIFICAT' ||
+        d.document_type === 'ATTESTATION',
     );
 
     let newStatus = VerificationStatus.PENDING;
