@@ -117,4 +117,8 @@ export class UsersService {
       .where('id = :id', { id: userId })
       .execute();
   }
+
+  async updateFcmToken(userId: string, fcmToken: string): Promise<void> {
+    await this.userRepository.update(userId, { fcm_token: fcmToken });
+  }
 }

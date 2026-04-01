@@ -20,6 +20,15 @@ import { Roles } from '../../common/decorators';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  // ── FCM Token ──────────────────────────────────────────────────
+  @Put('users/fcm-token')
+  updateFcmToken(
+    @CurrentUser('id') userId: string,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    return this.usersService.updateFcmToken(userId, fcmToken);
+  }
+
   // ── Artisan Profile ─────────────────────────────────────────────
   @Get('artisan/profile')
   @UseGuards(RolesGuard)

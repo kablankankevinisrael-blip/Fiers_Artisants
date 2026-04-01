@@ -58,6 +58,9 @@ class ApiEndpoints {
   // Analytics
   static const String analyticsLog = '/analytics/log';
 
+  // Users
+  static const String updateFcmToken = '/users/fcm-token';
+
   // Health
   static const String health = '/health';
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/storage/secure_storage.dart';
 import '../data/models/user_model.dart';
 import '../data/repositories/auth_repository.dart';
+import '../services/push_notification_service.dart';
 
 // Auth state
 enum AuthStatus { initial, authenticated, unauthenticated, loading }
@@ -95,6 +96,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
+      PushNotificationService().initialize().catchError((_) {});
       return true;
     } catch (e) {
       // Détecter 403 OTP_REQUIRED
@@ -155,6 +157,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
+      PushNotificationService().initialize().catchError((_) {});
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -198,6 +201,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
+      PushNotificationService().initialize().catchError((_) {});
       return true;
     } catch (e) {
       state = state.copyWith(

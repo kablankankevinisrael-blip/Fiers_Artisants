@@ -1,6 +1,8 @@
 {
   "app": {
     "title": "Fiers Artisans — Admin",
+    "subtitle": "Administration",
+    "role_admin": "Admin",
     "logout": "Logout",
     "loading": "Loading...",
     "error": "An error occurred",

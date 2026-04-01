@@ -56,7 +56,7 @@ export function Topbar() {
         <DropdownMenuContent align="end">
           <div className="px-2 py-1.5">
             <p className="text-sm font-medium">{user?.phone_number}</p>
-            <p className="text-xs text-muted-foreground">Admin</p>
+            <p className="text-xs text-muted-foreground">{t('role_admin')}</p>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={logout} className="text-destructive">

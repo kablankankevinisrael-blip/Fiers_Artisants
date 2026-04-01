@@ -168,9 +168,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (text.isEmpty || _currentUserId == null) return;
     _messageCtrl.clear();
 
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+
     // Optimistic: add message to local list immediately
     final optimistic = MessageModel(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      id: tempId,
       conversationId: widget.conversationId,
       senderId: _currentUserId!,
       content: text,
@@ -179,14 +181,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.read(chatProvider.notifier).addMessage(optimistic);
     _scrollToBottom();
 
-    // Send via REST (fire-and-forget, optimistic message already shown)
+    // Send via REST — replace temp on success, remove on failure
     ref
         .read(chatProvider.notifier)
         .sendMessage(
           conversationId: widget.conversationId,
           content: text,
+          tempId: tempId,
         )
-        .ignore();
+        .then((_) {})
+        .catchError((_) {
+      ref.read(chatProvider.notifier).removeMessage(tempId);
+    });
   }
 
   void _scrollToBottom() {

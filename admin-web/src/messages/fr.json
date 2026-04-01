@@ -1,6 +1,8 @@
 {
   "app": {
     "title": "Fiers Artisans — Admin",
+    "subtitle": "Administration",
+    "role_admin": "Administrateur",
     "logout": "Déconnexion",
     "loading": "Chargement...",
     "error": "Une erreur est survenue",

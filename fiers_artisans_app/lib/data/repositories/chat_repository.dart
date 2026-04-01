@@ -1,16 +1,10 @@
-import 'dart:convert';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import '../../config/app_config.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
-import '../../core/storage/secure_storage.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 
 class ChatRepository {
   final ApiClient _api = ApiClient();
-  WebSocketChannel? _channel;
-  bool get isWebSocketConnected => _channel != null;
 
   Future<List<ConversationModel>> getConversations() async {
     final response = await _api.get(ApiEndpoints.conversations);
@@ -62,22 +56,5 @@ class ChatRepository {
   /// Mark all messages in a conversation as read.
   Future<void> markAsRead(String conversationId) async {
     await _api.put(ApiEndpoints.conversationRead(conversationId));
-  }
-
-  Future<WebSocketChannel> connectWebSocket() async {
-    final userId = await SecureStorage.getUserId();
-    final uri = Uri.parse(
-        '${AppConfig.wsBaseUrl}/ws/chat?userId=$userId');
-    _channel = WebSocketChannel.connect(uri);
-    return _channel!;
-  }
-
-  void sendViaWebSocket(MessageModel message) {
-    _channel?.sink.add(jsonEncode(message.toJson()));
-  }
-
-  void disconnect() {
-    _channel?.sink.close();
-    _channel = null;
   }
 }

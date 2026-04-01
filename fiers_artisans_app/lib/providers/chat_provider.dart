@@ -69,18 +69,24 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(messages: [...state.messages, message]);
   }
 
+  void removeMessage(String messageId) {
+    state = state.copyWith(
+      messages: state.messages.where((m) => m.id != messageId).toList(),
+    );
+  }
+
   Future<MessageModel> sendMessage({
     required String conversationId,
     required String content,
+    required String tempId,
   }) async {
-    // Don't add to state here — the caller already added an optimistic message
     final sent = await _repo.sendMessage(
       conversationId: conversationId,
       content: content,
     );
     // Replace the optimistic temp message with the real server response
     final updated = state.messages.map((m) {
-      if (m.id.startsWith('temp_') && m.content == content) return sent;
+      if (m.id == tempId) return sent;
       return m;
     }).toList();
     state = state.copyWith(messages: updated);
@@ -99,9 +105,5 @@ class ChatNotifier extends StateNotifier<ChatState> {
     try {
       await _repo.markAsRead(conversationId);
     } catch (_) {}
-  }
-
-  void disconnect() {
-    _repo.disconnect();
   }
 }

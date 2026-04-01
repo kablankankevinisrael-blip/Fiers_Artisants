@@ -29,6 +29,7 @@ const navItems = [
 export function MobileSidebar() {
   const pathname = usePathname();
   const { t } = useTranslations('nav');
+  const { t: tApp } = useTranslations('app');
 
   return (
     <div className="flex flex-col h-full">
@@ -36,7 +37,7 @@ export function MobileSidebar() {
         <h1 className="text-lg font-bold tracking-tight">
           ⚒️ Fiers Artisans
         </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Administration</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{tApp('subtitle')}</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
