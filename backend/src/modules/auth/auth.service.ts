@@ -165,7 +165,7 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  private generateTokens(user: User) {
+  private async generateTokens(user: User) {
     const payload = {
       sub: user.id,
       phone_number: user.phone_number,
@@ -182,6 +182,30 @@ export class AuthService {
       expiresIn: (this.configService.get<string>('jwt.refreshExpiration') || '30d') as any,
     });
 
+    // Resolve first_name / last_name from profile
+    let first_name = '';
+    let last_name = '';
+
+    if (user.role === UserRole.ARTISAN) {
+      const profile = await this.artisanProfileRepository.findOne({
+        where: { user_id: user.id },
+        select: ['first_name', 'last_name', 'business_name'],
+      });
+      if (profile) {
+        first_name = profile.first_name;
+        last_name = profile.last_name;
+      }
+    } else if (user.role === UserRole.CLIENT) {
+      const profile = await this.clientProfileRepository.findOne({
+        where: { user_id: user.id },
+        select: ['first_name', 'last_name'],
+      });
+      if (profile) {
+        first_name = profile.first_name;
+        last_name = profile.last_name;
+      }
+    }
+
     return {
       access_token,
       refresh_token,
@@ -189,6 +213,9 @@ export class AuthService {
         id: user.id,
         phone_number: user.phone_number,
         role: user.role,
+        first_name,
+        last_name,
+        email: user.email,
         is_phone_verified: user.is_phone_verified,
         verification_status: user.verification_status,
       },
