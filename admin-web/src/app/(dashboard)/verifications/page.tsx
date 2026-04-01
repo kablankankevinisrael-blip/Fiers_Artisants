@@ -30,9 +30,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { CheckCircle, XCircle, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, FileText, Loader2, Eye, Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import type { VerificationDocument } from '@/types';
+
+function isImageUrl(url: string): boolean {
+  return /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url);
+}
 
 export default function VerificationsPage() {
   const [docs, setDocs] = useState<VerificationDocument[]>([]);
@@ -40,6 +44,7 @@ export default function VerificationsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectDialog, setRejectDialog] = useState<VerificationDocument | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [previewDoc, setPreviewDoc] = useState<VerificationDocument | null>(null);
   const { t } = useTranslations('verifications');
   const { t: tApp, locale } = useTranslations('app');
 
@@ -122,6 +127,7 @@ export default function VerificationsPage() {
                   <TableHead>{t('document_type')}</TableHead>
                   <TableHead>{t('submitted_by')}</TableHead>
                   <TableHead>{t('submitted_at')}</TableHead>
+                  <TableHead>{t('document')}</TableHead>
                   <TableHead>{t('status')}</TableHead>
                   <TableHead className="text-right">{t('actions')}</TableHead>
                 </TableRow>
@@ -133,6 +139,40 @@ export default function VerificationsPage() {
                     <TableCell>{doc.user?.phone_number || doc.user_id.slice(0, 8)}</TableCell>
                     <TableCell>
                       {new Date(doc.submitted_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
+                    </TableCell>
+                    <TableCell>
+                      {doc.file_url ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 px-2"
+                            onClick={() => setPreviewDoc(doc)}
+                            title={t('preview')}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <a
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={t('open_new_tab')}
+                            className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                          <a
+                            href={doc.file_url}
+                            download
+                            title={t('download')}
+                            className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">{t('no_file')}</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{t('status_pending') || 'PENDING'}</Badge>
@@ -166,6 +206,88 @@ export default function VerificationsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Document preview dialog */}
+      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {previewDoc?.document_type}
+            </DialogTitle>
+            <DialogDescription>
+              {previewDoc?.user?.phone_number || previewDoc?.user_id.slice(0, 8)}
+              {' — '}
+              {previewDoc && new Date(previewDoc.submitted_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto rounded-md border bg-muted/50 min-h-[300px] flex items-center justify-center">
+            {previewDoc?.file_url && isImageUrl(previewDoc.file_url) ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={previewDoc.file_url}
+                alt={previewDoc.document_type}
+                className="max-w-full max-h-[60vh] object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement!.innerHTML =
+                    `<p class="text-muted-foreground text-sm p-8">${t('preview_error')}</p>`;
+                }}
+              />
+            ) : previewDoc?.file_url ? (
+              <iframe
+                src={previewDoc.file_url}
+                className="w-full h-[60vh] border-0"
+                title={previewDoc.document_type}
+              />
+            ) : (
+              <p className="text-muted-foreground">{t('no_file')}</p>
+            )}
+          </div>
+          <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
+            <div className="flex gap-2">
+              <a href={previewDoc?.file_url} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm">
+                  <ExternalLink className="mr-1 h-4 w-4" />
+                  {t('open_new_tab')}
+                </Button>
+              </a>
+              <a href={previewDoc?.file_url} download>
+                <Button variant="outline" size="sm">
+                  <Download className="mr-1 h-4 w-4" />
+                  {t('download')}
+                </Button>
+              </a>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => {
+                  if (previewDoc) handleApprove(previewDoc);
+                  setPreviewDoc(null);
+                }}
+                disabled={actionLoading}
+              >
+                <CheckCircle className="mr-1 h-4 w-4" />
+                {t('approve')}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  if (previewDoc) setRejectDialog(previewDoc);
+                  setPreviewDoc(null);
+                }}
+                disabled={actionLoading}
+              >
+                <XCircle className="mr-1 h-4 w-4" />
+                {t('reject')}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reject dialog */}
       <Dialog open={!!rejectDialog} onOpenChange={() => { setRejectDialog(null); setRejectReason(''); }}>

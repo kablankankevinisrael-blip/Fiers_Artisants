@@ -52,6 +52,7 @@
     "document_type": "Type",
     "submitted_by": "Soumis par",
     "submitted_at": "Date",
+    "document": "Document",
     "status": "Statut",
     "actions": "Actions",
     "approve": "Approuver",
@@ -64,7 +65,12 @@
     "no_pending": "Aucun document en attente",
     "confirm_approve": "Confirmer l'approbation de ce document ?",
     "confirm_reject": "Confirmer le rejet de ce document ?",
-    "status_pending": "EN ATTENTE"
+    "status_pending": "EN ATTENTE",
+    "preview": "Aperçu",
+    "download": "Télécharger",
+    "open_new_tab": "Ouvrir dans un nouvel onglet",
+    "no_file": "Aucun fichier",
+    "preview_error": "Impossible de charger l'aperçu. Utilisez le lien de téléchargement."
   },
   "artisans": {
     "title": "Artisans",

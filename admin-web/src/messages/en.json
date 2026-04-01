@@ -52,6 +52,7 @@
     "document_type": "Type",
     "submitted_by": "Submitted by",
     "submitted_at": "Date",
+    "document": "Document",
     "status": "Status",
     "actions": "Actions",
     "approve": "Approve",
@@ -64,7 +65,12 @@
     "no_pending": "No pending documents",
     "confirm_approve": "Confirm approval of this document?",
     "confirm_reject": "Confirm rejection of this document?",
-    "status_pending": "PENDING"
+    "status_pending": "PENDING",
+    "preview": "Preview",
+    "download": "Download",
+    "open_new_tab": "Open in new tab",
+    "no_file": "No file",
+    "preview_error": "Unable to load preview. Use the download link instead."
   },
   "artisans": {
     "title": "Artisans",
