@@ -53,4 +53,21 @@ export class AnalyticsService {
       recentLogins,
     };
   }
+
+  async getLogs(page = 1, limit = 50, action?: string) {
+    const filter: Record<string, any> = {};
+    if (action) filter.action = action;
+
+    const [data, total] = await Promise.all([
+      this.activityLogModel
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .exec(),
+      this.activityLogModel.countDocuments(filter),
+    ]);
+
+    return { data, total, page, limit };
+  }
 }

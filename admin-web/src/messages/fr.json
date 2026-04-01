@@ -27,7 +27,11 @@
     "overview": "Vue d'ensemble",
     "verifications": "Vérifications",
     "artisans": "Artisans",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "clients": "Clients",
+    "subscriptions": "Abonnements",
+    "reviews": "Avis",
+    "logs": "Journaux"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -87,5 +91,67 @@
     "contacts": "Contacts",
     "logins": "Connexions",
     "activity_chart": "Activité"
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Liste des clients inscrits",
+    "name": "Nom",
+    "phone": "Téléphone",
+    "city": "Ville",
+    "status": "Statut",
+    "verified": "Vérifié",
+    "joined": "Inscrit le",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "yes": "Oui",
+    "no": "Non",
+    "no_clients": "Aucun client trouvé",
+    "filter_all": "Tous"
+  },
+  "subscriptions": {
+    "title": "Abonnements",
+    "subtitle": "Gestion des abonnements artisans",
+    "artisan": "Artisan",
+    "plan": "Plan",
+    "status": "Statut",
+    "amount": "Montant",
+    "start_date": "Date début",
+    "expiry_date": "Date expiration",
+    "last_payment": "Dernier paiement",
+    "no_subscriptions": "Aucun abonnement trouvé",
+    "filter_all": "Tous",
+    "filter_status": "Filtrer par statut",
+    "no_payment": "Aucun"
+  },
+  "reviews": {
+    "title": "Avis",
+    "subtitle": "Gestion des avis clients",
+    "client": "Client",
+    "artisan": "Artisan",
+    "rating": "Note",
+    "comment": "Commentaire",
+    "date": "Date",
+    "actions": "Actions",
+    "delete": "Supprimer",
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer cet avis ?",
+    "deleted_success": "Avis supprimé",
+    "no_reviews": "Aucun avis trouvé",
+    "filter_all": "Toutes",
+    "filter_rating": "Filtrer par note"
+  },
+  "logs": {
+    "title": "Journaux",
+    "subtitle": "Historique des activités",
+    "action": "Action",
+    "actor_id": "ID Acteur",
+    "target_id": "ID Cible",
+    "metadata": "Métadonnées",
+    "timestamp": "Date",
+    "no_logs": "Aucun journal trouvé",
+    "filter_all": "Toutes",
+    "filter_action": "Filtrer par action",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page_info": "Page {page} sur {total}"
   }
 }

@@ -3,8 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
+import { ClientProfile } from '../users/entities/client-profile.entity';
 import { Subscription, SubscriptionStatus } from '../subscription/entities/subscription.entity';
 import { Payment, PaymentStatus } from '../subscription/entities/payment.entity';
+import { Review } from '../reviews/entities/review.entity';
 import { VerificationService } from '../verification/verification.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { ReviewDocumentDto } from '../verification/dto/review-document.dto';
@@ -16,10 +18,14 @@ export class AdminService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(ArtisanProfile)
     private readonly artisanProfileRepository: Repository<ArtisanProfile>,
+    @InjectRepository(ClientProfile)
+    private readonly clientProfileRepository: Repository<ClientProfile>,
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
     private readonly verificationService: VerificationService,
     private readonly analyticsService: AnalyticsService,
   ) {}
@@ -72,5 +78,39 @@ export class AdminService {
 
   async getAnalytics() {
     return this.analyticsService.getDashboardStats();
+  }
+
+  // ── Clients ─────────────────────────────────────────────────
+  async listClients() {
+    return this.clientProfileRepository.find({
+      relations: ['user', 'reviews'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  // ── Subscriptions ───────────────────────────────────────────
+  async listSubscriptions() {
+    return this.subscriptionRepository.find({
+      relations: ['artisan_profile', 'artisan_profile.user', 'payments'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  // ── Reviews ─────────────────────────────────────────────────
+  async listReviews() {
+    return this.reviewRepository.find({
+      relations: ['client', 'artisan'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async deleteReview(reviewId: string) {
+    await this.reviewRepository.delete(reviewId);
+    return { deleted: true };
+  }
+
+  // ── Activity Logs ───────────────────────────────────────────
+  async getLogs(page = 1, limit = 50, action?: string) {
+    return this.analyticsService.getLogs(page, limit, action);
   }
 }

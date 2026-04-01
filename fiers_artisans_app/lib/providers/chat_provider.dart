@@ -69,6 +69,32 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(messages: [...state.messages, message]);
   }
 
+  Future<MessageModel> sendMessage({
+    required String conversationId,
+    required String content,
+  }) async {
+    final sent = await _repo.sendMessage(
+      conversationId: conversationId,
+      content: content,
+    );
+    state = state.copyWith(messages: [...state.messages, sent]);
+    return sent;
+  }
+
+  Future<ConversationModel> createConversation(String participantId) async {
+    final convo = await _repo.createConversation(participantId);
+    state = state.copyWith(
+      conversations: [...state.conversations, convo],
+    );
+    return convo;
+  }
+
+  Future<void> markAsRead(String conversationId) async {
+    try {
+      await _repo.markAsRead(conversationId);
+    } catch (_) {}
+  }
+
   void disconnect() {
     _repo.disconnect();
   }

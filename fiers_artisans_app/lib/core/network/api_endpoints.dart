@@ -43,6 +43,14 @@ class ApiEndpoints {
   static const String conversations = '/chat/conversations';
   static String messages(String conversationId) =>
       '/chat/conversations/$conversationId/messages';
+  static String conversationRead(String conversationId) =>
+      '/chat/conversations/$conversationId/read';
+
+  // Notifications
+  static const String notifications = '/notifications';
+  static const String notificationsUnreadCount = '/notifications/unread-count';
+  static String notificationRead(String id) => '/notifications/$id/read';
+  static const String notificationsReadAll = '/notifications/read-all';
 
   // Media
   static const String upload = '/media/upload';

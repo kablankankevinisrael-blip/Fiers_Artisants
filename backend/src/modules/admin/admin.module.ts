@@ -4,14 +4,16 @@ import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 import { User } from '../users/entities/user.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
+import { ClientProfile } from '../users/entities/client-profile.entity';
 import { Subscription } from '../subscription/entities/subscription.entity';
 import { Payment } from '../subscription/entities/payment.entity';
+import { Review } from '../reviews/entities/review.entity';
 import { VerificationModule } from '../verification/verification.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, ArtisanProfile, Subscription, Payment]),
+    TypeOrmModule.forFeature([User, ArtisanProfile, ClientProfile, Subscription, Payment, Review]),
     VerificationModule,
     AnalyticsModule,
   ],

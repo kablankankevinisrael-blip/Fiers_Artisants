@@ -67,3 +67,73 @@ export interface AnalyticsData {
   totalContacts: number;
   recentLogins: number;
 }
+
+export interface ClientProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  city: string;
+  commune: string;
+  created_at: string;
+  user: {
+    id: string;
+    phone_number: string;
+    is_active: boolean;
+    is_phone_verified: boolean;
+    verification_status: string;
+  };
+}
+
+export interface SubscriptionRecord {
+  id: string;
+  artisan_profile_id: string;
+  plan: string;
+  amount_fcfa: number;
+  status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
+  starts_at: string;
+  expires_at: string;
+  auto_renew: boolean;
+  created_at: string;
+  artisan_profile: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    business_name: string;
+    user: {
+      phone_number: string;
+    };
+  };
+  payments: {
+    id: string;
+    amount_fcfa: number;
+    status: 'PENDING' | 'SUCCESS' | 'FAILED';
+    paid_at: string;
+  }[];
+}
+
+export interface ReviewRecord {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  client: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+  artisan: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    business_name: string;
+  };
+}
+
+export interface ActivityLog {
+  _id: string;
+  actorId: string;
+  action: 'SEARCH' | 'PROFILE_VIEW' | 'CONTACT_CLICK' | 'LOGIN' | 'PAYMENT_ATTEMPT' | 'REGISTRATION';
+  targetId?: string;
+  metadata?: Record<string, unknown>;
+  timestamp: string;
+}

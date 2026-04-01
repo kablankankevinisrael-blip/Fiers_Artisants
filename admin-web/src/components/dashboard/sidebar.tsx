@@ -9,6 +9,10 @@ import {
   ShieldCheck,
   Hammer,
   BarChart3,
+  Users,
+  CreditCard,
+  Star,
+  FileText,
 } from 'lucide-react';
 
 const navItems = [
@@ -16,6 +20,10 @@ const navItems = [
   { key: 'verifications', href: '/verifications', icon: ShieldCheck },
   { key: 'artisans', href: '/artisans', icon: Hammer },
   { key: 'analytics', href: '/analytics', icon: BarChart3 },
+  { key: 'clients', href: '/clients', icon: Users },
+  { key: 'subscriptions', href: '/subscriptions', icon: CreditCard },
+  { key: 'reviews', href: '/reviews', icon: Star },
+  { key: 'logs', href: '/logs', icon: FileText },
 ];
 
 export function Sidebar() {

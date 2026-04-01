@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../config/constants.dart';
+import '../../data/models/message_model.dart';
 import '../../providers/chat_provider.dart';
 import '../../core/storage/secure_storage.dart';
 import '../../core/utils/formatters.dart';
@@ -24,9 +25,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
     Future.microtask(() async {
       _currentUserId = await SecureStorage.getUserId();
-      ref
-          .read(chatProvider.notifier)
-          .loadMessages(widget.conversationId);
+      if (!mounted) return;
+      setState(() {});
+      final notifier = ref.read(chatProvider.notifier);
+      await notifier.loadMessages(widget.conversationId);
+      notifier.markAsRead(widget.conversationId);
+      _scrollToBottom();
     });
   }
 
@@ -161,8 +165,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _send() {
     final text = _messageCtrl.text.trim();
-    if (text.isEmpty) return;
-    // TODO: Implement WebSocket send
+    if (text.isEmpty || _currentUserId == null) return;
     _messageCtrl.clear();
+
+    // Optimistic: add message to local list immediately
+    final optimistic = MessageModel(
+      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      conversationId: widget.conversationId,
+      senderId: _currentUserId!,
+      content: text,
+      createdAt: DateTime.now(),
+    );
+    ref.read(chatProvider.notifier).addMessage(optimistic);
+    _scrollToBottom();
+
+    // Send via REST (fire-and-forget, optimistic message already shown)
+    ref
+        .read(chatProvider.notifier)
+        .sendMessage(
+          conversationId: widget.conversationId,
+          content: text,
+        )
+        .ignore();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollCtrl.hasClients) {
+        _scrollCtrl.animateTo(
+          _scrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 }

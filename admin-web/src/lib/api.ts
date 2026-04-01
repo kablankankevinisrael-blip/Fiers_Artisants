@@ -5,6 +5,10 @@ import type {
   VerificationDocument,
   ArtisanProfile,
   AnalyticsData,
+  ClientProfile,
+  SubscriptionRecord,
+  ReviewRecord,
+  ActivityLog,
 } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
@@ -145,6 +149,42 @@ export async function getArtisans(): Promise<ArtisanProfile[]> {
 // Analytics
 export async function getAnalytics(): Promise<AnalyticsData> {
   const { data } = await api.get<AnalyticsData>('/admin/analytics');
+  return data;
+}
+
+// Clients
+export async function getClients(): Promise<ClientProfile[]> {
+  const { data } = await api.get<ClientProfile[]>('/admin/clients');
+  return data;
+}
+
+// Subscriptions
+export async function getSubscriptions(): Promise<SubscriptionRecord[]> {
+  const { data } = await api.get<SubscriptionRecord[]>('/admin/subscriptions');
+  return data;
+}
+
+// Reviews
+export async function getReviews(): Promise<ReviewRecord[]> {
+  const { data } = await api.get<ReviewRecord[]>('/admin/reviews');
+  return data;
+}
+
+export async function deleteReview(id: string): Promise<void> {
+  await api.delete(`/admin/reviews/${id}`);
+}
+
+// Logs
+export async function getLogs(
+  page?: number,
+  limit?: number,
+  action?: string
+): Promise<{ data: ActivityLog[]; total: number; page: number; limit: number }> {
+  const params: Record<string, string | number> = {};
+  if (page) params.page = page;
+  if (limit) params.limit = limit;
+  if (action) params.action = action;
+  const { data } = await api.get<{ data: ActivityLog[]; total: number; page: number; limit: number }>('/admin/logs', { params });
   return data;
 }
 
