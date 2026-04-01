@@ -140,7 +140,9 @@
     "active": "Abonnement actif",
     "expires_in": "Expire dans {days} jours",
     "expired": "Abonnement expiré",
-    "renew": "Renouveler"
+    "renew": "Renouveler",
+    "error_open_wave": "Impossible d'ouvrir Wave. Vérifiez que l'application est installée.",
+    "error_payment": "Erreur lors de l'initiation du paiement."
   },
   "review": {
     "title": "Avis",
