@@ -73,11 +73,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
     required String conversationId,
     required String content,
   }) async {
+    // Don't add to state here — the caller already added an optimistic message
     final sent = await _repo.sendMessage(
       conversationId: conversationId,
       content: content,
     );
-    state = state.copyWith(messages: [...state.messages, sent]);
+    // Replace the optimistic temp message with the real server response
+    final updated = state.messages.map((m) {
+      if (m.id.startsWith('temp_') && m.content == content) return sent;
+      return m;
+    }).toList();
+    state = state.copyWith(messages: updated);
     return sent;
   }
 

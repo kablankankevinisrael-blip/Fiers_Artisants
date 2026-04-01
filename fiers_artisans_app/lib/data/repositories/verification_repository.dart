@@ -14,7 +14,7 @@ class VerificationRepository {
     final response = await _api.dio.post(
       ApiEndpoints.upload,
       data: formData,
-      queryParameters: {'bucket': 'verifications'},
+      queryParameters: {'bucket': 'documents'},
     );
     final data = response.data;
     return data['url'] as String;

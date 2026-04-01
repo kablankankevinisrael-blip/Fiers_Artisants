@@ -61,7 +61,8 @@
     "rejected_success": "Document rejected",
     "no_pending": "No pending documents",
     "confirm_approve": "Confirm approval of this document?",
-    "confirm_reject": "Confirm rejection of this document?"
+    "confirm_reject": "Confirm rejection of this document?",
+    "status_pending": "PENDING"
   },
   "artisans": {
     "title": "Artisans",
@@ -81,7 +82,14 @@
     "no_artisans": "No artisans found",
     "filter_all": "All",
     "filter_city": "Filter by city",
-    "filter_status": "Filter by status"
+    "filter_status": "Filter by status",
+    "sub_active": "Active",
+    "sub_expired": "Expired",
+    "sub_pending": "Pending",
+    "verif_verified": "Verified",
+    "verif_certified": "Certified",
+    "verif_pending": "Pending",
+    "status_pending": "PENDING"
   },
   "analytics": {
     "title": "Analytics",
@@ -121,7 +129,11 @@
     "no_subscriptions": "No subscriptions found",
     "filter_all": "All",
     "filter_status": "Filter by status",
-    "no_payment": "None"
+    "no_payment": "None",
+    "status_active": "Active",
+    "status_expired": "Expired",
+    "status_pending": "Pending",
+    "status_cancelled": "Cancelled"
   },
   "reviews": {
     "title": "Reviews",

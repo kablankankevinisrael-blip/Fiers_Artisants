@@ -43,6 +43,8 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadMessages(locale).then(setMessages);
+    // Sync <html lang> attribute with current locale
+    document.documentElement.lang = locale;
   }, [locale]);
 
   const setLocale = useCallback((newLocale: string) => {

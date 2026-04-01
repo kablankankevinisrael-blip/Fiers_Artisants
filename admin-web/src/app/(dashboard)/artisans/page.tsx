@@ -73,11 +73,11 @@ export default function ArtisansPage() {
   const subBadge = (status?: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('sub_active')}</Badge>;
       case 'EXPIRED':
-        return <Badge variant="destructive">Expired</Badge>;
+        return <Badge variant="destructive">{t('sub_expired')}</Badge>;
       case 'PENDING':
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge variant="outline">{t('sub_pending')}</Badge>;
       default:
         return <Badge variant="secondary">—</Badge>;
     }
@@ -86,11 +86,11 @@ export default function ArtisansPage() {
   const verifBadge = (status?: string) => {
     switch (status) {
       case 'VERIFIED':
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Verified</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{t('verif_verified')}</Badge>;
       case 'CERTIFIED':
-        return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Certified</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">{t('verif_certified')}</Badge>;
       default:
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge variant="outline">{t('verif_pending')}</Badge>;
     }
   };
 

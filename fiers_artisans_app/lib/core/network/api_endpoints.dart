@@ -55,6 +55,9 @@ class ApiEndpoints {
   // Media
   static const String upload = '/media/upload';
 
+  // Analytics
+  static const String analyticsLog = '/analytics/log';
+
   // Health
   static const String health = '/health';
 }

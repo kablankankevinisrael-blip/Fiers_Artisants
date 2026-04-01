@@ -35,7 +35,7 @@ export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
-  const { t } = useTranslations('subscriptions');
+  const { t, locale } = useTranslations('subscriptions');
   const { t: tApp } = useTranslations('app');
 
   useEffect(() => {
@@ -60,13 +60,13 @@ export default function SubscriptionsPage() {
   const statusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('status_active')}</Badge>;
       case 'EXPIRED':
-        return <Badge variant="destructive">Expired</Badge>;
+        return <Badge variant="destructive">{t('status_expired')}</Badge>;
       case 'PENDING':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{t('status_pending')}</Badge>;
       case 'CANCELLED':
-        return <Badge variant="secondary">Cancelled</Badge>;
+        return <Badge variant="secondary">{t('status_cancelled')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -77,7 +77,7 @@ export default function SubscriptionsPage() {
       .filter((p) => p.status === 'SUCCESS')
       .sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime());
     return successful.length > 0
-      ? new Date(successful[0].paid_at).toLocaleDateString('fr-FR')
+      ? new Date(successful[0].paid_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')
       : t('no_payment');
   };
 
@@ -96,10 +96,10 @@ export default function SubscriptionsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('filter_all')}</SelectItem>
-            <SelectItem value="ACTIVE">Active</SelectItem>
-            <SelectItem value="EXPIRED">Expired</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="ACTIVE">{t('status_active')}</SelectItem>
+            <SelectItem value="EXPIRED">{t('status_expired')}</SelectItem>
+            <SelectItem value="PENDING">{t('status_pending')}</SelectItem>
+            <SelectItem value="CANCELLED">{t('status_cancelled')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -146,12 +146,12 @@ export default function SubscriptionsPage() {
                       </TableCell>
                       <TableCell>{s.plan}</TableCell>
                       <TableCell>{statusBadge(s.status)}</TableCell>
-                      <TableCell>{s.amount_fcfa?.toLocaleString('fr-FR')} FCFA</TableCell>
+                      <TableCell>{s.amount_fcfa?.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} FCFA</TableCell>
                       <TableCell>
-                        {new Date(s.starts_at).toLocaleDateString('fr-FR')}
+                        {new Date(s.starts_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
                       </TableCell>
                       <TableCell>
-                        {new Date(s.expires_at).toLocaleDateString('fr-FR')}
+                        {new Date(s.expires_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
                       </TableCell>
                       <TableCell>
                         {getLastPaymentDate(s.payments || [])}

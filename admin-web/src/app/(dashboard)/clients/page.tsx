@@ -29,7 +29,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const { t } = useTranslations('clients');
+  const { t, locale } = useTranslations('clients');
   const { t: tApp } = useTranslations('app');
 
   useEffect(() => {
@@ -130,7 +130,7 @@ export default function ClientsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {new Date(c.created_at).toLocaleDateString('fr-FR')}
+                        {new Date(c.created_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -41,7 +41,7 @@ export default function VerificationsPage() {
   const [rejectDialog, setRejectDialog] = useState<VerificationDocument | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const { t } = useTranslations('verifications');
-  const { t: tApp } = useTranslations('app');
+  const { t: tApp, locale } = useTranslations('app');
 
   const loadDocs = useCallback(async () => {
     setLoading(true);
@@ -132,10 +132,10 @@ export default function VerificationsPage() {
                     <TableCell className="font-medium">{doc.document_type}</TableCell>
                     <TableCell>{doc.user?.phone_number || doc.user_id.slice(0, 8)}</TableCell>
                     <TableCell>
-                      {new Date(doc.submitted_at).toLocaleDateString('fr-FR')}
+                      {new Date(doc.submitted_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">PENDING</Badge>
+                      <Badge variant="outline">{t('status_pending') || 'PENDING'}</Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button

@@ -63,7 +63,7 @@ export default function ReviewsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [deleteDialog, setDeleteDialog] = useState<ReviewRecord | null>(null);
-  const { t } = useTranslations('reviews');
+  const { t, locale } = useTranslations('reviews');
   const { t: tApp } = useTranslations('app');
 
   const loadReviews = useCallback(async () => {
@@ -174,7 +174,7 @@ export default function ReviewsPage() {
                         {r.comment || '—'}
                       </TableCell>
                       <TableCell>
-                        {new Date(r.created_at).toLocaleDateString('fr-FR')}
+                        {new Date(r.created_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

@@ -10,6 +10,7 @@ import '../models/message_model.dart';
 class ChatRepository {
   final ApiClient _api = ApiClient();
   WebSocketChannel? _channel;
+  bool get isWebSocketConnected => _channel != null;
 
   Future<List<ConversationModel>> getConversations() async {
     final response = await _api.get(ApiEndpoints.conversations);

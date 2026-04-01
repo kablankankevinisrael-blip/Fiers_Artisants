@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AnalyticsService } from './analytics.service';
+import { AnalyticsController } from './analytics.controller';
 import { ActivityLog, ActivityLogSchema } from './schemas/activity-log.schema';
 
 @Module({
@@ -9,6 +10,7 @@ import { ActivityLog, ActivityLogSchema } from './schemas/activity-log.schema';
       { name: ActivityLog.name, schema: ActivityLogSchema },
     ]),
   ],
+  controllers: [AnalyticsController],
   providers: [AnalyticsService],
   exports: [AnalyticsService],
 })

@@ -69,6 +69,9 @@ export class User {
   })
   location: string;
 
+  @Column({ nullable: true })
+  fcm_token: string;
+
   @CreateDateColumn()
   created_at: Date;
 

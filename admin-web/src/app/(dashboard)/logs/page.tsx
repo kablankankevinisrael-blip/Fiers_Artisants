@@ -48,7 +48,7 @@ export default function LogsPage() {
   const [total, setTotal] = useState(0);
   const [actionFilter, setActionFilter] = useState('all');
   const limit = 50;
-  const { t } = useTranslations('logs');
+  const { t, locale } = useTranslations('logs');
   const { t: tApp } = useTranslations('app');
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -174,7 +174,7 @@ export default function LogsPage() {
                         </TableCell>
                         <TableCell>{formatMetadata(log.metadata)}</TableCell>
                         <TableCell>
-                          {new Date(log.timestamp).toLocaleString('fr-FR')}
+                          {new Date(log.timestamp).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')}
                         </TableCell>
                       </TableRow>
                     ))}

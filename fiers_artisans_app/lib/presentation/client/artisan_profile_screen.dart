@@ -10,6 +10,7 @@ import '../../config/constants.dart';
 import '../../config/app_config.dart';
 import '../../providers/artisan_provider.dart';
 import '../../core/utils/formatters.dart';
+import '../../data/repositories/analytics_repository.dart';
 import '../common/rating_stars.dart';
 import '../common/badge_verified.dart';
 import '../common/skeleton_loader.dart';
@@ -329,12 +330,24 @@ class _ArtisanProfileScreenState
     );
   }
 
+  final AnalyticsRepository _analytics = AnalyticsRepository();
+
   Future<void> _launchPhone(String phone) async {
+    _analytics.logEvent(
+      action: 'CONTACT_CLICK',
+      targetId: widget.userId,
+      metadata: {'method': 'phone'},
+    );
     final uri = Uri.parse('tel:${AppConfig.phonePrefix}$phone');
     if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   Future<void> _launchWhatsApp(String phone) async {
+    _analytics.logEvent(
+      action: 'CONTACT_CLICK',
+      targetId: widget.userId,
+      metadata: {'method': 'whatsapp'},
+    );
     final uri = Uri.parse(
         'https://wa.me/${AppConfig.phonePrefix}$phone');
     if (await canLaunchUrl(uri)) {
