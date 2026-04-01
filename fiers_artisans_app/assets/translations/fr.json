@@ -131,7 +131,12 @@
     "item_description": "Description",
     "item_price": "Prix (FCFA)",
     "item_images": "Photos",
-    "empty": "Votre portfolio est vide. Ajoutez vos réalisations !"
+    "empty": "Votre portfolio est vide. Ajoutez vos réalisations !",
+    "images_required": "Ajoutez au moins une photo.",
+    "add_error": "Erreur lors de l'ajout. Réessayez.",
+    "delete_confirm_title": "Supprimer",
+    "delete_confirm": "Supprimer cette réalisation de votre portfolio ?",
+    "delete_error": "Erreur lors de la suppression."
   },
   "subscription": {
     "title": "Abonnement",

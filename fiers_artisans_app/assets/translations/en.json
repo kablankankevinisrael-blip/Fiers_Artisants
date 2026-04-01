@@ -131,7 +131,12 @@
     "item_description": "Description",
     "item_price": "Price (FCFA)",
     "item_images": "Photos",
-    "empty": "Your portfolio is empty. Add your projects!"
+    "empty": "Your portfolio is empty. Add your projects!",
+    "images_required": "Add at least one photo.",
+    "add_error": "Error adding item. Try again.",
+    "delete_confirm_title": "Delete",
+    "delete_confirm": "Delete this project from your portfolio?",
+    "delete_error": "Error deleting item."
   },
   "subscription": {
     "title": "Subscription",
