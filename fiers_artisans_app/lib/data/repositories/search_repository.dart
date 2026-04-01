@@ -11,6 +11,8 @@ class SearchRepository {
     double? radius,
     String? categoryId,
     String? query,
+    String? sortBy,
+    bool? availableOnly,
     int page = 1,
     int limit = 20,
   }) async {
@@ -23,6 +25,8 @@ class SearchRepository {
     if (radius != null) params['radius_km'] = radius;
     if (categoryId != null) params['category'] = categoryId;
     if (query != null && query.isNotEmpty) params['query'] = query;
+    if (sortBy != null) params['sort_by'] = sortBy;
+    if (availableOnly == true) params['available_only'] = true;
 
     final response = await _api.get(
       ApiEndpoints.search,

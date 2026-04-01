@@ -14,7 +14,11 @@ export class SearchService {
   ) {}
 
   async searchArtisans(dto: SearchArtisansDto) {
-    const { lat, lng, radius_km = 10, category, query, page = 1, limit = 20 } = dto;
+    const {
+      lat, lng, radius_km = 10, category, query,
+      sort_by = 'distance', available_only = false,
+      page = 1, limit = 20,
+    } = dto;
     const offset = (page - 1) * limit;
 
     let qb = this.artisanProfileRepository
@@ -41,6 +45,10 @@ export class SearchService {
         'distance_meters',
       );
 
+    if (available_only) {
+      qb = qb.andWhere('ap.is_available = :avail', { avail: true });
+    }
+
     if (category) {
       // Accept both category slug and UUID id from mobile
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
@@ -58,8 +66,13 @@ export class SearchService {
       );
     }
 
+    if (sort_by === 'rating') {
+      qb = qb.orderBy('ap.rating_avg', 'DESC').addOrderBy('distance_meters', 'ASC');
+    } else {
+      qb = qb.orderBy('distance_meters', 'ASC');
+    }
+
     const [results, total] = await qb
-      .orderBy('distance_meters', 'ASC')
       .skip(offset)
       .take(limit)
       .getManyAndCount();

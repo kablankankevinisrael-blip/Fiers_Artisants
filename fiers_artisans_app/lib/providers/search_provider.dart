@@ -10,6 +10,8 @@ class SearchState {
   final String? query;
   final String? categoryId;
   final double? radius;
+  final String? sortBy;
+  final bool availableOnly;
   final int page;
   final bool hasMore;
 
@@ -20,6 +22,8 @@ class SearchState {
     this.query,
     this.categoryId,
     this.radius,
+    this.sortBy,
+    this.availableOnly = false,
     this.page = 1,
     this.hasMore = true,
   });
@@ -31,6 +35,8 @@ class SearchState {
     String? query,
     String? categoryId,
     double? radius,
+    String? sortBy,
+    bool? availableOnly,
     int? page,
     bool? hasMore,
   }) {
@@ -41,6 +47,8 @@ class SearchState {
       query: query ?? this.query,
       categoryId: categoryId ?? this.categoryId,
       radius: radius ?? this.radius,
+      sortBy: sortBy ?? this.sortBy,
+      availableOnly: availableOnly ?? this.availableOnly,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
     );
@@ -63,12 +71,16 @@ class SearchNotifier extends StateNotifier<SearchState> {
     double? radius,
     String? categoryId,
     String? query,
+    String? sortBy,
+    bool? availableOnly,
   }) async {
     state = SearchState(
       isLoading: true,
       query: query,
       categoryId: categoryId,
       radius: radius,
+      sortBy: sortBy,
+      availableOnly: availableOnly ?? false,
     );
 
     try {
@@ -78,6 +90,8 @@ class SearchNotifier extends StateNotifier<SearchState> {
         radius: radius,
         categoryId: categoryId,
         query: query,
+        sortBy: sortBy,
+        availableOnly: availableOnly,
         page: 1,
       );
       state = state.copyWith(
@@ -109,6 +123,8 @@ class SearchNotifier extends StateNotifier<SearchState> {
         radius: state.radius,
         categoryId: state.categoryId,
         query: state.query,
+        sortBy: state.sortBy,
+        availableOnly: state.availableOnly ? true : null,
         page: nextPage,
       );
       state = state.copyWith(

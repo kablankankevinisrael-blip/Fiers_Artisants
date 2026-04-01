@@ -1,5 +1,5 @@
-import { IsOptional, IsNumber, IsString, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsNumber, IsString, IsIn, IsBoolean, Min, Max } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class SearchArtisansDto {
   @Type(() => Number)
@@ -24,6 +24,16 @@ export class SearchArtisansDto {
   @IsOptional()
   @IsString()
   query?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['distance', 'rating'])
+  sort_by?: string = 'distance';
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  available_only?: boolean = false;
 
   @IsOptional()
   @Type(() => Number)

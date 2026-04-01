@@ -23,6 +23,8 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _searchCtrl = TextEditingController();
   String? _selectedCategoryId;
+  String? _sortBy;
+  bool _availableOnly = false;
   double _radius = AppConfig.defaultSearchRadius;
   double? _latitude;
   double? _longitude;
@@ -33,15 +35,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.initState();
     Future.microtask(() {
       ref.read(categoriesProvider.notifier).load();
-      _initLocation();
 
-      // Handle initial params
+      // Handle initial params from dashboard CTAs
       if (widget.initialParams != null) {
-        final cat = widget.initialParams!['categoryId'] as String?;
-        if (cat != null) {
-          setState(() => _selectedCategoryId = cat);
+        final params = widget.initialParams!;
+        final cat = params['categoryId'] as String?;
+        if (cat != null) _selectedCategoryId = cat;
+
+        if (params['topRated'] == true) _sortBy = 'rating';
+        if (params['availableOnly'] == true) _availableOnly = true;
+        if (params['nearby'] == true) {
+          _radius = 5; // Tighter radius for "nearby" intent
         }
       }
+
+      _initLocation();
     });
   }
 
@@ -78,6 +86,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           query: _searchCtrl.text.trim().isNotEmpty
               ? _searchCtrl.text.trim()
               : null,
+          sortBy: _sortBy,
+          availableOnly: _availableOnly ? true : null,
         );
   }
 
@@ -141,6 +151,37 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
           ),
           const SizedBox(height: 8),
+
+          // Active filter chips
+          if (_sortBy != null || _availableOnly)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  if (_sortBy == 'rating')
+                    InputChip(
+                      label: Text('search.top_rated'.tr()),
+                      avatar: const Icon(Icons.star_rounded, size: 16),
+                      selected: true,
+                      onDeleted: () {
+                        setState(() => _sortBy = null);
+                        _search();
+                      },
+                    ),
+                  if (_availableOnly)
+                    InputChip(
+                      label: Text('search.available_only'.tr()),
+                      avatar: const Icon(Icons.check_circle_outline, size: 16),
+                      selected: true,
+                      onDeleted: () {
+                        setState(() => _availableOnly = false);
+                        _search();
+                      },
+                    ),
+                ],
+              ),
+            ),
 
           // Radius indicator
           Padding(
@@ -206,34 +247,67 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showFilters() {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('search.filter'.tr(),
-                style: Theme.of(ctx).textTheme.headlineMedium),
-            const SizedBox(height: 24),
-            Text(
-              'search.radius'.tr(
-                  namedArgs: {'km': _radius.toStringAsFixed(0)}),
-              style: Theme.of(ctx).textTheme.bodyMedium,
-            ),
-            Slider(
-              value: _radius,
-              min: 1,
-              max: AppConfig.maxSearchRadius,
-              divisions: 49,
-              label: '${_radius.toStringAsFixed(0)} km',
-              onChanged: (v) => setState(() => _radius = v),
-              onChangeEnd: (_) {
-                Navigator.pop(ctx);
-                _search();
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('search.filter'.tr(),
+                  style: Theme.of(ctx).textTheme.headlineMedium),
+              const SizedBox(height: 24),
+              Text(
+                'search.radius'.tr(
+                    namedArgs: {'km': _radius.toStringAsFixed(0)}),
+                style: Theme.of(ctx).textTheme.bodyMedium,
+              ),
+              Slider(
+                value: _radius,
+                min: 1,
+                max: AppConfig.maxSearchRadius,
+                divisions: 49,
+                label: '${_radius.toStringAsFixed(0)} km',
+                onChanged: (v) {
+                  setState(() => _radius = v);
+                  setSheetState(() {});
+                },
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: Text('search.top_rated'.tr()),
+                subtitle: Text('search.top_rated_desc'.tr()),
+                value: _sortBy == 'rating',
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) {
+                  setState(() => _sortBy = v ? 'rating' : null);
+                  setSheetState(() {});
+                },
+              ),
+              SwitchListTile(
+                title: Text('search.available_only'.tr()),
+                subtitle: Text('search.available_only_desc'.tr()),
+                value: _availableOnly,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) {
+                  setState(() => _availableOnly = v);
+                  setSheetState(() {});
+                },
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _search();
+                  },
+                  child: Text('search.apply_filters'.tr()),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );

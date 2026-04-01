@@ -95,7 +95,12 @@
     "sort_by": "Sort by",
     "distance": "Distance",
     "rating": "Rating",
-    "verified_only": "Verified only"
+    "verified_only": "Verified only",
+    "top_rated": "Top rated",
+    "top_rated_desc": "Sort by highest rating",
+    "available_only": "Available now",
+    "available_only_desc": "Show only available craftsmen",
+    "apply_filters": "Apply"
   },
   "artisan": {
     "verified": "Verified",

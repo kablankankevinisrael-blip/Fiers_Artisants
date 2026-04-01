@@ -95,7 +95,12 @@
     "sort_by": "Trier par",
     "distance": "Distance",
     "rating": "Note",
-    "verified_only": "Vérifiés uniquement"
+    "verified_only": "Vérifiés uniquement",
+    "top_rated": "Mieux notés",
+    "top_rated_desc": "Trier par note décroissante",
+    "available_only": "Disponibles",
+    "available_only_desc": "Afficher uniquement les artisans disponibles",
+    "apply_filters": "Appliquer"
   },
   "artisan": {
     "verified": "Vérifié",
