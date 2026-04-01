@@ -110,7 +110,7 @@ export class ChatService {
     if (artisanIds.length > 0) {
       const profiles = await this.artisanProfileRepository.find({
         where: { user_id: In(artisanIds) },
-        select: ['user_id', 'first_name', 'last_name', 'business_name'],
+        select: ['id', 'user_id', 'first_name', 'last_name', 'business_name'],
       });
       for (const p of profiles) {
         nameMap.set(
@@ -123,7 +123,7 @@ export class ChatService {
     if (clientIds.length > 0) {
       const profiles = await this.clientProfileRepository.find({
         where: { user_id: In(clientIds) },
-        select: ['user_id', 'first_name', 'last_name'],
+        select: ['id', 'user_id', 'first_name', 'last_name'],
       });
       for (const p of profiles) {
         nameMap.set(p.user_id, `${p.first_name} ${p.last_name}`);
