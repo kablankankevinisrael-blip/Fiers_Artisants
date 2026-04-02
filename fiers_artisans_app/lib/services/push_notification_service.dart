@@ -13,6 +13,9 @@ class PushNotificationService {
   final ApiClient _api = ApiClient();
   bool _initialized = false;
 
+  /// Callback invoked when a verification-related push arrives.
+  VoidCallback? onVerificationUpdate;
+
   Future<void> initialize() async {
     if (_initialized) return;
 
@@ -46,11 +49,17 @@ class PushNotificationService {
     messaging.onTokenRefresh.listen(_registerToken);
 
     // Handle foreground messages
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('FCM foreground: ${message.notification?.title}');
-    });
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
     _initialized = true;
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    debugPrint('FCM foreground: ${message.notification?.title}');
+    final type = message.data['type'] as String?;
+    if (type == 'DOCUMENT_APPROVED' || type == 'DOCUMENT_REJECTED') {
+      onVerificationUpdate?.call();
+    }
   }
 
   Future<void> _registerToken(String token) async {

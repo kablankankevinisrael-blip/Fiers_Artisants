@@ -51,21 +51,27 @@ class VerificationState {
     );
   }
 
-  /// Aggregated dashboard label: the "worst" status across both families.
+  /// Aggregated dashboard label: worst-status-wins across both families.
+  /// Priority: REJECTED > PENDING > NONE > per-family approved.
   String get dashboardLabel {
+    final statuses = [identityStatus, diplomaStatus];
+
+    // Any rejection → global REJECTED
+    if (statuses.contains(DocFamilyStatus.rejected)) return 'REJECTED';
+
+    // Any pending → global PENDING
+    if (statuses.contains(DocFamilyStatus.pending)) return 'PENDING';
+
+    // Both approved → CERTIFIED
     if (identityStatus == DocFamilyStatus.approved &&
         diplomaStatus == DocFamilyStatus.approved) {
       return 'CERTIFIED';
     }
+
+    // Only identity approved (diploma not yet submitted) → VERIFIED
     if (identityStatus == DocFamilyStatus.approved) return 'VERIFIED';
-    if (identityStatus == DocFamilyStatus.pending ||
-        diplomaStatus == DocFamilyStatus.pending) {
-      return 'PENDING';
-    }
-    if (identityStatus == DocFamilyStatus.rejected ||
-        diplomaStatus == DocFamilyStatus.rejected) {
-      return 'REJECTED';
-    }
+
+    // Both NONE → NONE
     return 'NONE';
   }
 }

@@ -5,10 +5,12 @@ import { VerificationController } from './verification.controller';
 import { VerificationDocument } from './entities/verification-document.entity';
 import { VerificationDocumentPage } from './entities/verification-document-page.entity';
 import { User } from '../users/entities/user.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([VerificationDocument, VerificationDocumentPage, User]),
+    NotificationsModule,
   ],
   controllers: [VerificationController],
   providers: [VerificationService],

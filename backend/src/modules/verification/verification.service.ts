@@ -18,6 +18,7 @@ import {
 import { User, VerificationStatus } from '../users/entities/user.entity';
 import { SubmitDocumentDto } from './dto/submit-document.dto';
 import { ReviewDocumentDto } from './dto/review-document.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const IDENTITY_TYPES = [DocumentType.CNI, DocumentType.PASSPORT];
 const DIPLOMA_TYPES = [
@@ -35,6 +36,7 @@ export class VerificationService {
     private readonly pageRepository: Repository<VerificationDocumentPage>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private getFamilyTypes(docType: DocumentType): DocumentType[] {
@@ -283,6 +285,29 @@ export class VerificationService {
     if (dto.status === DocumentStatus.APPROVED) {
       await this.updateUserVerificationStatus(doc.user_id);
     }
+
+    // Notify artisan via FCM (fire-and-forget)
+    const notifType =
+      dto.status === DocumentStatus.APPROVED
+        ? 'DOCUMENT_APPROVED'
+        : 'DOCUMENT_REJECTED';
+    const notifTitle =
+      dto.status === DocumentStatus.APPROVED
+        ? 'Document approuvé'
+        : 'Document rejeté';
+    const notifBody =
+      dto.status === DocumentStatus.APPROVED
+        ? `Votre ${doc.document_type} a été approuvé.`
+        : `Votre ${doc.document_type} a été rejeté.`;
+    this.notificationsService
+      .create({
+        userId: doc.user_id,
+        type: notifType,
+        title: notifTitle,
+        body: notifBody,
+        data: { documentId: doc.id, documentType: doc.document_type },
+      })
+      .catch(() => {});
 
     return saved;
   }
