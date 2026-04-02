@@ -1,79 +1,44 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/theme.dart';
 import '../../data/repositories/verification_repository.dart';
+import '../../providers/verification_provider.dart';
 
 /// Max extra pages allowed for DIPLOME/CERTIFICAT/ATTESTATION
 const int kMaxExtraPages = 5;
 
-class VerificationScreen extends StatefulWidget {
+class VerificationScreen extends ConsumerStatefulWidget {
   const VerificationScreen({super.key});
 
   @override
-  State<VerificationScreen> createState() => _VerificationScreenState();
+  ConsumerState<VerificationScreen> createState() =>
+      _VerificationScreenState();
 }
 
-class _VerificationScreenState extends State<VerificationScreen> {
+class _VerificationScreenState extends ConsumerState<VerificationScreen>
+    with WidgetsBindingObserver {
   final VerificationRepository _repo = VerificationRepository();
-
-  bool _loading = true;
-  String? _error;
-
-  String _identityStatus = 'none';
-  String? _identityRejectionReason;
-  String _diplomaStatus = 'none';
-  String? _diplomaRejectionReason;
 
   @override
   void initState() {
     super.initState();
-    _loadStatus();
+    WidgetsBinding.instance.addObserver(this);
+    Future.microtask(() => ref.read(verificationProvider.notifier).refresh());
   }
 
-  Future<void> _loadStatus() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final data = await _repo.getVerificationStatus();
-      final docs = data['documents'] as List<dynamic>? ?? [];
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
-      String idStatus = 'none';
-      String? idReason;
-      String dipStatus = 'none';
-      String? dipReason;
-
-      for (final doc in docs) {
-        final type = doc['document_type'] as String? ?? '';
-        final status = doc['status'] as String? ?? '';
-        final reason = doc['rejection_reason'] as String?;
-
-        if (type == 'CNI' || type == 'PASSPORT') {
-          idStatus = status;
-          idReason = reason;
-        } else if (type == 'DIPLOME' ||
-            type == 'CERTIFICAT' ||
-            type == 'ATTESTATION') {
-          dipStatus = status;
-          dipReason = reason;
-        }
-      }
-
-      setState(() {
-        _identityStatus = idStatus;
-        _identityRejectionReason = idReason;
-        _diplomaStatus = dipStatus;
-        _diplomaRejectionReason = dipReason;
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _loading = false;
-        _error = e.toString();
-      });
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(verificationProvider.notifier).refresh();
     }
   }
 
@@ -122,26 +87,37 @@ class _VerificationScreenState extends State<VerificationScreen> {
     required String documentType,
     required bool isIdentity,
   }) {
-    Navigator.of(context).push(
+    Navigator.of(context)
+        .push(
       MaterialPageRoute(
         builder: (_) => _DocumentBuilderScreen(
           documentType: documentType,
           repo: _repo,
           onSubmitted: () {
-            _loadStatus();
+            // Optimistic local update then refresh from backend
+            ref
+                .read(verificationProvider.notifier)
+                .markFamilyPending(isIdentity: isIdentity);
+            ref.read(verificationProvider.notifier).refresh();
           },
         ),
       ),
-    );
+    )
+        .then((_) {
+      // Refresh when returning from builder screen
+      ref.read(verificationProvider.notifier).refresh();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final vState = ref.watch(verificationProvider);
+
     return Scaffold(
       appBar: AppBar(title: Text('artisan.verification.title'.tr())),
-      body: _loading
+      body: vState.isLoading && vState.documents.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
+          : vState.error != null && vState.documents.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -149,43 +125,49 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       Text('error.generic'.tr()),
                       const SizedBox(height: 12),
                       OutlinedButton(
-                        onPressed: _loadStatus,
+                        onPressed: () =>
+                            ref.read(verificationProvider.notifier).refresh(),
                         child: Text('common.retry'.tr()),
                       ),
                     ],
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: _loadStatus,
+                  onRefresh: () =>
+                      ref.read(verificationProvider.notifier).refresh(),
                   child: ListView(
                     padding: const EdgeInsets.all(24),
                     children: [
                       _VerificationStep(
                         icon: Icons.badge_outlined,
                         title: 'artisan.verification.upload_id'.tr(),
-                        status: _identityStatus,
-                        rejectionReason: _identityRejectionReason,
-                        onTap: _identityStatus == 'APPROVED'
-                            ? null
-                            : () =>
-                                _showDocumentTypePicker(isIdentity: true),
+                        familyStatus: vState.identityStatus,
+                        rejectionReason: vState.identityRejectionReason,
+                        onAction: _canSubmit(vState.identityStatus)
+                            ? () =>
+                                _showDocumentTypePicker(isIdentity: true)
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       _VerificationStep(
                         icon: Icons.school_outlined,
                         title: 'artisan.verification.upload_diploma'.tr(),
-                        status: _diplomaStatus,
-                        rejectionReason: _diplomaRejectionReason,
-                        onTap: _diplomaStatus == 'APPROVED'
-                            ? null
-                            : () =>
-                                _showDocumentTypePicker(isIdentity: false),
+                        familyStatus: vState.diplomaStatus,
+                        rejectionReason: vState.diplomaRejectionReason,
+                        onAction: _canSubmit(vState.diplomaStatus)
+                            ? () =>
+                                _showDocumentTypePicker(isIdentity: false)
+                            : null,
                       ),
                     ],
                   ),
                 ),
     );
   }
+
+  /// Only allow submission when status is NONE or REJECTED.
+  bool _canSubmit(DocFamilyStatus s) =>
+      s == DocFamilyStatus.none || s == DocFamilyStatus.rejected;
 }
 
 // ─── Document Builder Screen ──────────────────────────────────────────────────
@@ -690,16 +672,16 @@ class _ImageSlot extends StatelessWidget {
 class _VerificationStep extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String status;
+  final DocFamilyStatus familyStatus;
   final String? rejectionReason;
-  final VoidCallback? onTap;
+  final VoidCallback? onAction;
 
   const _VerificationStep({
     required this.icon,
     required this.title,
-    required this.status,
+    required this.familyStatus,
     this.rejectionReason,
-    this.onTap,
+    this.onAction,
   });
 
   @override
@@ -707,63 +689,145 @@ class _VerificationStep extends StatelessWidget {
     final theme = Theme.of(context);
     final Color statusColor;
     final String statusText;
+    final IconData statusIcon;
 
-    switch (status) {
-      case 'APPROVED':
+    switch (familyStatus) {
+      case DocFamilyStatus.approved:
         statusColor = AppTheme.success;
         statusText = 'artisan.verification.approved'.tr();
-      case 'PENDING':
+        statusIcon = Icons.check_circle_outline;
+      case DocFamilyStatus.pending:
         statusColor = AppTheme.warning;
         statusText = 'artisan.verification.pending'.tr();
-      case 'REJECTED':
+        statusIcon = Icons.schedule_outlined;
+      case DocFamilyStatus.rejected:
         statusColor = AppTheme.error;
-        statusText = rejectionReason ??
-            'artisan.verification.rejected'.tr();
-      default:
+        statusText = 'artisan.verification.rejected'.tr();
+        statusIcon = Icons.cancel_outlined;
+      case DocFamilyStatus.none:
         statusColor = theme.textTheme.bodySmall?.color ?? Colors.grey;
         statusText = 'artisan.verification.not_submitted'.tr();
+        statusIcon = Icons.upload_file_outlined;
     }
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.dividerColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: statusColor),
               ),
-              child: Icon(icon, color: statusColor),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(statusIcon, size: 14, color: statusColor),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            statusText,
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: statusColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Rejection reason block (separate from status)
+          if (familyStatus == DocFamilyStatus.rejected &&
+              rejectionReason != null &&
+              rejectionReason!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border:
+                    Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: theme.textTheme.titleMedium),
+                  Text(
+                    'artisan.verification.rejection_reason'.tr(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppTheme.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    statusText,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: statusColor),
+                    rejectionReason!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppTheme.error.withValues(alpha: 0.85),
+                    ),
                   ),
                 ],
               ),
             ),
-            if (onTap != null)
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: 16, color: theme.textTheme.bodySmall?.color),
           ],
-        ),
+
+          // CTA button
+          if (onAction != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onAction,
+                icon: Icon(
+                  familyStatus == DocFamilyStatus.rejected
+                      ? Icons.refresh_rounded
+                      : Icons.upload_file_outlined,
+                  size: 18,
+                ),
+                label: Text(
+                  familyStatus == DocFamilyStatus.rejected
+                      ? 'artisan.verification.resubmit'.tr()
+                      : 'artisan.verification.submit_document'.tr(),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: familyStatus == DocFamilyStatus.rejected
+                      ? AppTheme.error
+                      : theme.colorScheme.primary,
+                  side: BorderSide(
+                    color: familyStatus == DocFamilyStatus.rejected
+                        ? AppTheme.error.withValues(alpha: 0.5)
+                        : theme.colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

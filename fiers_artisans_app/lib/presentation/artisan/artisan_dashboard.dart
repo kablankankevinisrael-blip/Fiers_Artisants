@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
+import '../../providers/verification_provider.dart';
 import '../../providers/chat_provider.dart';
 
 class ArtisanDashboard extends ConsumerStatefulWidget {
@@ -16,7 +17,7 @@ class ArtisanDashboard extends ConsumerStatefulWidget {
 }
 
 class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animController;
   late Animation<double> _fadeIn;
   bool _isAvailable = true;
@@ -24,6 +25,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -35,6 +37,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     Future.microtask(() {
       ref.read(subscriptionProvider.notifier).loadStatus();
       ref.read(chatProvider.notifier).loadConversations();
+      ref.read(verificationProvider.notifier).refresh();
     });
   }
 
@@ -54,11 +57,20 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     await Future.wait([
       ref.read(subscriptionProvider.notifier).loadStatus(),
       ref.read(chatProvider.notifier).loadConversations(),
+      ref.read(verificationProvider.notifier).refresh(),
     ]);
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(verificationProvider.notifier).refresh();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
     super.dispose();
   }
@@ -69,6 +81,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     final user = ref.watch(authProvider).user;
     final subState = ref.watch(subscriptionProvider);
     final chatState = ref.watch(chatProvider);
+    final vState = ref.watch(verificationProvider);
     final isDark = theme.brightness == Brightness.dark;
 
     final unreadMessages = chatState.conversations
@@ -150,7 +163,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: _VerificationCard(
-                      user: user,
+                      vState: vState,
                       onTap: () => context.push('/artisan/verification'),
                     ),
                   ),
@@ -449,19 +462,18 @@ class _SubscriptionCard extends StatelessWidget {
 }
 
 class _VerificationCard extends StatelessWidget {
-  final dynamic user;
+  final VerificationState vState;
   final VoidCallback onTap;
 
-  const _VerificationCard({required this.user, required this.onTap});
+  const _VerificationCard({required this.vState, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final rawStatus = user?.verificationStatus as String?;
-    final status = rawStatus?.toUpperCase() ?? '';
+    final label = vState.dashboardLabel;
 
     final (Color statusColor, String statusText, IconData statusIcon) =
-        switch (status) {
+        switch (label) {
       'VERIFIED' || 'CERTIFIED' => (
           AppTheme.success,
           'artisan.verification.approved'.tr(),
@@ -472,10 +484,15 @@ class _VerificationCard extends StatelessWidget {
           'artisan.verification.pending'.tr(),
           Icons.schedule_outlined,
         ),
-      _ => (
+      'REJECTED' => (
           AppTheme.error,
-          'artisan.verification.not_submitted'.tr(),
+          'artisan.verification.rejected'.tr(),
           Icons.cancel_outlined,
+        ),
+      _ => (
+          theme.textTheme.bodySmall?.color ?? Colors.grey,
+          'artisan.verification.not_submitted'.tr(),
+          Icons.upload_file_outlined,
         ),
     };
 

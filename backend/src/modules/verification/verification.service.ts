@@ -2,9 +2,10 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import {
   VerificationDocument,
   DocumentType,
@@ -18,6 +19,13 @@ import { User, VerificationStatus } from '../users/entities/user.entity';
 import { SubmitDocumentDto } from './dto/submit-document.dto';
 import { ReviewDocumentDto } from './dto/review-document.dto';
 
+const IDENTITY_TYPES = [DocumentType.CNI, DocumentType.PASSPORT];
+const DIPLOMA_TYPES = [
+  DocumentType.DIPLOME,
+  DocumentType.CERTIFICAT,
+  DocumentType.ATTESTATION,
+];
+
 @Injectable()
 export class VerificationService {
   constructor(
@@ -29,10 +37,46 @@ export class VerificationService {
     private readonly userRepository: Repository<User>,
   ) {}
 
+  private getFamilyTypes(docType: DocumentType): DocumentType[] {
+    if (IDENTITY_TYPES.includes(docType)) return IDENTITY_TYPES;
+    if (DIPLOMA_TYPES.includes(docType)) return DIPLOMA_TYPES;
+    return [docType];
+  }
+
+  /**
+   * Prevents duplicate active submissions within the same document family.
+   * Identity family: CNI, PASSPORT
+   * Diploma family: DIPLOME, CERTIFICAT, ATTESTATION
+   */
+  private async guardDuplicatePending(
+    userId: string,
+    docType: DocumentType,
+  ): Promise<void> {
+    const familyTypes = this.getFamilyTypes(docType);
+    const existing = await this.docRepository.findOne({
+      where: {
+        user_id: userId,
+        document_type: In(familyTypes),
+        status: DocumentStatus.PENDING,
+      },
+    });
+    if (existing) {
+      const label = IDENTITY_TYPES.includes(docType)
+        ? "d'identité"
+        : 'de diplôme/certificat';
+      throw new ConflictException(
+        `Vous avez déjà un dossier ${label} en attente de validation. Veuillez patienter.`,
+      );
+    }
+  }
+
   async submitDocument(
     userId: string,
     dto: SubmitDocumentDto,
   ): Promise<VerificationDocument> {
+    // Prevent duplicate PENDING submissions within the same family
+    await this.guardDuplicatePending(userId, dto.document_type);
+
     const files = dto.files;
     const legacyFileUrl = dto.file_url;
 
@@ -225,8 +269,13 @@ export class VerificationService {
     doc.status = dto.status;
     doc.reviewed_by = adminId;
     doc.reviewed_at = new Date();
-    if (dto.status === DocumentStatus.REJECTED && dto.rejection_reason) {
-      doc.rejection_reason = dto.rejection_reason;
+    if (dto.status === DocumentStatus.REJECTED) {
+      if (!dto.rejection_reason?.trim()) {
+        throw new BadRequestException(
+          'Le motif de rejet est obligatoire.',
+        );
+      }
+      doc.rejection_reason = dto.rejection_reason.trim();
     }
 
     const saved = await this.docRepository.save(doc);
