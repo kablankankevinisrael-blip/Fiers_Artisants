@@ -93,23 +93,15 @@ function isCNIIncomplete(doc: VerificationDocument): boolean {
 // ─── AuthenticatedPreview: fetches blob via axios, renders image or PDF ─
 
 function AuthenticatedPreview({ page, alt }: { page: VerificationDocumentPage; alt: string }) {
+  const { bucket, objectKey } = resolveFileRef(page);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [loading, setLoading] = useState(!!objectKey);
+  const [hasError, setHasError] = useState(!objectKey);
   const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!objectKey) return;
     let cancelled = false;
-    setLoading(true);
-    setHasError(false);
-    setBlobUrl(null);
-
-    const { bucket, objectKey } = resolveFileRef(page);
-    if (!objectKey) {
-      setHasError(true);
-      setLoading(false);
-      return;
-    }
 
     fetchFileBlob(bucket, objectKey)
       .then((blob) => {
@@ -132,7 +124,7 @@ function AuthenticatedPreview({ page, alt }: { page: VerificationDocumentPage; a
         blobUrlRef.current = null;
       }
     };
-  }, [page]);
+  }, [bucket, objectKey]);
 
   if (loading) {
     return (
