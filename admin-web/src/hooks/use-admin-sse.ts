@@ -14,7 +14,9 @@ const POLL_INTERVAL = 30_000;
  */
 export function useAdminSSE(onEvent: () => void) {
   const onEventRef = useRef(onEvent);
-  onEventRef.current = onEvent;
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  });
 
   useEffect(() => {
     let es: EventSource | null = null;
