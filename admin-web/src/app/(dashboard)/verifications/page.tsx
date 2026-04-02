@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getPendingVerifications, reviewDocument, fetchFileBlob } from '@/lib/api';
 import { useTranslations } from '@/hooks/use-translations';
+import { useAdminSSE } from '@/hooks/use-admin-sse';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -210,70 +211,8 @@ export default function VerificationsPage() {
     loadDocs();
   }, [loadDocs]);
 
-  // SSE: real-time admin refresh on new submissions and reviews.
-  // Falls back to 30s polling if SSE fails or disconnects.
-  useEffect(() => {
-    let es: EventSource | null = null;
-    let fallbackId: ReturnType<typeof setInterval> | null = null;
-
-    const startSSE = () => {
-      const token = typeof window !== 'undefined'
-        ? localStorage.getItem('admin_token')
-        : null;
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
-      // EventSource doesn't support custom headers, pass token as query param
-      const url = `${baseUrl}/admin/verifications/events${token ? `?token=${token}` : ''}`;
-      es = new EventSource(url);
-
-      es.onmessage = () => {
-        silentRefresh();
-      };
-
-      es.onerror = () => {
-        // SSE disconnected — start fallback polling
-        es?.close();
-        es = null;
-        startPolling();
-      };
-
-      // SSE connected — stop fallback polling
-      stopPolling();
-    };
-
-    const startPolling = () => {
-      if (!fallbackId) {
-        fallbackId = setInterval(silentRefresh, 30_000);
-      }
-    };
-    const stopPolling = () => {
-      if (fallbackId) {
-        clearInterval(fallbackId);
-        fallbackId = null;
-      }
-    };
-
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        silentRefresh();
-        if (!es) startSSE();
-      } else {
-        es?.close();
-        es = null;
-        stopPolling();
-      }
-    };
-
-    if (document.visibilityState === 'visible') {
-      startSSE();
-    }
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      es?.close();
-      stopPolling();
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [silentRefresh]);
+  // Real-time: refresh docs on SSE events (new submission / review)
+  useAdminSSE(silentRefresh);
 
   const closePreview = useCallback(() => {
     setPreviewDoc(null);

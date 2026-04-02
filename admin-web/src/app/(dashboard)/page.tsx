@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { getDashboardStats } from '@/lib/api';
 import { useTranslations } from '@/hooks/use-translations';
+import { useAdminSSE } from '@/hooks/use-admin-sse';
 import { KpiCard } from '@/components/dashboard/kpi-card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +26,7 @@ export default function DashboardPage() {
   const { t } = useTranslations('dashboard');
   const { t: tApp } = useTranslations('app');
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
@@ -36,11 +37,21 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const silentRefresh = useCallback(async () => {
+    try {
+      const data = await getDashboardStats();
+      setStats(data);
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [loadStats]);
+
+  // Real-time: refresh stats on SSE events (new submission / review)
+  useAdminSSE(silentRefresh);
 
   return (
     <div className="space-y-6">
