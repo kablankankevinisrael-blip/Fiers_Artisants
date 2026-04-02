@@ -18,11 +18,12 @@ import { CurrentUser } from '../../common/decorators';
 import { PhoneVerifiedGuard } from '../../common/guards';
 
 @Controller('media')
-@UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard)
+@UseGuards(AuthGuard('jwt'))
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('upload')
+  @UseGuards(PhoneVerifiedGuard)
   @UseInterceptors(FileInterceptor('file'))
   async upload(
     @CurrentUser('id') userId: string,

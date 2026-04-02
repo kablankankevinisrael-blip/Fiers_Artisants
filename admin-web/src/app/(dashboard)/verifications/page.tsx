@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { getPendingVerifications, reviewDocument } from '@/lib/api';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { getPendingVerifications, reviewDocument, fetchFileBlob } from '@/lib/api';
 import { useTranslations } from '@/hooks/use-translations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,28 +34,21 @@ import { CheckCircle, XCircle, FileText, Loader2, Eye, Download, ChevronLeft, Ch
 import { toast } from 'sonner';
 import type { VerificationDocument, VerificationDocumentPage } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+// ─── Helpers ──────────────────────────────────────────────────────────
 
-/**
- * Build a stable proxy URL for a verification file.
- * Uses the backend proxy endpoint which streams from MinIO on demand.
- * Falls back to the raw file_url only if no object_key is available.
- */
-function getProxyUrl(page: VerificationDocumentPage): string {
+/** Extract durable bucket+objectKey from a page, with legacy URL fallback. */
+function resolveFileRef(page: VerificationDocumentPage): { bucket: string; objectKey: string | undefined } {
   if (page.object_key) {
-    return `${API_URL}/media/file/documents/${page.object_key}`;
+    return { bucket: 'documents', objectKey: page.object_key };
   }
-  // Legacy: try to extract objectKey from the signed URL
   try {
     const url = new URL(page.file_url);
     const parts = url.pathname.split('/').filter(Boolean);
     if (parts.length >= 2) {
-      return `${API_URL}/media/file/${parts[0]}/${parts.slice(1).join('/')}`;
+      return { bucket: parts[0], objectKey: parts.slice(1).join('/') };
     }
-  } catch {
-    // Fall through
-  }
-  return page.file_url;
+  } catch { /* fall through */ }
+  return { bucket: 'documents', objectKey: undefined };
 }
 
 function isImageKey(objectKeyOrUrl: string): boolean {
@@ -97,36 +90,91 @@ function isCNIIncomplete(doc: VerificationDocument): boolean {
   return !roles.includes('FRONT') || !roles.includes('BACK');
 }
 
-// ─── Preview Image Component (React-safe error handling) ──────────────
+// ─── AuthenticatedPreview: fetches blob via axios, renders image or PDF ─
 
-function PreviewImage({ src, alt }: { src: string; alt: string }) {
+function AuthenticatedPreview({ page, alt }: { page: VerificationDocumentPage; alt: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const blobUrlRef = useRef<string | null>(null);
 
-  // Reset error state when src changes (page navigation)
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
     setHasError(false);
-  }, [src]);
+    setBlobUrl(null);
 
-  if (hasError) {
+    const { bucket, objectKey } = resolveFileRef(page);
+    if (!objectKey) {
+      setHasError(true);
+      setLoading(false);
+      return;
+    }
+
+    fetchFileBlob(bucket, objectKey)
+      .then((blob) => {
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        blobUrlRef.current = url;
+        setBlobUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setHasError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, [page]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Chargement…</p>
+      </div>
+    );
+  }
+
+  if (hasError || !blobUrl) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 p-8">
         <ImageOff className="h-10 w-10 text-muted-foreground" />
         <p className="text-muted-foreground text-sm text-center">
-          Impossible de charger l&apos;image.
+          Impossible de charger le fichier.
           <br />
-          Le fichier a peut-être expiré ou est inaccessible.
+          Le fichier est peut-être manquant ou inaccessible.
         </p>
       </div>
     );
   }
 
+  const fileRef = page.object_key || page.file_url;
+  if (isImageKey(fileRef)) {
+    return (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={blobUrl}
+        alt={alt}
+        className="max-w-full max-h-[60vh] object-contain"
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  // PDF or other — render in iframe from blob URL
   return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={src}
-      alt={alt}
-      className="max-w-full max-h-[60vh] object-contain"
-      onError={() => setHasError(true)}
+    <iframe
+      src={blobUrl}
+      className="w-full h-[60vh] border-0"
+      title={alt}
     />
   );
 }
@@ -209,6 +257,28 @@ export default function VerificationsPage() {
       toast.error(tApp('error'));
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  /** Download current page via authenticated fetch → programmatic save */
+  const handleDownload = async (page: VerificationDocumentPage) => {
+    const { bucket, objectKey } = resolveFileRef(page);
+    if (!objectKey) {
+      toast.error('Référence fichier manquante.');
+      return;
+    }
+    try {
+      const blob = await fetchFileBlob(bucket, objectKey);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = objectKey;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Erreur lors du téléchargement.');
     }
   };
 
@@ -332,7 +402,7 @@ export default function VerificationsPage() {
         </CardContent>
       </Card>
 
-      {/* Document preview dialog — fully React-controlled, no DOM mutation */}
+      {/* Document preview dialog — fully React-controlled, authenticated blob loading */}
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) closePreview(); }}>
         <DialogContent className="max-w-3xl max-h-[85vh]">
           <DialogHeader>
@@ -372,22 +442,14 @@ export default function VerificationsPage() {
             </div>
           )}
 
-          {/* Current page preview — React-safe */}
+          {/* Current page — authenticated blob fetch via axios */}
           <div className="flex-1 overflow-auto rounded-md border bg-muted/50 min-h-[300px] flex items-center justify-center relative">
             {currentPreviewPage ? (
-              isImageKey(currentPreviewPage.object_key || currentPreviewPage.file_url) ? (
-                <PreviewImage
-                  key={currentPreviewPage.id}
-                  src={getProxyUrl(currentPreviewPage)}
-                  alt={`${previewDoc?.document_type} - ${getPageLabel(currentPreviewPage)}`}
-                />
-              ) : (
-                <iframe
-                  src={getProxyUrl(currentPreviewPage)}
-                  className="w-full h-[60vh] border-0"
-                  title={`${previewDoc?.document_type} - ${getPageLabel(currentPreviewPage)}`}
-                />
-              )
+              <AuthenticatedPreview
+                key={currentPreviewPage.id}
+                page={currentPreviewPage}
+                alt={`${previewDoc?.document_type} - ${getPageLabel(currentPreviewPage)}`}
+              />
             ) : (
               <p className="text-muted-foreground">{t('no_file')}</p>
             )}
@@ -422,12 +484,14 @@ export default function VerificationsPage() {
           <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
             <div className="flex gap-2">
               {currentPreviewPage && (
-                <a href={getProxyUrl(currentPreviewPage)} download>
-                  <Button variant="outline" size="sm">
-                    <Download className="mr-1 h-4 w-4" />
-                    {t('download')}
-                  </Button>
-                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownload(currentPreviewPage)}
+                >
+                  <Download className="mr-1 h-4 w-4" />
+                  {t('download')}
+                </Button>
               )}
             </div>
             <div className="flex gap-2">

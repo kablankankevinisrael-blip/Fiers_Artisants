@@ -188,4 +188,12 @@ export async function getLogs(
   return data;
 }
 
+// Media — authenticated blob fetch for admin preview/download
+export async function fetchFileBlob(bucket: string, objectKey: string): Promise<Blob> {
+  const response = await api.get(`/media/file/${bucket}/${objectKey}`, {
+    responseType: 'blob',
+  });
+  return response.data as Blob;
+}
+
 export default api;
