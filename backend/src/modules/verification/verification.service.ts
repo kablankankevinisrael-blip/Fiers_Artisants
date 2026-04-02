@@ -7,8 +7,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   VerificationDocument,
+  DocumentType,
   DocumentStatus,
 } from './entities/verification-document.entity';
+import {
+  VerificationDocumentPage,
+  PageRole,
+} from './entities/verification-document-page.entity';
 import { User, VerificationStatus } from '../users/entities/user.entity';
 import { SubmitDocumentDto } from './dto/submit-document.dto';
 import { ReviewDocumentDto } from './dto/review-document.dto';
@@ -18,6 +23,8 @@ export class VerificationService {
   constructor(
     @InjectRepository(VerificationDocument)
     private readonly docRepository: Repository<VerificationDocument>,
+    @InjectRepository(VerificationDocumentPage)
+    private readonly pageRepository: Repository<VerificationDocumentPage>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -26,17 +33,146 @@ export class VerificationService {
     userId: string,
     dto: SubmitDocumentDto,
   ): Promise<VerificationDocument> {
+    const files = dto.files;
+    const legacyFileUrl = dto.file_url;
+
+    // Backwards-compatible: if old-style single file_url is sent without files[]
+    if (!files?.length && legacyFileUrl) {
+      const role = this.getDefaultRole(dto.document_type);
+      const objectKey = this.extractObjectKey(legacyFileUrl);
+      const doc = this.docRepository.create({
+        user_id: userId,
+        document_type: dto.document_type,
+        file_url: legacyFileUrl,
+        object_key: objectKey,
+      });
+      const saved = await this.docRepository.save(doc);
+      const page = this.pageRepository.create({
+        document_id: saved.id,
+        file_url: legacyFileUrl,
+        object_key: objectKey,
+        page_role: role,
+        page_order: 0,
+      });
+      await this.pageRepository.save(page);
+      return this.docRepository.findOne({
+        where: { id: saved.id },
+        relations: ['pages'],
+      }) as Promise<VerificationDocument>;
+    }
+
+    if (!files?.length) {
+      throw new BadRequestException(
+        'Au moins un fichier est requis.',
+      );
+    }
+
+    // Business validation per document type
+    this.validateFiles(dto.document_type, files);
+
+    const firstKey =
+      files[0].object_key || this.extractObjectKey(files[0].file_url);
+
     const doc = this.docRepository.create({
       user_id: userId,
       document_type: dto.document_type,
-      file_url: dto.file_url,
+      file_url: files[0].file_url,
+      object_key: firstKey,
     });
-    return this.docRepository.save(doc);
+    const saved = await this.docRepository.save(doc);
+
+    const pages = files.map((f, idx) =>
+      this.pageRepository.create({
+        document_id: saved.id,
+        file_url: f.file_url,
+        object_key: f.object_key || this.extractObjectKey(f.file_url),
+        page_role: f.page_role,
+        page_order: f.page_order ?? idx,
+      }),
+    );
+    await this.pageRepository.save(pages);
+
+    return this.docRepository.findOne({
+      where: { id: saved.id },
+      relations: ['pages'],
+    }) as Promise<VerificationDocument>;
+  }
+
+  /**
+   * Extract MinIO objectKey from a signed URL.
+   * URL format: http://host:port/bucket/objectKey?params
+   */
+  private extractObjectKey(fileUrl: string): string | undefined {
+    try {
+      const url = new URL(fileUrl);
+      // pathname = /documents/uuid.ext or /bucket/key
+      const parts = url.pathname.split('/').filter(Boolean);
+      // parts = ['documents', 'uuid.ext']
+      if (parts.length >= 2) {
+        return parts.slice(1).join('/');
+      }
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private validateFiles(
+    docType: DocumentType,
+    files: { file_url: string; page_role: PageRole }[],
+  ): void {
+    const roles = files.map((f) => f.page_role);
+
+    switch (docType) {
+      case DocumentType.CNI: {
+        const hasFront = roles.includes(PageRole.FRONT);
+        const hasBack = roles.includes(PageRole.BACK);
+        if (!hasFront || !hasBack) {
+          throw new BadRequestException(
+            'La CNI nécessite obligatoirement un recto (FRONT) et un verso (BACK).',
+          );
+        }
+        break;
+      }
+      case DocumentType.PASSPORT: {
+        const hasMain = roles.includes(PageRole.MAIN);
+        if (!hasMain) {
+          throw new BadRequestException(
+            'Le passeport nécessite au moins une page principale (MAIN).',
+          );
+        }
+        break;
+      }
+      case DocumentType.DIPLOME:
+      case DocumentType.CERTIFICAT:
+      case DocumentType.ATTESTATION: {
+        const hasMain = roles.includes(PageRole.MAIN);
+        if (!hasMain) {
+          throw new BadRequestException(
+            'Ce document nécessite au moins une page principale (MAIN).',
+          );
+        }
+        break;
+      }
+    }
+  }
+
+  private getDefaultRole(docType: DocumentType): PageRole {
+    switch (docType) {
+      case DocumentType.CNI:
+        return PageRole.FRONT;
+      case DocumentType.PASSPORT:
+      case DocumentType.DIPLOME:
+      case DocumentType.CERTIFICAT:
+      case DocumentType.ATTESTATION:
+        return PageRole.MAIN;
+    }
   }
 
   async getVerificationStatus(userId: string) {
     const documents = await this.docRepository.find({
       where: { user_id: userId },
+      relations: ['pages'],
       order: { submitted_at: 'DESC' },
     });
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -49,7 +185,7 @@ export class VerificationService {
   async getPendingDocuments() {
     return this.docRepository.find({
       where: { status: DocumentStatus.PENDING },
-      relations: ['user'],
+      relations: ['user', 'pages'],
       order: { submitted_at: 'ASC' },
     });
   }
@@ -61,13 +197,29 @@ export class VerificationService {
   ): Promise<VerificationDocument> {
     const doc = await this.docRepository.findOne({
       where: { id: docId },
-      relations: ['user'],
+      relations: ['user', 'pages'],
     });
     if (!doc) {
       throw new NotFoundException('Document non trouvé.');
     }
     if (doc.status !== DocumentStatus.PENDING) {
       throw new BadRequestException('Ce document a déjà été traité.');
+    }
+
+    // Block approval of incomplete CNI
+    if (
+      dto.status === DocumentStatus.APPROVED &&
+      doc.document_type === DocumentType.CNI
+    ) {
+      const pageRoles = (doc.pages || []).map((p) => p.page_role);
+      if (
+        !pageRoles.includes(PageRole.FRONT) ||
+        !pageRoles.includes(PageRole.BACK)
+      ) {
+        throw new BadRequestException(
+          'Impossible d\'approuver une CNI incomplète (recto et verso requis).',
+        );
+      }
     }
 
     doc.status = dto.status;
@@ -79,7 +231,6 @@ export class VerificationService {
 
     const saved = await this.docRepository.save(doc);
 
-    // Mettre à jour le statut de vérification de l'utilisateur
     if (dto.status === DocumentStatus.APPROVED) {
       await this.updateUserVerificationStatus(doc.user_id);
     }

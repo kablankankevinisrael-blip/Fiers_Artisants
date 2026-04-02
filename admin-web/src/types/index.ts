@@ -24,17 +24,29 @@ export interface DashboardStats {
   pendingVerifications: number;
 }
 
+export interface VerificationDocumentPage {
+  id: string;
+  document_id: string;
+  file_url: string;
+  object_key?: string;
+  page_role: 'FRONT' | 'BACK' | 'MAIN' | 'EXTRA';
+  page_order: number;
+  created_at: string;
+}
+
 export interface VerificationDocument {
   id: string;
   user_id: string;
   document_type: string;
   file_url: string;
+  object_key?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   rejection_reason?: string;
   reviewed_by?: string;
   submitted_at: string;
   updated_at: string;
   user?: User;
+  pages?: VerificationDocumentPage[];
 }
 
 export interface ArtisanProfile {

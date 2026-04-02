@@ -3,10 +3,12 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { VerificationDocumentPage } from './verification-document-page.entity';
 
 export enum DocumentType {
   CNI = 'CNI',
@@ -37,8 +39,17 @@ export class VerificationDocument {
   @Column({ type: 'enum', enum: DocumentType })
   document_type: DocumentType;
 
-  @Column()
+  @Column({ nullable: true })
   file_url: string;
+
+  @Column({ nullable: true })
+  object_key: string;
+
+  @OneToMany(() => VerificationDocumentPage, (page) => page.document, {
+    cascade: true,
+    eager: true,
+  })
+  pages: VerificationDocumentPage[];
 
   @Column({ type: 'enum', enum: DocumentStatus, default: DocumentStatus.PENDING })
   status: DocumentStatus;

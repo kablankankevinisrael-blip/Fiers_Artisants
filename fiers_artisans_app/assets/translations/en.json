@@ -126,7 +126,9 @@
       "not_submitted": "Not submitted",
       "select_type": "Select document type",
       "upload_success": "Document submitted successfully",
-      "upload_error": "Failed to upload document"
+      "upload_error": "Failed to upload document",
+      "submitting": "Submitting…",
+      "submit_document": "Submit document"
     }
   },
   "portfolio": {

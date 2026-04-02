@@ -6,8 +6,8 @@ class VerificationRepository {
   final ApiClient _api = ApiClient();
 
   /// Uploads a file to the verifications bucket.
-  /// Returns the URL of the uploaded file.
-  Future<String> uploadDocument(String filePath) async {
+  /// Returns {url, objectKey} of the uploaded file.
+  Future<Map<String, String>> uploadDocument(String filePath) async {
     final formData = FormData.fromMap({
       'file': await MultipartFile.fromFile(filePath),
     });
@@ -17,10 +17,29 @@ class VerificationRepository {
       queryParameters: {'bucket': 'documents'},
     );
     final data = response.data;
-    return data['url'] as String;
+    return {
+      'url': data['url'] as String,
+      'objectKey': (data['objectKey'] as String?) ?? '',
+    };
   }
 
-  /// Submits a verification document to the backend.
+  /// Submits a verification document with structured files to the backend.
+  /// [files] is a list of {file_url, page_role} maps.
+  Future<Map<String, dynamic>> submitDocumentWithFiles({
+    required String documentType,
+    required List<Map<String, dynamic>> files,
+  }) async {
+    final response = await _api.post(
+      ApiEndpoints.verificationSubmit,
+      data: {
+        'document_type': documentType,
+        'files': files,
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Legacy single-file submit (backwards compatible).
   Future<Map<String, dynamic>> submitDocument({
     required String documentType,
     required String fileUrl,

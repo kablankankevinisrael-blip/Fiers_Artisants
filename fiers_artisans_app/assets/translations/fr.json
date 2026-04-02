@@ -126,7 +126,9 @@
       "not_submitted": "Non soumis",
       "select_type": "Sélectionner le type de document",
       "upload_success": "Document soumis avec succès",
-      "upload_error": "Échec de l'envoi du document"
+      "upload_error": "Échec de l'envoi du document",
+      "submitting": "Envoi en cours…",
+      "submit_document": "Envoyer le dossier"
     }
   },
   "portfolio": {

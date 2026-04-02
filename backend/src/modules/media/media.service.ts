@@ -109,6 +109,35 @@ export class MediaService {
     return this.minioClient.presignedGetObject(bucket, objectKey, 3600);
   }
 
+  async streamFile(
+    bucket: string,
+    objectKey: string,
+  ): Promise<{ stream: NodeJS.ReadableStream; contentType: string; size: number }> {
+    const stat = await this.minioClient.statObject(bucket, objectKey);
+    const stream = await this.minioClient.getObject(bucket, objectKey);
+    const contentType =
+      stat.metaData?.['content-type'] ||
+      this.guessMimeType(objectKey);
+    return { stream, contentType, size: stat.size };
+  }
+
+  private guessMimeType(objectKey: string): string {
+    const ext = objectKey.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
   async delete(bucket: string, objectKey: string): Promise<void> {
     await this.minioClient.removeObject(bucket, objectKey);
   }
