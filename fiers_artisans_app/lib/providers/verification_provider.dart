@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/repositories/verification_repository.dart';
+import '../services/push_notification_service.dart';
 
 /// Document-level status for a single document family (identity or diploma).
 enum DocFamilyStatus { none, pending, approved, rejected }
@@ -79,7 +80,11 @@ class VerificationState {
 class VerificationNotifier extends StateNotifier<VerificationState> {
   final VerificationRepository _repo;
 
-  VerificationNotifier(this._repo) : super(const VerificationState());
+  VerificationNotifier(this._repo) : super(const VerificationState()) {
+    // Global FCM bridge: any DOCUMENT_APPROVED/REJECTED push triggers refresh
+    // regardless of which screen is currently active.
+    PushNotificationService().onVerificationUpdate = () => refresh();
+  }
 
   static const _identityTypes = {'CNI', 'PASSPORT'};
   static const _diplomaTypes = {'DIPLOME', 'CERTIFICAT', 'ATTESTATION'};

@@ -8,7 +8,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/verification_provider.dart';
 import '../../providers/chat_provider.dart';
-import '../../services/push_notification_service.dart';
 
 class ArtisanDashboard extends ConsumerStatefulWidget {
   const ArtisanDashboard({super.key});
@@ -40,11 +39,6 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
       ref.read(chatProvider.notifier).loadConversations();
       ref.read(verificationProvider.notifier).refresh();
     });
-
-    // Wire FCM verification push → provider refresh
-    PushNotificationService().onVerificationUpdate = () {
-      ref.read(verificationProvider.notifier).refresh();
-    };
   }
 
   Future<void> _loadAvailability() async {
@@ -76,7 +70,6 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
 
   @override
   void dispose() {
-    PushNotificationService().onVerificationUpdate = null;
     WidgetsBinding.instance.removeObserver(this);
     _animController.dispose();
     super.dispose();
@@ -171,7 +164,9 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: _VerificationCard(
                       vState: vState,
-                      onTap: () => context.push('/artisan/verification'),
+                      onTap: () => context.push('/artisan/verification').then(
+                        (_) => ref.read(verificationProvider.notifier).refresh(),
+                      ),
                     ),
                   ),
                 ),
@@ -273,7 +268,9 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                           icon: Icons.verified_outlined,
                           label: 'artisan.verification.title'.tr(),
                           color: AppTheme.warning,
-                          onTap: () => context.push('/artisan/verification'),
+                          onTap: () => context.push('/artisan/verification').then(
+                            (_) => ref.read(verificationProvider.notifier).refresh(),
+                          ),
                         ),
                         _ActionTile(
                           icon: Icons.credit_card_outlined,

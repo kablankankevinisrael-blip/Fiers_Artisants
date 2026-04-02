@@ -196,9 +196,54 @@ export default function VerificationsPage() {
     }
   }, [tApp]);
 
+  // Silent refresh (no loading spinner) for polling
+  const silentRefresh = useCallback(async () => {
+    try {
+      const data = await getPendingVerifications();
+      setDocs(data);
+    } catch {
+      // Silently ignore polling errors
+    }
+  }, []);
+
   useEffect(() => {
     loadDocs();
   }, [loadDocs]);
+
+  // Visibility-aware polling: refresh every 30s when the tab is visible
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (!intervalId) {
+        intervalId = setInterval(silentRefresh, 30_000);
+      }
+    };
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        silentRefresh(); // immediate refresh on tab focus
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    // Start polling if page is already visible
+    if (document.visibilityState === 'visible') startPolling();
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [silentRefresh]);
 
   const closePreview = useCallback(() => {
     setPreviewDoc(null);
