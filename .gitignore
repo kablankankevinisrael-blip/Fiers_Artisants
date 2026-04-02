@@ -5,3 +5,4 @@ dist/
 *.log
 google-services.json
 GoogleService-Info.plist
+*-firebase-adminsdk-*.json
