@@ -196,13 +196,13 @@ export default function VerificationsPage() {
     }
   }, [tApp]);
 
-  // Silent refresh (no loading spinner) for polling
+  // Silent refresh (no loading spinner) for SSE and polling
   const silentRefresh = useCallback(async () => {
     try {
       const data = await getPendingVerifications();
       setDocs(data);
     } catch {
-      // Silently ignore polling errors
+      // Silently ignore refresh errors
     }
   }, []);
 
@@ -210,36 +210,66 @@ export default function VerificationsPage() {
     loadDocs();
   }, [loadDocs]);
 
-  // Visibility-aware polling: refresh every 30s when the tab is visible
+  // SSE: real-time admin refresh on new submissions and reviews.
+  // Falls back to 30s polling if SSE fails or disconnects.
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let es: EventSource | null = null;
+    let fallbackId: ReturnType<typeof setInterval> | null = null;
+
+    const startSSE = () => {
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('admin_token')
+        : null;
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+      // EventSource doesn't support custom headers, pass token as query param
+      const url = `${baseUrl}/admin/verifications/events${token ? `?token=${token}` : ''}`;
+      es = new EventSource(url);
+
+      es.onmessage = () => {
+        silentRefresh();
+      };
+
+      es.onerror = () => {
+        // SSE disconnected — start fallback polling
+        es?.close();
+        es = null;
+        startPolling();
+      };
+
+      // SSE connected — stop fallback polling
+      stopPolling();
+    };
 
     const startPolling = () => {
-      if (!intervalId) {
-        intervalId = setInterval(silentRefresh, 30_000);
+      if (!fallbackId) {
+        fallbackId = setInterval(silentRefresh, 30_000);
       }
     };
     const stopPolling = () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
+      if (fallbackId) {
+        clearInterval(fallbackId);
+        fallbackId = null;
       }
     };
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
-        silentRefresh(); // immediate refresh on tab focus
-        startPolling();
+        silentRefresh();
+        if (!es) startSSE();
       } else {
+        es?.close();
+        es = null;
         stopPolling();
       }
     };
 
-    // Start polling if page is already visible
-    if (document.visibilityState === 'visible') startPolling();
+    if (document.visibilityState === 'visible') {
+      startSSE();
+    }
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
+      es?.close();
       stopPolling();
       document.removeEventListener('visibilitychange', onVisibility);
     };

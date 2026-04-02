@@ -64,6 +64,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           return;
         }
         state = AuthState(status: AuthStatus.authenticated, user: user);
+        PushNotificationService().initialize().catchError((_) {});
       } catch (e) {
         if (_isOtpRequired(e)) {
           debugPrint('[Auth] checkAuth: 403 OTP_REQUIRED from backend');

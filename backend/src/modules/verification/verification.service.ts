@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
+import { Subject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   VerificationDocument,
   DocumentType,
@@ -38,6 +40,19 @@ export class VerificationService {
     private readonly userRepository: Repository<User>,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  /** Emits on new submissions and reviews — admin SSE subscribes to this. */
+  private readonly _docEvents$ = new Subject<{ type: string; documentId: string }>();
+
+  /** SSE stream for admin: emits MessageEvents on document changes. */
+  get docEvents$(): Observable<MessageEvent> {
+    return this._docEvents$.pipe(
+      map(
+        (payload) =>
+          ({ data: payload }) as MessageEvent,
+      ),
+    );
+  }
 
   private getFamilyTypes(docType: DocumentType): DocumentType[] {
     if (IDENTITY_TYPES.includes(docType)) return IDENTITY_TYPES;
@@ -101,6 +116,7 @@ export class VerificationService {
         page_order: 0,
       });
       await this.pageRepository.save(page);
+      this._docEvents$.next({ type: 'DOCUMENT_SUBMITTED', documentId: saved.id });
       return this.docRepository.findOne({
         where: { id: saved.id },
         relations: ['pages'],
@@ -137,6 +153,8 @@ export class VerificationService {
       }),
     );
     await this.pageRepository.save(pages);
+
+    this._docEvents$.next({ type: 'DOCUMENT_SUBMITTED', documentId: saved.id });
 
     return this.docRepository.findOne({
       where: { id: saved.id },
@@ -308,6 +326,8 @@ export class VerificationService {
         data: { documentId: doc.id, documentType: doc.document_type },
       })
       .catch(() => {});
+
+    this._docEvents$.next({ type: 'DOCUMENT_REVIEWED', documentId: doc.id });
 
     return saved;
   }
