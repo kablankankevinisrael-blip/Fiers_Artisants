@@ -1,0 +1,123 @@
+PS C:\Users\melly\Fiers-Artisans\admin-web> npm run dev
+
+> admin-web@0.1.0 dev
+> next dev -p 3002
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://192.168.1.23:3002
+- Environments: .env.local
+✓ Ready in 935ms
+
+ GET /verifications 200 in 955ms (next.js: 421ms, application-code: 534ms)
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+              <HTTPAccessFallbackErrorBoundary pathname="/verificat..." notFound={{...}} forbidden={undefined} ...>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/verificat..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                      <SegmentViewNode type="layout" pagePath="(dashboard...">
+                        <SegmentTrieNode>
+                        <script>
+                        <script>
+                        <script>
+                        <script>
+                        <script>
+                        <script>
+                        <ClientSegmentRoot Component={function DashboardLayout} slots={{children:{...}}} ...>
+                          <DashboardLayout params={Promise}>
++                           <div className="flex h-screen overflow-hidden">
+-                           <section
+-                             aria-label="Notifications alt+T"
+-                             tabindex="-1"
+-                             aria-live="polite"
+-                             aria-relevant="additions text"
+-                             aria-atomic="false"
+-                           >
+                    ...
+        ...
+
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at div (<anonymous>)
+    at DashboardLayout (src/app/(dashboard)/layout.tsx:34:5)
+  32 |
+  33 |   return (
+> 34 |     <div className="flex h-screen overflow-hidden">
+     |     ^
+  35 |       <Sidebar />
+  36 |       <div className="flex-1 flex flex-col overflow-hidden">
+  37 |         <Topbar />
+ GET /verifications 200 in 82ms (next.js: 7ms, application-code: 76ms)
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={{...}} forbidden={undefined} unauthorized={undefined}>
+              <HTTPAccessFallbackErrorBoundary pathname="/verificat..." notFound={{...}} forbidden={undefined} ...>
+                <RedirectBoundary>
+                  <RedirectErrorBoundary router={{...}}>
+                    <InnerLayoutRouter url="/verificat..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                      <SegmentViewNode type="layout" pagePath="(dashboard...">
+                        <SegmentTrieNode>
+                        <script>
+                        <script>
+                        <script>
+                        <script>
+                        <script>
+                        <script>
+                        <ClientSegmentRoot Component={function DashboardLayout} slots={{children:{...}}} ...>
+                          <DashboardLayout params={Promise}>
++                           <div className="flex h-screen overflow-hidden">
+-                           <section
+-                             aria-label="Notifications alt+T"
+-                             tabindex="-1"
+-                             aria-live="polite"
+-                             aria-relevant="additions text"
+-                             aria-atomic="false"
+-                           >
+                    ...
+        ...
+
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at div (<anonymous>)
+    at DashboardLayout (src/app/(dashboard)/layout.tsx:34:5)
+  32 |
+  33 |   return (
+> 34 |     <div className="flex h-screen overflow-hidden">
+     |     ^
+  35 |       <Sidebar />
+  36 |       <div className="flex-1 flex flex-col overflow-hidden">
+  37 |         <Topbar />
+ GET /login 200 in 217ms (next.js: 82ms, application-code: 135ms)
+ GET / 200 in 105ms (next.js: 63ms, application-code: 42ms)
+ GET /verifications 200 in 38ms (next.js: 9ms, application-code: 28ms)
+ GET / 200 in 32ms (next.js: 5ms, application-code: 27ms)

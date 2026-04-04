@@ -30,15 +30,17 @@ async function loadMessages(locale: string): Promise<Messages> {
   return cachedMessages!;
 }
 
-function getInitialLocale(): string {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('admin_locale') || process.env.NEXT_PUBLIC_DEFAULT_LOCALE || 'fr';
-  }
-  return process.env.NEXT_PUBLIC_DEFAULT_LOCALE || 'fr';
-}
+const DEFAULT_LOCALE = process.env.NEXT_PUBLIC_DEFAULT_LOCALE || 'fr';
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState(getInitialLocale);
+  const [locale, setLocaleState] = useState(DEFAULT_LOCALE);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('admin_locale');
+    if (saved && saved !== locale) {
+      setLocaleState(saved);
+    }
+  }, []);
   const [messages, setMessages] = useState<Messages | null>(null);
 
   useEffect(() => {

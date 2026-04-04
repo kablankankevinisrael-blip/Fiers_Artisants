@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { loginAdmin } from '@/lib/api';
 import { saveAuth, getUser, getToken, logout as clearAuth } from '@/lib/auth';
 import type { User } from '@/types';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window === 'undefined') return null;
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     const token = getToken();
     const savedUser = getUser();
-    if (token && savedUser && savedUser.role === 'ADMIN') return savedUser;
-    return null;
-  });
-  const [loading] = useState(false);
+    if (token && savedUser && savedUser.role === 'ADMIN') {
+      setUser(savedUser);
+    }
+    setLoading(false);
+  }, []);
 
   const login = useCallback(async (phone: string, password: string) => {
     const data = await loginAdmin(phone, password);
