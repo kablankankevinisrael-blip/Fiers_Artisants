@@ -1,9 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/errors/error_mapper.dart';
 import '../core/storage/secure_storage.dart';
 import '../data/models/user_model.dart';
 import '../data/repositories/auth_repository.dart';
+import '../services/chat_realtime_service.dart';
 import '../services/push_notification_service.dart';
 
 // Auth state
@@ -65,9 +66,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }
         state = AuthState(status: AuthStatus.authenticated, user: user);
         PushNotificationService().initialize().catchError((_) {});
+        _connectRealtime(user.id);
       } catch (e) {
-        if (_isOtpRequired(e)) {
-          debugPrint('[Auth] checkAuth: 403 OTP_REQUIRED from backend');
+        final appError = mapException(e);
+        if (appError.isOtpRequired) {
+          debugPrint('[Auth] checkAuth: OTP required (code=${appError.code})');
         }
         await SecureStorage.clearAll();
         state = const AuthState(status: AuthStatus.unauthenticated);
@@ -90,18 +93,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final role = (userMap['role'] ?? '').toString();
       debugPrint('[Auth] login role from backend: "$role"');
       if (role.isEmpty) {
-        debugPrint('[Auth] ⚠️ role is empty — check backend response structure');
+        debugPrint(
+          '[Auth] ⚠️ role is empty — check backend response structure',
+        );
       }
       final userId = userMap['id']?.toString() ?? '';
-      await SecureStorage.saveUserInfo(userId: userId, role: role.toLowerCase());
+      await SecureStorage.saveUserInfo(
+        userId: userId,
+        role: role.toLowerCase(),
+      );
 
       final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
       PushNotificationService().initialize().catchError((_) {});
+      _connectRealtime(userId);
       return true;
     } catch (e) {
-      // Détecter 403 OTP_REQUIRED
-      if (_isOtpRequired(e)) {
+      final appError = mapException(e);
+      debugPrint('[Auth] login error: $appError');
+
+      // Détecter OTP requis via le code stable
+      if (appError.isOtpRequired) {
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
           otpRequired: true,
@@ -111,7 +123,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
-        error: _extractError(e),
+        error: appError.userMessage,
       );
       return false;
     }
@@ -154,16 +166,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final role = (userMap['role'] ?? 'ARTISAN').toString();
       debugPrint('[Auth] registerArtisan role from backend: "$role"');
       final userId = userMap['id']?.toString() ?? '';
-      await SecureStorage.saveUserInfo(userId: userId, role: role.toLowerCase());
+      await SecureStorage.saveUserInfo(
+        userId: userId,
+        role: role.toLowerCase(),
+      );
 
       final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
       PushNotificationService().initialize().catchError((_) {});
+      _connectRealtime(userId);
       return true;
     } catch (e) {
+      final appError = mapException(e);
+      debugPrint('[Auth] registerArtisan error: $appError');
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
-        error: _extractError(e),
+        error: appError.userMessage,
       );
       return false;
     }
@@ -198,16 +216,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final role = (userMap['role'] ?? 'CLIENT').toString();
       debugPrint('[Auth] registerClient role from backend: "$role"');
       final userId = userMap['id']?.toString() ?? '';
-      await SecureStorage.saveUserInfo(userId: userId, role: role.toLowerCase());
+      await SecureStorage.saveUserInfo(
+        userId: userId,
+        role: role.toLowerCase(),
+      );
 
       final user = UserModel.fromJson(userMap);
       state = AuthState(status: AuthStatus.authenticated, user: user);
       PushNotificationService().initialize().catchError((_) {});
+      _connectRealtime(userId);
       return true;
     } catch (e) {
+      final appError = mapException(e);
+      debugPrint('[Auth] registerClient error: $appError');
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
-        error: _extractError(e),
+        error: appError.userMessage,
       );
       return false;
     }
@@ -232,106 +256,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    ChatRealtimeService().disconnect();
     await SecureStorage.clearAll();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
-  /// Détecte une réponse 403 OTP_REQUIRED du backend.
-  /// Le GlobalExceptionFilter peut renvoyer message comme String ou List.
-  bool _isOtpRequired(dynamic e) {
-    if (e is DioException && e.response?.statusCode == 403) {
-      var data = e.response?.data;
-      if (data is Map<String, dynamic>) {
-        // Unwrap enveloppe {statusCode, data, timestamp} si présente
-        if (data.containsKey('data') && data.containsKey('statusCode')) {
-          data = data['data'];
-        }
-        if (data is Map) {
-          if (_messageContains(data['message'], 'OTP_REQUIRED')) return true;
-          // Fallback: error == 'Forbidden' + message contient OTP_REQUIRED
-          if (data['error'] == 'Forbidden' &&
-              _messageContains(data['message'], 'OTP_REQUIRED')) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  /// Vérifie si [message] (String ou List) contient la valeur cible.
-  bool _messageContains(dynamic message, String target) {
-    if (message is String) return message == target;
-    if (message is List) return message.any((m) => m.toString() == target);
-    return false;
+  void _connectRealtime(String userId) {
+    if (userId.isEmpty) return;
+    ChatRealtimeService().connect(userId: userId).catchError((_) {});
   }
 
   /// Extrait access_token et refresh_token depuis la réponse backend (déjà unwrappée).
   (String, String) _extractTokens(Map<String, dynamic> data) {
-    final access = data['access_token']?.toString() ??
+    final access =
+        data['access_token']?.toString() ??
         data['accessToken']?.toString() ??
         '';
-    final refresh = data['refresh_token']?.toString() ??
+    final refresh =
+        data['refresh_token']?.toString() ??
         data['refreshToken']?.toString() ??
         '';
     if (access.isEmpty) {
       debugPrint('[Auth] ⚠️ access_token is empty in response: ${data.keys}');
     }
     return (access, refresh);
-  }
-
-  String _extractError(dynamic e) {
-    if (e is DioException) {
-      // Extraire le message du backend (peut être dans l'enveloppe ou direct)
-      var data = e.response?.data;
-      if (data is Map<String, dynamic>) {
-        // Unwrap l'enveloppe si présente
-        if (data.containsKey('data') && data.containsKey('statusCode')) {
-          data = data['data'];
-        }
-        if (data is Map<String, dynamic>) {
-          final message = data['message'];
-          if (message is List) return message.join(', ');
-          if (message is String) return message;
-        }
-      }
-      // Messages réseau détaillés
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-          return 'Le serveur met trop de temps à répondre. '
-              'Vérifiez que le backend est démarré sur le port 3000.';
-        case DioExceptionType.receiveTimeout:
-          return 'Réponse du serveur trop lente. Réessayez.';
-        case DioExceptionType.connectionError:
-          final msg = e.error?.toString() ?? '';
-          if (msg.contains('Connection refused') ||
-              msg.contains('ECONNREFUSED')) {
-            return 'Serveur indisponible (connexion refusée). '
-                'Vérifiez que le backend et les services Docker sont lancés.';
-          }
-          if (msg.contains('Network is unreachable') ||
-              msg.contains('SocketException')) {
-            return 'Réseau inaccessible. Vérifiez votre Wi-Fi '
-                'et que le téléphone est sur le même réseau que le PC.';
-          }
-          return 'Impossible de joindre le serveur. '
-              'Vérifiez votre connexion réseau.';
-        case DioExceptionType.badResponse:
-          final code = e.response?.statusCode;
-          if (code == 401) return 'Identifiants incorrects.';
-          if (code == 403) return 'Accès refusé. Veuillez vérifier votre téléphone.';
-          if (code == 409) return 'Ce compte existe déjà.';
-          if (code == 400) return 'Données invalides. Vérifiez les champs.';
-          if (code == 500) return 'Erreur interne du serveur. Réessayez.';
-          return 'Erreur serveur ($code).';
-        default:
-          return e.message ?? 'Erreur réseau inattendue.';
-      }
-    }
-    if (e is Exception) {
-      return e.toString().replaceAll('Exception: ', '');
-    }
-    return 'Une erreur est survenue.';
   }
 }

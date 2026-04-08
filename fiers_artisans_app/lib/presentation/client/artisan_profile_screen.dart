@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../config/constants.dart';
 import '../../config/app_config.dart';
+import '../../providers/chat_provider.dart';
 import '../../providers/artisan_provider.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/repositories/analytics_repository.dart';
@@ -27,6 +28,8 @@ class ArtisanProfileScreen extends ConsumerStatefulWidget {
 
 class _ArtisanProfileScreenState
     extends ConsumerState<ArtisanProfileScreen> {
+  bool _isOpeningChat = false;
+
   @override
   void initState() {
     super.initState();
@@ -176,10 +179,8 @@ class _ArtisanProfileScreenState
                         child: AppButton(
                           text: 'artisan.contact.chat'.tr(),
                           icon: Icons.chat_bubble_outline,
-                          onPressed: () {
-                            // TODO: Navigate to chat
-                            context.push('/chat');
-                          },
+                          isLoading: _isOpeningChat,
+                          onPressed: () => _openChatWithArtisan(artisan.userId),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -352,6 +353,26 @@ class _ArtisanProfileScreenState
         'https://wa.me/${AppConfig.phonePrefix}$phone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openChatWithArtisan(String participantUserId) async {
+    if (_isOpeningChat) return;
+    setState(() => _isOpeningChat = true);
+    try {
+      final convo =
+          await ref.read(chatProvider.notifier).createConversation(participantUserId);
+      if (!mounted) return;
+      context.push('/chat/${convo.id}');
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible de demarrer la conversation.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningChat = false);
+      }
     }
   }
 }

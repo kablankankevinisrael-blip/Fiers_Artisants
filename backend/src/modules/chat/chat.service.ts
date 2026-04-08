@@ -145,12 +145,15 @@ export class ChatService {
     page = 1,
     limit = 50,
   ): Promise<Message[]> {
-    return this.messageModel
+    const messages = await this.messageModel
       .find({ conversationId })
-      .sort({ sentAt: 1 })
+      // Return latest messages first, then re-order in ascending order for UI rendering.
+      .sort({ sentAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
+
+    return messages.reverse();
   }
 
   async sendMessage(

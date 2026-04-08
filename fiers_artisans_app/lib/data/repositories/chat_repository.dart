@@ -6,11 +6,28 @@ import '../models/message_model.dart';
 class ChatRepository {
   final ApiClient _api = ApiClient();
 
+  Map<String, dynamic> _asDataMap(dynamic payload) {
+    if (payload is Map<String, dynamic>) {
+      if (payload['data'] is Map<String, dynamic>) {
+        return payload['data'] as Map<String, dynamic>;
+      }
+      return payload;
+    }
+    return <String, dynamic>{};
+  }
+
+  List<dynamic> _asDataList(dynamic payload) {
+    if (payload is List) return payload;
+    if (payload is Map<String, dynamic> && payload['data'] is List) {
+      return payload['data'] as List;
+    }
+    return <dynamic>[];
+  }
+
   Future<List<ConversationModel>> getConversations() async {
     final response = await _api.get(ApiEndpoints.conversations);
-    final list =
-        response.data is List ? response.data : response.data['data'] ?? [];
-    return (list as List).map((e) => ConversationModel.fromJson(e)).toList();
+    final list = _asDataList(response.data);
+    return list.map((e) => ConversationModel.fromJson(e)).toList();
   }
 
   Future<List<MessageModel>> getMessages(
@@ -21,9 +38,8 @@ class ChatRepository {
       ApiEndpoints.messages(conversationId),
       queryParameters: {'page': page, 'limit': 50},
     );
-    final list =
-        response.data is List ? response.data : response.data['data'] ?? [];
-    return (list as List).map((e) => MessageModel.fromJson(e)).toList();
+    final list = _asDataList(response.data);
+    return list.map((e) => MessageModel.fromJson(e)).toList();
   }
 
   /// Send a message via REST (reliable path).
@@ -41,7 +57,7 @@ class ChatRepository {
       ApiEndpoints.messages(conversationId),
       data: body,
     );
-    return MessageModel.fromJson(response.data);
+    return MessageModel.fromJson(_asDataMap(response.data));
   }
 
   /// Create a new conversation with a participant.
@@ -50,7 +66,7 @@ class ChatRepository {
       ApiEndpoints.conversations,
       data: {'participantId': participantId},
     );
-    return ConversationModel.fromJson(response.data);
+    return ConversationModel.fromJson(_asDataMap(response.data));
   }
 
   /// Mark all messages in a conversation as read.

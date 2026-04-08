@@ -1,10 +1,9 @@
 import {
   Injectable,
-  UnauthorizedException,
-  ConflictException,
-  ForbiddenException,
+  HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { BusinessException } from '../../common/exceptions/business.exception';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -44,7 +43,7 @@ export class AuthService {
       where: { phone_number: dto.phone_number },
     });
     if (existing) {
-      throw new ConflictException('Ce numéro de téléphone est déjà utilisé.');
+      throw new BusinessException('AUTH_PHONE_ALREADY_USED', 'Ce numéro de téléphone est déjà utilisé.', HttpStatus.CONFLICT);
     }
 
     // Créer l'utilisateur
@@ -80,7 +79,7 @@ export class AuthService {
       where: { phone_number: dto.phone_number },
     });
     if (existing) {
-      throw new ConflictException('Ce numéro de téléphone est déjà utilisé.');
+      throw new BusinessException('AUTH_PHONE_ALREADY_USED', 'Ce numéro de téléphone est déjà utilisé.', HttpStatus.CONFLICT);
     }
 
     const password_hash = await bcrypt.hash(dto.password, 12);
@@ -128,7 +127,7 @@ export class AuthService {
       where: { phone_number: dto.phone_number },
     });
     if (!user) {
-      throw new UnauthorizedException('Identifiants invalides.');
+      throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -136,11 +135,11 @@ export class AuthService {
       user.password_hash,
     );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Identifiants invalides.');
+      throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
     }
 
     if (!user.is_active) {
-      throw new UnauthorizedException('Compte désactivé.');
+      throw new BusinessException('AUTH_ACCOUNT_DISABLED', 'Compte désactivé.', HttpStatus.UNAUTHORIZED);
     }
 
     // Si téléphone non vérifié → envoyer OTP et bloquer
@@ -150,7 +149,7 @@ export class AuthService {
       } catch (e) {
         this.logger.warn(`OTP send failed during login for ${user.phone_number}: ${e.message}`);
       }
-      throw new ForbiddenException('OTP_REQUIRED');
+      throw new BusinessException('AUTH_OTP_REQUIRED', 'Vérification du téléphone requise.', HttpStatus.FORBIDDEN);
     }
 
     this.analyticsService.logActivity({ actorId: user.id, action: 'LOGIN', metadata: { role: user.role } });
@@ -160,7 +159,7 @@ export class AuthService {
   async refreshToken(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user || !user.is_active) {
-      throw new UnauthorizedException('Token invalide.');
+      throw new BusinessException('AUTH_INVALID_TOKEN', 'Token invalide.', HttpStatus.UNAUTHORIZED);
     }
     return this.generateTokens(user);
   }

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../config/constants.dart';
 import '../../data/models/message_model.dart';
@@ -18,27 +21,73 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _messageCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  static final RegExp _conversationIdPattern = RegExp(r'^[a-fA-F0-9]{24}$');
   String? _currentUserId;
+  Timer? _pollTimer;
+  int _lastMessageCount = 0;
+  bool _invalidConversationId = false;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
+    final conversationId = widget.conversationId.trim();
+    if (!_conversationIdPattern.hasMatch(conversationId)) {
+      _invalidConversationId = true;
+      return;
+    }
+    Future.microtask(_bootstrapConversation);
+  }
+
+  Future<void> _bootstrapConversation() async {
+    try {
       _currentUserId = await SecureStorage.getUserId();
-      if (!mounted) return;
-      setState(() {});
-      final notifier = ref.read(chatProvider.notifier);
-      await notifier.loadMessages(widget.conversationId);
-      notifier.markAsRead(widget.conversationId);
-      _scrollToBottom();
-    });
+    } catch (_) {
+      // On web, secure storage can fail transiently; continue without user id.
+      _currentUserId = null;
+    }
+
+    if (!mounted) return;
+    setState(() {});
+
+    final notifier = ref.read(chatProvider.notifier);
+    await notifier.loadMessages(widget.conversationId);
+    await notifier.markAsRead(widget.conversationId);
+    _scrollToBottom();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _messageCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _resolveCurrentUserIdIfNeeded() async {
+    if ((_currentUserId ?? '').isNotEmpty) return;
+    try {
+      _currentUserId = await SecureStorage.getUserId();
+      if (!mounted) return;
+      setState(() {});
+    } catch (_) {
+      // Keep null and let caller handle with explicit UX.
+    }
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (!mounted) return;
+      if (ref.read(chatProvider).authRequired) return;
+      final beforeCount = ref.read(chatProvider).messages.length;
+      await ref.read(chatProvider.notifier).loadMessages(widget.conversationId);
+      ref.read(chatProvider.notifier).markAsRead(widget.conversationId);
+      final afterCount = ref.read(chatProvider).messages.length;
+      if (afterCount > beforeCount) {
+        _scrollToBottom();
+      }
+    });
   }
 
   @override
@@ -46,6 +95,67 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final theme = Theme.of(context);
     final chatState = ref.watch(chatProvider);
     final messages = chatState.messages;
+
+    if (_invalidConversationId) {
+      return Scaffold(
+        appBar: AppBar(title: Text('chat.title'.tr())),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 34),
+                const SizedBox(height: 12),
+                Text(
+                  'Conversation invalide. Veuillez ouvrir une conversation depuis la liste.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => context.go('/chat'),
+                  child: const Text('Retour aux conversations'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (messages.length > _lastMessageCount) {
+      _lastMessageCount = messages.length;
+      _scrollToBottom();
+    }
+
+    if (chatState.authRequired) {
+      return Scaffold(
+        appBar: AppBar(title: Text('chat.title'.tr())),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline, size: 34),
+                const SizedBox(height: 12),
+                Text(
+                  'Session expiree. Veuillez vous reconnecter.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Se reconnecter'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -57,7 +167,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: messages.isEmpty
                 ? Center(
-                    child: Text('Aucun message',
+                child: Text(chatState.errorMessage ?? 'Aucun message',
                         style: theme.textTheme.bodySmall))
                 : ListView.builder(
                     controller: _scrollCtrl,
@@ -163,9 +273,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  void _send() {
+  Future<void> _send() async {
+    if (_invalidConversationId) return;
     final text = _messageCtrl.text.trim();
-    if (text.isEmpty || _currentUserId == null) return;
+    if (text.isEmpty) return;
+
+    await _resolveCurrentUserIdIfNeeded();
+    if ((_currentUserId ?? '').isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Session invalide. Veuillez vous reconnecter.')),
+      );
+      return;
+    }
+
     _messageCtrl.clear();
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
@@ -189,7 +310,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           content: text,
           tempId: tempId,
         )
-        .then((_) {})
+        .then((_) {
+          ref.read(chatProvider.notifier).loadMessages(widget.conversationId);
+          ref.read(chatProvider.notifier).loadConversations();
+        })
         .catchError((_) {
       ref.read(chatProvider.notifier).removeMessage(tempId);
     });

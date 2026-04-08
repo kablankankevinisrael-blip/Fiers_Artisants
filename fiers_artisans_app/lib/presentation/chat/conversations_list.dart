@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,11 +18,30 @@ class ConversationsListScreen extends ConsumerStatefulWidget {
 
 class _ConversationsListScreenState
     extends ConsumerState<ConversationsListScreen> {
+  Timer? _pollTimer;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-        () => ref.read(chatProvider.notifier).loadConversations());
+    Future.microtask(() async {
+      await ref.read(chatProvider.notifier).loadConversations();
+      _startPolling();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (!mounted) return;
+      if (ref.read(chatProvider).authRequired) return;
+      ref.read(chatProvider.notifier).loadConversations();
+    });
   }
 
   @override
@@ -28,12 +49,40 @@ class _ConversationsListScreenState
     final theme = Theme.of(context);
     final chatState = ref.watch(chatProvider);
 
+    if (chatState.authRequired) {
+      return Scaffold(
+        appBar: AppBar(title: Text('chat.title'.tr())),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline, size: 34),
+                const SizedBox(height: 12),
+                Text(
+                  'Session expiree. Veuillez vous reconnecter.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Se reconnecter'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text('chat.title'.tr())),
       body: chatState.conversations.isEmpty
           ? EmptyState(
               icon: Icons.chat_bubble_outline,
-              title: 'chat.empty'.tr(),
+              title: chatState.errorMessage ?? 'chat.empty'.tr(),
             )
           : ListView.builder(
               physics: const BouncingScrollPhysics(),

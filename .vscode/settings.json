@@ -1,4 +1,5 @@
 {
     "chat.agent.maxRequests": 50,
-    "chat.tools.terminal.autoReplyToPrompts": true
+    "chat.tools.terminal.autoReplyToPrompts": true,
+    "workbench.browser.openLocalhostLinks": true
 }

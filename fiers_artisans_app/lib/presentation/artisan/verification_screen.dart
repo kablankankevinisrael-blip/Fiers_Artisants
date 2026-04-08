@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -191,14 +191,14 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
   final ImagePicker _picker = ImagePicker();
 
   // CNI slots
-  File? _frontFile;
-  File? _backFile;
+  _PickedImage? _frontFile;
+  _PickedImage? _backFile;
 
   // Passport / Diploma single main
-  File? _mainFile;
+  _PickedImage? _mainFile;
 
   // Extra pages for diploma-like docs
-  final List<File> _extraFiles = [];
+  final List<_PickedImage> _extraFiles = [];
 
   bool _submitting = false;
 
@@ -233,13 +233,19 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
     }
   }
 
-  Future<File?> _pickImage() async {
+  Future<_PickedImage?> _pickImage() async {
     final picked = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
     );
     if (picked == null) return null;
-    return File(picked.path);
+    final bytes = await picked.readAsBytes();
+    return _PickedImage(
+      bytes: bytes,
+      filename: picked.name.isNotEmpty
+          ? picked.name
+          : 'document_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
   }
 
   Future<void> _submit() async {
@@ -250,8 +256,14 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
       final List<Map<String, dynamic>> files = [];
 
       if (_isCNI) {
-        final front = await widget.repo.uploadDocument(_frontFile!.path);
-        final back = await widget.repo.uploadDocument(_backFile!.path);
+        final front = await widget.repo.uploadDocumentBytes(
+          bytes: _frontFile!.bytes,
+          filename: _frontFile!.filename,
+        );
+        final back = await widget.repo.uploadDocumentBytes(
+          bytes: _backFile!.bytes,
+          filename: _backFile!.filename,
+        );
         files.add({
           'file_url': front['url'],
           'object_key': front['objectKey'],
@@ -265,7 +277,10 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
           'page_order': 1,
         });
       } else if (_isPassport) {
-        final main = await widget.repo.uploadDocument(_mainFile!.path);
+        final main = await widget.repo.uploadDocumentBytes(
+          bytes: _mainFile!.bytes,
+          filename: _mainFile!.filename,
+        );
         files.add({
           'file_url': main['url'],
           'object_key': main['objectKey'],
@@ -273,7 +288,10 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
           'page_order': 0,
         });
       } else if (_isDiplomaLike) {
-        final main = await widget.repo.uploadDocument(_mainFile!.path);
+        final main = await widget.repo.uploadDocumentBytes(
+          bytes: _mainFile!.bytes,
+          filename: _mainFile!.filename,
+        );
         files.add({
           'file_url': main['url'],
           'object_key': main['objectKey'],
@@ -281,8 +299,10 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
           'page_order': 0,
         });
         for (int i = 0; i < _extraFiles.length; i++) {
-          final extra =
-              await widget.repo.uploadDocument(_extraFiles[i].path);
+          final extra = await widget.repo.uploadDocumentBytes(
+            bytes: _extraFiles[i].bytes,
+            filename: _extraFiles[i].filename,
+          );
           files.add({
             'file_url': extra['url'],
             'object_key': extra['objectKey'],
@@ -308,6 +328,7 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
         Navigator.of(context).pop();
       }
     } catch (e) {
+      debugPrint('Verification submit error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -535,7 +556,7 @@ class _DocumentBuilderScreenState extends State<_DocumentBuilderScreen> {
 
 class _ImageSlot extends StatelessWidget {
   final String label;
-  final File? file;
+  final _PickedImage? file;
   final bool required;
   final VoidCallback onPick;
   final VoidCallback onRemove;
@@ -616,8 +637,8 @@ class _ImageSlot extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  file!,
+                child: Image.memory(
+                  file!.bytes,
                   height: 180,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -665,6 +686,16 @@ class _ImageSlot extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PickedImage {
+  final Uint8List bytes;
+  final String filename;
+
+  const _PickedImage({
+    required this.bytes,
+    required this.filename,
+  });
 }
 
 // ─── Verification Step Widget (unchanged) ─────────────────────────────────────

@@ -40,39 +40,22 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
-  }) =>
-      _dio.get(path, queryParameters: queryParameters, options: options);
+  }) => _dio.get(path, queryParameters: queryParameters, options: options);
 
   // POST
-  Future<Response> post(
-    String path, {
-    dynamic data,
-    Options? options,
-  }) =>
+  Future<Response> post(String path, {dynamic data, Options? options}) =>
       _dio.post(path, data: data, options: options);
 
   // PUT
-  Future<Response> put(
-    String path, {
-    dynamic data,
-    Options? options,
-  }) =>
+  Future<Response> put(String path, {dynamic data, Options? options}) =>
       _dio.put(path, data: data, options: options);
 
   // PATCH
-  Future<Response> patch(
-    String path, {
-    dynamic data,
-    Options? options,
-  }) =>
+  Future<Response> patch(String path, {dynamic data, Options? options}) =>
       _dio.patch(path, data: data, options: options);
 
   // DELETE
-  Future<Response> delete(
-    String path, {
-    dynamic data,
-    Options? options,
-  }) =>
+  Future<Response> delete(String path, {dynamic data, Options? options}) =>
       _dio.delete(path, data: data, options: options);
 
   // Upload file
@@ -111,7 +94,9 @@ class _UnwrapInterceptor extends Interceptor {
 class _AuthInterceptor extends Interceptor {
   @override
   void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     final token = await SecureStorage.getAccessToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -147,12 +132,7 @@ class _AuthInterceptor extends Interceptor {
 
       final response = await Dio(
         BaseOptions(baseUrl: AppConfig.apiBaseUrl),
-      ).post(
-        ApiEndpoints.refreshToken,
-        options: Options(headers: {
-          'Authorization': 'Bearer $refreshToken',
-        }),
-      );
+      ).post(ApiEndpoints.refreshToken, data: {'refresh_token': refreshToken});
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Unwrap l'enveloppe backend {statusCode, data, timestamp}

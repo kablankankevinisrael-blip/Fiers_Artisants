@@ -22,6 +22,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(ChatGateway.name);
   private userSockets = new Map<string, string>(); // userId -> socketId
 
+  private toClientMessage(message: any) {
+    if (!message) return message;
+    const plain = typeof message.toObject === 'function' ? message.toObject() : message;
+    return {
+      ...plain,
+      id: plain?._id?.toString?.() ?? plain?.id?.toString?.() ?? '',
+      _id: plain?._id?.toString?.() ?? plain?.id?.toString?.() ?? '',
+    };
+  }
+
   handleConnection(client: Socket) {
     const userId = client.handshake.query.userId as string;
     if (userId) {
@@ -70,12 +80,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       data.mediaUrl,
     );
 
+    const payload = this.toClientMessage(message);
+
     // Émettre aux participants de la conversation
     this.server
       .to(`conversation:${data.conversationId}`)
-      .emit('newMessage', message);
+      .emit('newMessage', payload);
 
-    return message;
+    return payload;
   }
 
   @SubscribeMessage('markAsRead')

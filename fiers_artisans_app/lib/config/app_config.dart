@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Configuration centralisée — les valeurs réseau sont lues depuis .env
@@ -9,6 +10,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 ///
 /// Variables .env disponibles :
 ///   API_HOST       (défaut: 10.0.2.2)
+///   API_HOST_WEB   (prioritaire sur web, défaut: localhost)
+///   API_HOST_MOBILE(prioritaire mobile, défaut: 10.0.2.2)
 ///   API_PORT       (défaut: 3000)
 ///   API_SCHEME     (défaut: http)
 ///   WS_SCHEME      (défaut: ws)
@@ -18,7 +21,12 @@ class AppConfig {
   static const String appVersion = '1.0.0';
 
   // ── Réseau (lues depuis .env avec fallback sûr) ────────────────────
-  static String get _apiHost => dotenv.env['API_HOST'] ?? '10.0.2.2';
+  static String get _apiHost {
+    if (kIsWeb) {
+      return dotenv.env['API_HOST_WEB'] ?? dotenv.env['API_HOST'] ?? 'localhost';
+    }
+    return dotenv.env['API_HOST_MOBILE'] ?? dotenv.env['API_HOST'] ?? '10.0.2.2';
+  }
   static String get _apiPort => dotenv.env['API_PORT'] ?? '3000';
   static String get _apiScheme => dotenv.env['API_SCHEME'] ?? 'http';
   static String get _wsScheme => dotenv.env['WS_SCHEME'] ?? 'ws';
