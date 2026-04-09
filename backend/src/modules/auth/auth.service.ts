@@ -17,8 +17,10 @@ import {
   RegisterArtisanDto,
   RegisterClientDto,
   LoginDto,
+  SetupPinDto,
 } from './dto/auth.dto';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { PinLoginGuardService } from './pin-login-guard.service';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +37,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly otpService: OtpService,
     private readonly analyticsService: AnalyticsService,
+    private readonly pinLoginGuardService: PinLoginGuardService,
   ) {}
 
   async registerArtisan(dto: RegisterArtisanDto) {
@@ -47,10 +50,11 @@ export class AuthService {
     }
 
     // Créer l'utilisateur
-    const password_hash = await bcrypt.hash(dto.password, 12);
+    const pin_hash = await bcrypt.hash(dto.pin_code, 12);
     const user = this.userRepository.create({
       phone_number: dto.phone_number,
-      password_hash,
+      pin_hash,
+      password_hash: null,
       role: UserRole.ARTISAN,
       email: dto.email,
       whatsapp_number: dto.whatsapp_number || dto.phone_number,
@@ -82,10 +86,11 @@ export class AuthService {
       throw new BusinessException('AUTH_PHONE_ALREADY_USED', 'Ce numéro de téléphone est déjà utilisé.', HttpStatus.CONFLICT);
     }
 
-    const password_hash = await bcrypt.hash(dto.password, 12);
+    const pin_hash = await bcrypt.hash(dto.pin_code, 12);
     const user = this.userRepository.create({
       phone_number: dto.phone_number,
-      password_hash,
+      pin_hash,
+      password_hash: null,
       role: UserRole.CLIENT,
       email: dto.email,
       whatsapp_number: dto.phone_number,
@@ -123,20 +128,38 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    if (await this.pinLoginGuardService.isBlocked(dto.phone_number)) {
+      const ttl = await this.pinLoginGuardService.blockTtlSeconds(dto.phone_number);
+      throw new BusinessException(
+        'AUTH_PIN_BLOCKED',
+        `Trop de tentatives. Réessayez dans ${ttl || 1} secondes.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     const user = await this.userRepository.findOne({
       where: { phone_number: dto.phone_number },
     });
     if (!user) {
+      await this.pinLoginGuardService.registerFailure(dto.phone_number);
       throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
     }
 
-    const isPasswordValid = await bcrypt.compare(
-      dto.password,
-      user.password_hash,
-    );
-    if (!isPasswordValid) {
+    if (!user.pin_hash) {
+      throw new BusinessException(
+        'AUTH_PIN_SETUP_REQUIRED',
+        'Votre compte doit definir un code PIN avant la connexion.',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const isPinValid = await bcrypt.compare(dto.pin_code, user.pin_hash);
+    if (!isPinValid) {
+      await this.pinLoginGuardService.registerFailure(dto.phone_number);
       throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
     }
+
+    await this.pinLoginGuardService.clearFailures(dto.phone_number);
 
     if (!user.is_active) {
       throw new BusinessException('AUTH_ACCOUNT_DISABLED', 'Compte désactivé.', HttpStatus.UNAUTHORIZED);
@@ -154,6 +177,31 @@ export class AuthService {
 
     this.analyticsService.logActivity({ actorId: user.id, action: 'LOGIN', metadata: { role: user.role } });
     return this.generateTokens(user);
+  }
+
+  async setupPin(dto: SetupPinDto) {
+    const user = await this.userRepository.findOne({
+      where: { phone_number: dto.phone_number },
+    });
+
+    if (!user) {
+      throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
+    }
+
+    await this.otpService.verifyOtp(dto.phone_number, dto.code);
+
+    user.pin_hash = await bcrypt.hash(dto.pin_code, 12);
+    user.password_hash = null;
+    user.is_phone_verified = true;
+    const saved = await this.userRepository.save(user);
+
+    await this.pinLoginGuardService.clearFailures(dto.phone_number);
+    this.analyticsService.logActivity({ actorId: saved.id, action: 'PIN_SETUP' });
+
+    return {
+      pin_set: true,
+      ...(await this.generateTokens(saved)),
+    };
   }
 
   async refreshToken(userId: string) {

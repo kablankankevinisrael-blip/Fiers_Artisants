@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { resolveApiUrl } from '@/lib/api';
 
 const POLL_INTERVAL = 30_000;
 
@@ -43,8 +44,7 @@ export function useAdminSSE(onEvent: () => void) {
         typeof window !== 'undefined'
           ? localStorage.getItem('admin_token')
           : null;
-      const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+      const baseUrl = resolveApiUrl();
       const url = `${baseUrl}/admin/verifications/events${token ? `?token=${token}` : ''}`;
       es = new EventSource(url);
 

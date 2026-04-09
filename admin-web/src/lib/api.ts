@@ -11,7 +11,26 @@ import type {
   ActivityLog,
 } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_URL = resolveApiUrl();
+
+function resolveApiUrl(): string {
+  const explicitUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (explicitUrl) {
+    return explicitUrl.replace(/\/+$/, '');
+  }
+
+  const apiPort = process.env.NEXT_PUBLIC_API_PORT?.trim() || '3000';
+  const rawBasePath = process.env.NEXT_PUBLIC_API_BASE_PATH?.trim() || '/api/v1';
+  const basePath = rawBasePath.startsWith('/') ? rawBasePath : `/${rawBasePath}`;
+
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+    const host = window.location.hostname || 'localhost';
+    return `${protocol}://${host}:${apiPort}${basePath}`;
+  }
+
+  return `http://localhost:${apiPort}${basePath}`;
+}
 
 const api = axios.create({
   baseURL: API_URL,
@@ -109,10 +128,10 @@ api.interceptors.response.use(undefined, async (error: AxiosError) => {
 });
 
 // Auth
-export async function loginAdmin(phone: string, password: string): Promise<AuthResponse> {
+export async function loginAdmin(phone: string, pinCode: string): Promise<AuthResponse> {
   const { data } = await api.post<AuthResponse>('/auth/login', {
     phone_number: phone,
-    password,
+    pin_code: pinCode,
   });
   return data;
 }
@@ -195,5 +214,7 @@ export async function fetchFileBlob(bucket: string, objectKey: string): Promise<
   });
   return response.data as Blob;
 }
+
+export { resolveApiUrl };
 
 export default api;

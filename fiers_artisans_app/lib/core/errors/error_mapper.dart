@@ -8,6 +8,8 @@ const _serverCodeMap = <String, AppErrorCode>{
   'AUTH_INVALID_CREDENTIALS': AppErrorCode.authInvalidCredentials,
   'AUTH_ACCOUNT_DISABLED': AppErrorCode.authAccountDisabled,
   'AUTH_OTP_REQUIRED': AppErrorCode.authOtpRequired,
+  'AUTH_PIN_SETUP_REQUIRED': AppErrorCode.authPinSetupRequired,
+  'AUTH_PIN_BLOCKED': AppErrorCode.authPinBlocked,
   'AUTH_INVALID_TOKEN': AppErrorCode.authInvalidToken,
   'AUTH_PHONE_ALREADY_USED': AppErrorCode.authPhoneAlreadyUsed,
   'INTERNAL_ERROR': AppErrorCode.internalError,
@@ -64,6 +66,10 @@ String _defaultUserMessage(AppErrorCode code) {
       return 'Ce compte a été désactivé.';
     case AppErrorCode.authOtpRequired:
       return 'Vérification du téléphone requise.';
+    case AppErrorCode.authPinSetupRequired:
+      return 'Veuillez configurer votre code PIN pour terminer la migration de votre compte.';
+    case AppErrorCode.authPinBlocked:
+      return 'Trop de tentatives PIN. Réessayez plus tard.';
     case AppErrorCode.authInvalidToken:
       return 'Session expirée. Veuillez vous reconnecter.';
     case AppErrorCode.authPhoneAlreadyUsed:

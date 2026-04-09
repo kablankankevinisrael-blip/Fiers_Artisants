@@ -19,7 +19,7 @@
     "subtitle": "Sign in to access the dashboard",
     "phone": "Phone number",
     "phone_placeholder": "07 XX XX XX XX",
-    "password": "Password",
+    "password": "PIN code (5 digits)",
     "submit": "Sign in",
     "error_credentials": "Invalid credentials",
     "error_role": "Admin access only",

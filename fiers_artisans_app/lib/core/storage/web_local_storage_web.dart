@@ -1,11 +1,15 @@
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
-String? readWebLocalStorage(String key) => html.window.localStorage[key];
+String? readWebLocalStorage(String key) => web.window.localStorage.getItem(key);
 
 Future<void> writeWebLocalStorage(String key, String value) async {
-  html.window.localStorage[key] = value;
+  web.window.localStorage.setItem(key, value);
+}
+
+Future<void> deleteWebLocalStorage(String key) async {
+  web.window.localStorage.removeItem(key);
 }
 
 Future<void> clearWebLocalStorage() async {
-  html.window.localStorage.clear();
+  web.window.localStorage.clear();
 }

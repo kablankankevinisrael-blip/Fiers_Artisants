@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -21,8 +22,8 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  final _confirmPasswordCtrl = TextEditingController();
+  final _pinCtrl = TextEditingController();
+  final _confirmPinCtrl = TextEditingController();
   final _professionCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _communeCtrl = TextEditingController();
@@ -43,8 +44,8 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _phoneCtrl.dispose();
-    _passwordCtrl.dispose();
-    _confirmPasswordCtrl.dispose();
+    _pinCtrl.dispose();
+    _confirmPinCtrl.dispose();
     _professionCtrl.dispose();
     _cityCtrl.dispose();
     _communeCtrl.dispose();
@@ -60,7 +61,7 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
     setState(() => _isLoading = true);
     final success = await ref.read(authProvider.notifier).registerArtisan(
           phone: _phoneCtrl.text.trim(),
-          password: _passwordCtrl.text,
+          pinCode: _pinCtrl.text,
           firstName: _firstNameCtrl.text.trim(),
           lastName: _lastNameCtrl.text.trim(),
           profession: _professionCtrl.text.trim(),
@@ -231,26 +232,37 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
                 const SizedBox(height: 16),
 
                 AppTextField(
-                  controller: _passwordCtrl,
-                  label: 'auth.password'.tr(),
+                  controller: _pinCtrl,
+                  label: 'auth.pin'.tr(),
                   prefixIcon: Icons.lock_outline,
                   obscureText: true,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  maxLength: 5,
                   textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      v!.length < 6 ? 'Minimum 6 caractères' : null,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'auth.pin'.tr();
+                    if (v.length != 5) return 'auth.pin_5_digits'.tr();
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
                 AppTextField(
-                  controller: _confirmPasswordCtrl,
-                  label: 'auth.confirm_password'.tr(),
+                  controller: _confirmPinCtrl,
+                  label: 'auth.confirm_pin'.tr(),
                   prefixIcon: Icons.lock_outline,
                   obscureText: true,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  maxLength: 5,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _register(),
-                  validator: (v) => v != _passwordCtrl.text
-                      ? 'Mots de passe différents'
-                      : null,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'auth.confirm_pin'.tr();
+                    if (v != _pinCtrl.text) return 'auth.pin_mismatch'.tr();
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 32),
 

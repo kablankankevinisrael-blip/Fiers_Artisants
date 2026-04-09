@@ -7,6 +7,7 @@ import '../presentation/auth/register_choice_screen.dart';
 import '../presentation/auth/register_artisan_screen.dart';
 import '../presentation/auth/register_client_screen.dart';
 import '../presentation/auth/otp_verification_screen.dart';
+import '../presentation/auth/pin_setup_screen.dart';
 import '../presentation/client/client_dashboard.dart';
 import '../presentation/client/search_screen.dart';
 import '../presentation/client/artisan_profile_screen.dart';
@@ -94,6 +95,13 @@ final GoRouter appRouter = GoRouter(
         OtpVerificationScreen(phone: state.extra as String? ?? ''),
       ),
     ),
+    GoRoute(
+      path: '/setup-pin',
+      pageBuilder: (context, state) => _buildTransition(
+        state,
+        PinSetupScreen(phone: state.extra as String? ?? ''),
+      ),
+    ),
 
     // ──────────── CLIENT SHELL ────────────
     ShellRoute(
@@ -177,7 +185,10 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) => _buildTransition(
         state,
         ChatScreen(
-            conversationId: state.pathParameters['conversationId']!),
+          conversationId: state.pathParameters['conversationId']!,
+          participantName: state.uri.queryParameters['name'],
+          participantAvatarUrl: state.uri.queryParameters['avatar'],
+        ),
       ),
     ),
     GoRoute(

@@ -149,7 +149,7 @@ class _AuthInterceptor extends Interceptor {
         return true;
       }
     } catch (_) {
-      await SecureStorage.clearAll();
+      await SecureStorage.clearAuthSession();
     }
     return false;
   }

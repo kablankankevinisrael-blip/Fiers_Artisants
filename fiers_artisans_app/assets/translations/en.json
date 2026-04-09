@@ -29,6 +29,10 @@
     "login": "Log in",
     "register": "Sign up",
     "phone": "Phone number",
+    "pin": "PIN code",
+    "confirm_pin": "Confirm PIN code",
+    "pin_5_digits": "PIN must be exactly 5 digits.",
+    "pin_mismatch": "PIN codes do not match.",
     "password": "Password",
     "confirm_password": "Confirm password",
     "first_name": "First name",
@@ -45,6 +49,13 @@
     "profession": "Profession",
     "experience_years": "Years of experience",
     "description": "Description",
+    "pin_setup": {
+      "title": "Set up your PIN",
+      "subtitle": "Your account still uses the legacy method. Enter the OTP sent to {phone}, then define your 5-digit PIN.",
+      "otp_label": "OTP code",
+      "otp_6_digits": "OTP must be exactly 6 digits.",
+      "cta": "Enable my PIN"
+    },
     "otp": {
       "title": "Verification",
       "subtitle": "Enter the code sent to {phone}",

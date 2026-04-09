@@ -13,6 +13,7 @@ import { User } from '../users/entities/user.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { ClientProfile } from '../users/entities/client-profile.entity';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { PinLoginGuardService } from './pin-login-guard.service';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AnalyticsModule } from '../analytics/analytics.module';
   providers: [
     AuthService,
     OtpService,
+    PinLoginGuardService,
     WhatsappOtpProvider,
     JwtStrategy,
     JwtRefreshStrategy,

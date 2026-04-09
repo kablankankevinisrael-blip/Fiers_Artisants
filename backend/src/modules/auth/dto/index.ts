@@ -5,4 +5,5 @@ export {
   VerifyOtpDto,
   LoginDto,
   RefreshTokenDto,
+  SetupPinDto,
 } from './auth.dto';

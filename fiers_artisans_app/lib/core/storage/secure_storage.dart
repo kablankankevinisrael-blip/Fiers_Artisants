@@ -1,10 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/constants.dart';
 import 'web_local_storage_stub.dart'
-    if (dart.library.html) 'web_local_storage_web.dart'
+    if (dart.library.js_interop) 'web_local_storage_web.dart'
     as web_storage;
 
 class SecureStorage {
+    static bool _looksLikePhone(String? value) {
+      final normalized = value?.trim() ?? '';
+      if (normalized.isEmpty) return false;
+      return RegExp(r'^\+?[0-9]{6,20}$').hasMatch(normalized);
+    }
+
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
@@ -79,6 +86,80 @@ class SecureStorage {
       if ((value ?? '').isNotEmpty) return value;
     } catch (_) {}
     return web_storage.readWebLocalStorage(AppConstants.keyUserRole);
+  }
+
+  // Login identifier (phone only, no password)
+  static Future<void> saveLastLoginPhone(String phone) async {
+    final normalized = phone.replaceAll(' ', '').trim();
+    if (normalized.isEmpty) return;
+
+    if (kIsWeb) {
+      await web_storage.writeWebLocalStorage(
+        AppConstants.keyLastLoginPhone,
+        normalized,
+      );
+      return;
+    }
+
+    try {
+      await _storage.write(
+        key: AppConstants.keyLastLoginPhone,
+        value: normalized,
+      );
+    } catch (_) {}
+
+    await web_storage.writeWebLocalStorage(
+      AppConstants.keyLastLoginPhone,
+      normalized,
+    );
+  }
+
+  static Future<String?> getLastLoginPhone() async {
+    if (kIsWeb) {
+      final webValue =
+          web_storage.readWebLocalStorage(AppConstants.keyLastLoginPhone);
+      if (_looksLikePhone(webValue)) {
+        return webValue!.trim();
+      }
+      return null;
+    }
+
+    String? secureValue;
+    try {
+      secureValue = await _storage.read(key: AppConstants.keyLastLoginPhone);
+    } catch (_) {}
+
+    if (_looksLikePhone(secureValue)) {
+      return secureValue!.trim();
+    }
+
+    final webValue =
+        web_storage.readWebLocalStorage(AppConstants.keyLastLoginPhone);
+    if (_looksLikePhone(webValue)) {
+      return webValue!.trim();
+    }
+
+    return null;
+  }
+
+  static Future<void> clearAuthSession({bool preserveLastPhone = true}) async {
+    final keys = <String>[
+      AppConstants.keyAccessToken,
+      AppConstants.keyRefreshToken,
+      AppConstants.keyUserId,
+      AppConstants.keyUserRole,
+      if (!preserveLastPhone) AppConstants.keyLastLoginPhone,
+    ];
+
+    try {
+      for (final key in keys) {
+        await _storage.delete(key: key);
+      }
+    } catch (_) {}
+
+    for (final key in keys) {
+      await web_storage.deleteWebLocalStorage(key);
+    }
   }
 
   // Clear all

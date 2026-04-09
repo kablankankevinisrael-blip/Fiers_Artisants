@@ -8,6 +8,7 @@ class ApiEndpoints {
   static const String refreshToken = '/auth/refresh';
   static const String sendOtp = '/auth/send-otp';
   static const String verifyOtp = '/auth/verify-otp';
+  static const String setupPin = '/auth/setup-pin';
 
   // Profiles
   static const String artisanProfile = '/artisan/profile';
@@ -60,6 +61,7 @@ class ApiEndpoints {
 
   // Users
   static const String updateFcmToken = '/users/fcm-token';
+  static const String updateUserLocation = '/users/location';
 
   // Health
   static const String health = '/health';

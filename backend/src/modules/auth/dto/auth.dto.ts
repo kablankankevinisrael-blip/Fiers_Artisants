@@ -1,20 +1,19 @@
 import {
   IsString,
-  IsEnum,
-  IsPhoneNumber,
-  MinLength,
+  Matches,
   IsOptional,
   IsEmail,
 } from 'class-validator';
-import { UserRole } from '../../users/entities/user.entity';
+
+const PIN_REGEX = /^\d{5}$/;
 
 export class RegisterArtisanDto {
   @IsString()
   phone_number: string;
 
   @IsString()
-  @MinLength(6)
-  password: string;
+  @Matches(PIN_REGEX, { message: 'Le code PIN doit contenir exactement 5 chiffres.' })
+  pin_code: string;
 
   @IsString()
   first_name: string;
@@ -48,8 +47,8 @@ export class RegisterClientDto {
   phone_number: string;
 
   @IsString()
-  @MinLength(6)
-  password: string;
+  @Matches(PIN_REGEX, { message: 'Le code PIN doit contenir exactement 5 chiffres.' })
+  pin_code: string;
 
   @IsString()
   first_name: string;
@@ -88,7 +87,20 @@ export class LoginDto {
   phone_number: string;
 
   @IsString()
-  password: string;
+  @Matches(PIN_REGEX, { message: 'Le code PIN doit contenir exactement 5 chiffres.' })
+  pin_code: string;
+}
+
+export class SetupPinDto {
+  @IsString()
+  phone_number: string;
+
+  @IsString()
+  code: string;
+
+  @IsString()
+  @Matches(PIN_REGEX, { message: 'Le code PIN doit contenir exactement 5 chiffres.' })
+  pin_code: string;
 }
 
 export class RefreshTokenDto {

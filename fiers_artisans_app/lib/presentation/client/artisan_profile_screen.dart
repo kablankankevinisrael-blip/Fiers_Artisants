@@ -180,7 +180,11 @@ class _ArtisanProfileScreenState
                           text: 'artisan.contact.chat'.tr(),
                           icon: Icons.chat_bubble_outline,
                           isLoading: _isOpeningChat,
-                          onPressed: () => _openChatWithArtisan(artisan.userId),
+                          onPressed: () => _openChatWithArtisan(
+                            participantUserId: artisan.userId,
+                            participantName: artisan.fullName,
+                            participantAvatarUrl: artisan.profilePhotoUrl,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -356,14 +360,24 @@ class _ArtisanProfileScreenState
     }
   }
 
-  Future<void> _openChatWithArtisan(String participantUserId) async {
+  Future<void> _openChatWithArtisan({
+    required String participantUserId,
+    required String participantName,
+    String? participantAvatarUrl,
+  }) async {
     if (_isOpeningChat) return;
     setState(() => _isOpeningChat = true);
     try {
       final convo =
           await ref.read(chatProvider.notifier).createConversation(participantUserId);
       if (!mounted) return;
-      context.push('/chat/${convo.id}');
+      final queryParams = <String, String>{'name': participantName};
+      final avatar = participantAvatarUrl?.trim();
+      if (avatar != null && avatar.isNotEmpty) {
+        queryParams['avatar'] = avatar;
+      }
+      final query = Uri(queryParameters: queryParams).query;
+      context.push('/chat/${convo.id}?$query');
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

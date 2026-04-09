@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppTextField extends StatefulWidget {
   final TextEditingController? controller;
@@ -15,6 +16,12 @@ class AppTextField extends StatefulWidget {
   final void Function(String)? onChanged;
   final void Function(String)? onSubmitted;
   final FocusNode? focusNode;
+  final Iterable<String>? autofillHints;
+  final bool enableSuggestions;
+  final bool autocorrect;
+  final bool enableIMEPersonalizedLearning;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   const AppTextField({
     super.key,
@@ -32,6 +39,12 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.focusNode,
+    this.autofillHints,
+    this.enableSuggestions = true,
+    this.autocorrect = true,
+    this.enableIMEPersonalizedLearning = true,
+    this.inputFormatters,
+    this.maxLength,
   });
 
   @override
@@ -67,6 +80,12 @@ class _AppTextFieldState extends State<AppTextField> {
           onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,
           focusNode: widget.focusNode,
+          autofillHints: widget.autofillHints,
+          enableSuggestions: widget.enableSuggestions,
+          autocorrect: widget.autocorrect,
+          enableIMEPersonalizedLearning: widget.enableIMEPersonalizedLearning,
+          inputFormatters: widget.inputFormatters,
+          maxLength: widget.maxLength,
           style: Theme.of(context).textTheme.bodyLarge,
           decoration: InputDecoration(
             hintText: widget.hint,

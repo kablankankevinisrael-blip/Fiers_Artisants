@@ -29,6 +29,10 @@
     "login": "Se connecter",
     "register": "S'inscrire",
     "phone": "Numéro de téléphone",
+    "pin": "Code PIN",
+    "confirm_pin": "Confirmer le code PIN",
+    "pin_5_digits": "Le code PIN doit contenir 5 chiffres.",
+    "pin_mismatch": "Les codes PIN ne correspondent pas.",
     "password": "Mot de passe",
     "confirm_password": "Confirmer le mot de passe",
     "first_name": "Prénom",
@@ -45,6 +49,13 @@
     "profession": "Profession",
     "experience_years": "Années d'expérience",
     "description": "Description",
+    "pin_setup": {
+      "title": "Configurer votre code PIN",
+      "subtitle": "Votre compte utilise l'ancienne méthode. Entrez le code OTP reçu au {phone} puis définissez un PIN à 5 chiffres.",
+      "otp_label": "Code OTP",
+      "otp_6_digits": "Le code OTP doit contenir 6 chiffres.",
+      "cta": "Activer mon PIN"
+    },
     "otp": {
       "title": "Vérification",
       "subtitle": "Entrez le code envoyé au {phone}",

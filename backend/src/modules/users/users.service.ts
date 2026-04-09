@@ -112,9 +112,10 @@ export class UsersService {
       .createQueryBuilder()
       .update(User)
       .set({
-        location: () => `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)`,
+        location: () => 'ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)',
       })
       .where('id = :id', { id: userId })
+      .setParameters({ lat, lng })
       .execute();
   }
 

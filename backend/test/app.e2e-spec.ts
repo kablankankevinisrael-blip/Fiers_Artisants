@@ -16,10 +16,21 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('/health (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect(({ body }) => {
+        expect(body).toMatchObject({
+          status: 'ok',
+          service: 'Fiers Artisans API',
+        });
+        expect(typeof body.timestamp).toBe('string');
+        expect(typeof body.uptime).toBe('number');
+      });
   });
 });

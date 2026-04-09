@@ -8,18 +8,18 @@ class AuthRepository {
 
   Future<Map<String, dynamic>> login({
     required String phone,
-    required String password,
+    required String pinCode,
   }) async {
     final response = await _api.post(
       ApiEndpoints.login,
-      data: {'phone_number': phone, 'password': password},
+      data: {'phone_number': phone, 'pin_code': pinCode},
     );
     return response.data;
   }
 
   Future<Map<String, dynamic>> registerArtisan({
     required String phone,
-    required String password,
+    required String pinCode,
     required String firstName,
     required String lastName,
     required String profession,
@@ -32,7 +32,7 @@ class AuthRepository {
   }) async {
     final body = <String, dynamic>{
       'phone_number': phone,
-      'password': password,
+      'pin_code': pinCode,
       'first_name': firstName,
       'last_name': lastName,
       'business_name': profession,
@@ -50,7 +50,7 @@ class AuthRepository {
 
   Future<Map<String, dynamic>> registerClient({
     required String phone,
-    required String password,
+    required String pinCode,
     required String firstName,
     required String lastName,
     required String city,
@@ -59,7 +59,7 @@ class AuthRepository {
   }) async {
     final body = <String, dynamic>{
       'phone_number': phone,
-      'password': password,
+      'pin_code': pinCode,
       'first_name': firstName,
       'last_name': lastName,
       'city': city,
@@ -85,6 +85,22 @@ class AuthRepository {
     final response = await _api.post(
       ApiEndpoints.verifyOtp,
       data: {'phone_number': phone, 'code': code},
+    );
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> setupPin({
+    required String phone,
+    required String code,
+    required String pinCode,
+  }) async {
+    final response = await _api.post(
+      ApiEndpoints.setupPin,
+      data: {
+        'phone_number': phone,
+        'code': code,
+        'pin_code': pinCode,
+      },
     );
     return response.data;
   }

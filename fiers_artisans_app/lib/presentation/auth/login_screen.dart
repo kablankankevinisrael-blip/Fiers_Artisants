@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../config/theme.dart';
+import '../../core/storage/secure_storage.dart';
 import '../../providers/auth_provider.dart';
 import '../common/app_button.dart';
 import '../common/app_text_field.dart';
@@ -17,23 +21,87 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _pinController = TextEditingController();
   bool _isLoading = false;
+  Timer? _autoLoginDebounce;
+  String _lastAutoAttemptSignature = '';
+  bool _isHydratingPhone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pinController.clear();
+    _hydrateSavedPhone();
+  }
 
   @override
   void dispose() {
+    _autoLoginDebounce?.cancel();
     _phoneController.dispose();
-    _passwordController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _hydrateSavedPhone() async {
+    if (_isHydratingPhone) return;
+    _isHydratingPhone = true;
+    try {
+      final savedPhone = await SecureStorage.getLastLoginPhone();
+      if (!mounted) return;
+      final normalized = savedPhone?.trim() ?? '';
+      if (normalized.isNotEmpty && _phoneController.text.trim().isEmpty) {
+        _phoneController.text = normalized;
+        _phoneController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _phoneController.text.length),
+        );
+      }
+    } finally {
+      _isHydratingPhone = false;
+    }
+  }
+
+  bool _isCredentialsValidForAutoLogin() {
+    final phone = _phoneController.text.trim();
+    final pinCode = _pinController.text;
+    return phone.isNotEmpty && pinCode.length == 5;
+  }
+
+  void _scheduleAutoLoginIfReady() {
+    if (_isLoading) return;
+    _autoLoginDebounce?.cancel();
+
+    if (!_isCredentialsValidForAutoLogin()) {
+      return;
+    }
+
+    final signature = '${_phoneController.text.trim()}|${_pinController.text}';
+    if (signature == _lastAutoAttemptSignature) {
+      return;
+    }
+
+    _autoLoginDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted || _isLoading) return;
+      final latestSignature = '${_phoneController.text.trim()}|${_pinController.text}';
+      if (latestSignature != signature) return;
+      _login(triggeredByAuto: true);
+    });
+  }
+
+  Future<void> _login({bool triggeredByAuto = false}) async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
+
+    final signature = '${_phoneController.text.trim()}|${_pinController.text}';
+    if (triggeredByAuto && signature == _lastAutoAttemptSignature) {
+      return;
+    }
+
+    _lastAutoAttemptSignature = signature;
 
     setState(() => _isLoading = true);
     final success = await ref.read(authProvider.notifier).login(
           phone: _phoneController.text.trim(),
-          password: _passwordController.text,
+          pinCode: _pinController.text,
         );
     setState(() => _isLoading = false);
 
@@ -50,6 +118,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         context.push('/otp', extra: authState.otpPhone);
         return;
       }
+      if (authState.pinSetupRequired && authState.pinSetupPhone != null) {
+        context.push('/setup-pin', extra: authState.pinSetupPhone);
+        return;
+      }
       final error = authState.error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -63,6 +135,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (_phoneController.text.trim().isEmpty && !_isHydratingPhone) {
+      Future.microtask(_hydrateSavedPhone);
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -118,6 +194,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   prefixIcon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.telephoneNumber],
+                  onChanged: (_) => _scheduleAutoLoginIfReady(),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return 'auth.phone'.tr();
@@ -127,18 +205,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Password
+                // PIN
                 AppTextField(
-                  controller: _passwordController,
-                  label: 'auth.password'.tr(),
-                  hint: '••••••••',
+                  controller: _pinController,
+                  label: 'auth.pin'.tr(),
+                  hint: '•••••',
                   prefixIcon: Icons.lock_outline,
                   obscureText: true,
+                  keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  maxLength: 5,
+                  autofillHints: const <String>[],
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  enableIMEPersonalizedLearning: false,
+                  onChanged: (_) => _scheduleAutoLoginIfReady(),
                   onSubmitted: (_) => _login(),
                   validator: (v) {
                     if (v == null || v.isEmpty) {
-                      return 'auth.password'.tr();
+                      return 'auth.pin'.tr();
+                    }
+                    if (v.length != 5) {
+                      return 'auth.pin_5_digits'.tr();
                     }
                     return null;
                   },

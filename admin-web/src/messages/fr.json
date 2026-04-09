@@ -19,7 +19,7 @@
     "subtitle": "Connectez-vous pour accéder au tableau de bord",
     "phone": "Numéro de téléphone",
     "phone_placeholder": "07 XX XX XX XX",
-    "password": "Mot de passe",
+    "password": "Code PIN (5 chiffres)",
     "submit": "Se connecter",
     "error_credentials": "Identifiants incorrects",
     "error_role": "Accès réservé aux administrateurs",

@@ -39,32 +39,46 @@ async function run() {
 
 async function seedAdmin(dataSource: DataSource) {
   const phone = process.env.ADMIN_PHONE || '0700000000';
-  const password = process.env.ADMIN_PASSWORD || 'admin123';
+  const pin = process.env.ADMIN_PIN || '12345';
   const repo = dataSource.getRepository(User);
 
   const existing = await repo.findOne({ where: { phone_number: phone } });
   if (existing) {
+    let changed = false;
     if (existing.role !== UserRole.ADMIN) {
       existing.role = UserRole.ADMIN;
+      changed = true;
+    }
+    if (!existing.pin_hash) {
+      existing.pin_hash = await bcrypt.hash(pin, 12);
+      existing.password_hash = null;
+      changed = true;
+    }
+    if (!existing.is_phone_verified) {
       existing.is_phone_verified = true;
+      changed = true;
+    }
+
+    if (changed) {
       await repo.save(existing);
-      console.log(`🔑 User ${phone} upgraded to ADMIN`);
+      console.log(`🔑 User ${phone} upgraded/migrated to ADMIN PIN auth`);
     } else {
       console.log(`✅ Admin ${phone} already exists`);
     }
     return;
   }
 
-  const hash = await bcrypt.hash(password, 12);
+  const hash = await bcrypt.hash(pin, 12);
   const admin = repo.create({
     phone_number: phone,
-    password_hash: hash,
+    pin_hash: hash,
+    password_hash: null,
     role: UserRole.ADMIN,
     is_phone_verified: true,
     is_active: true,
   });
   await repo.save(admin);
-  console.log(`🔑 Admin created: ${phone} / ${password}`);
+  console.log(`🔑 Admin created: ${phone} / ${pin}`);
 }
 
 run().catch((err) => {

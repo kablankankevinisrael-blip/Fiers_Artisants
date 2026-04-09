@@ -36,8 +36,12 @@ export class User {
   @Column({ nullable: true })
   email: string;
 
-  @Column()
-  password_hash: string;
+  // Legacy password hash kept for migration compatibility.
+  @Column({ nullable: true })
+  password_hash: string | null;
+
+  @Column({ nullable: true })
+  pin_hash: string | null;
 
   @Column({ type: 'enum', enum: UserRole })
   role: UserRole;

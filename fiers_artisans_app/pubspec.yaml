@@ -61,6 +61,7 @@ dependencies:
   permission_handler: ^11.4.0
   flutter_animate: ^4.5.2
   flutter_dotenv: ^6.0.0
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

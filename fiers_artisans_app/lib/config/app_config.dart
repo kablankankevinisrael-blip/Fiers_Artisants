@@ -9,9 +9,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 ///   3. Hot restart (R) ou relancer l'app
 ///
 /// Variables .env disponibles :
-///   API_HOST       (défaut: 10.0.2.2)
-///   API_HOST_WEB   (prioritaire sur web, défaut: localhost)
-///   API_HOST_MOBILE(prioritaire mobile, défaut: 10.0.2.2)
+///   API_HOST        (source de vérité, recommandé)
+///   API_HOST_WEB    (optionnel, fallback web)
+///   API_HOST_MOBILE (optionnel, fallback mobile)
 ///   API_PORT       (défaut: 3000)
 ///   API_SCHEME     (défaut: http)
 ///   WS_SCHEME      (défaut: ws)
@@ -22,11 +22,38 @@ class AppConfig {
 
   // ── Réseau (lues depuis .env avec fallback sûr) ────────────────────
   static String get _apiHost {
-    if (kIsWeb) {
-      return dotenv.env['API_HOST_WEB'] ?? dotenv.env['API_HOST'] ?? 'localhost';
+    final sharedHost = _firstNonEmpty([dotenv.env['API_HOST']]);
+    if (sharedHost != null) {
+      return sharedHost;
     }
-    return dotenv.env['API_HOST_MOBILE'] ?? dotenv.env['API_HOST'] ?? '10.0.2.2';
+
+    if (kIsWeb) {
+      final webHost = _firstNonEmpty([dotenv.env['API_HOST_WEB']]);
+      if (webHost != null) {
+        return webHost;
+      }
+
+      final browserHost = Uri.base.host.trim();
+      if (browserHost.isNotEmpty) {
+        return browserHost;
+      }
+
+      return 'localhost';
+    }
+
+    return _firstNonEmpty([dotenv.env['API_HOST_MOBILE']]) ?? '10.0.2.2';
   }
+
+  static String? _firstNonEmpty(Iterable<String?> values) {
+    for (final value in values) {
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        return trimmed;
+      }
+    }
+    return null;
+  }
+
   static String get _apiPort => dotenv.env['API_PORT'] ?? '3000';
   static String get _apiScheme => dotenv.env['API_SCHEME'] ?? 'http';
   static String get _wsScheme => dotenv.env['WS_SCHEME'] ?? 'ws';

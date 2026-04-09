@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useReducer,
   useState,
   type ReactNode,
 } from 'react';
@@ -32,27 +33,39 @@ async function loadMessages(locale: string): Promise<Messages> {
 
 const DEFAULT_LOCALE = process.env.NEXT_PUBLIC_DEFAULT_LOCALE || 'fr';
 
+function localeReducer(_state: string, nextLocale: string) {
+  return nextLocale;
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState(DEFAULT_LOCALE);
+  const [locale, dispatchLocale] = useReducer(localeReducer, DEFAULT_LOCALE);
 
   useEffect(() => {
     const saved = localStorage.getItem('admin_locale');
-    if (saved && saved !== locale) {
-      setLocaleState(saved);
+    if (saved) {
+      dispatchLocale(saved);
     }
   }, []);
   const [messages, setMessages] = useState<Messages | null>(null);
 
   useEffect(() => {
-    loadMessages(locale).then(setMessages);
+    let active = true;
+    void loadMessages(locale).then((loadedMessages) => {
+      if (active) {
+        setMessages(loadedMessages);
+      }
+    });
     // Sync <html lang> attribute with current locale
     document.documentElement.lang = locale;
+    return () => {
+      active = false;
+    };
   }, [locale]);
 
   const setLocale = useCallback((newLocale: string) => {
     localStorage.setItem('admin_locale', newLocale);
     cachedMessages = null;
-    setLocaleState(newLocale);
+    dispatchLocale(newLocale);
   }, []);
 
   return (

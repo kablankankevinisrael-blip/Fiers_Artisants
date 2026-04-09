@@ -11,6 +11,45 @@ import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters';
 import { LoggingInterceptor, TransformInterceptor } from './common/interceptors';
 
+const PRIVATE_LAN_HOST_PATTERN =
+  /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})$/;
+
+function isLoopbackOriginAllowed(origin: string): boolean {
+  try {
+    const parsed = new URL(origin);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return false;
+    }
+
+    return ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isLanOriginAllowed(origin: string, allowedPorts: number[]): boolean {
+  try {
+    const parsed = new URL(origin);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return false;
+    }
+
+    if (!PRIVATE_LAN_HOST_PATTERN.test(parsed.hostname)) {
+      return false;
+    }
+
+    const port = parsed.port
+      ? parseInt(parsed.port, 10)
+      : parsed.protocol === 'https:'
+        ? 443
+        : 80;
+
+    return Number.isInteger(port) && allowedPorts.includes(port);
+  } catch {
+    return false;
+  }
+}
+
 async function bootstrap() {
   // ── Fail-fast: vérifier les secrets obligatoires ────────────────
   const requiredSecrets = [
@@ -40,7 +79,13 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port') || 3000;
+  const host = configService.get<string>('app.host') || '0.0.0.0';
+  const nodeEnv = configService.get<string>('app.nodeEnv') || 'development';
   const corsOrigins = configService.get<string[]>('app.corsOrigins') || ['*'];
+  const corsAllowLan = configService.get<boolean>('app.corsAllowLan') ?? false;
+  const corsLanPorts = configService.get<number[]>('app.corsLanPorts') || [];
+  const corsOriginSet = new Set(corsOrigins);
+  const allowAnyCorsOrigin = corsOrigins.includes('*');
 
   // ── Préfixe global ──────────────────────────────────────────
   app.setGlobalPrefix('api/v1', {
@@ -50,7 +95,31 @@ async function bootstrap() {
   // ── Sécurité ──────────────────────────────────────────────────
   app.use(helmet());
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowAnyCorsOrigin || corsOriginSet.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      if (
+        nodeEnv !== 'production' &&
+        isLoopbackOriginAllowed(origin)
+      ) {
+        callback(null, true);
+        return;
+      }
+
+      if (
+        nodeEnv !== 'production' &&
+        corsAllowLan &&
+        isLanOriginAllowed(origin, corsLanPorts)
+      ) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
     credentials: true,
   });
 
@@ -83,11 +152,17 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, document);
   }
 
-  await app.listen(port);
+  await app.listen(port, host);
   Logger.log(
-    `🚀 Fiers Artisans API running on http://localhost:${port}`,
+    `🚀 Fiers Artisans API running on http://${host}:${port}`,
     'Bootstrap',
   );
+  if (host !== 'localhost') {
+    Logger.log(
+      `🔁 Loopback access: http://localhost:${port}`,
+      'Bootstrap',
+    );
+  }
   Logger.log(
     `📖 Swagger docs: http://localhost:${port}/api/docs`,
     'Bootstrap',

@@ -1,16 +1,16 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/storage/secure_storage.dart';
 import '../data/models/conversation_model.dart';
 import '../data/models/message_model.dart';
 import '../data/repositories/chat_repository.dart';
-import '../core/storage/secure_storage.dart';
 import '../services/chat_realtime_service.dart';
 
 class ChatState {
   final List<ConversationModel> conversations;
-  final List<MessageModel> messages;
+  final Map<String, List<MessageModel>> messagesByConversation;
   final bool isLoading;
   final String? activeConversationId;
   final String? errorMessage;
@@ -18,16 +18,31 @@ class ChatState {
 
   const ChatState({
     this.conversations = const [],
-    this.messages = const [],
+    this.messagesByConversation = const {},
     this.isLoading = false,
     this.activeConversationId,
     this.errorMessage,
     this.authRequired = false,
   });
 
+  List<MessageModel> messagesFor(String conversationId) =>
+      messagesByConversation[conversationId] ?? const [];
+
+  bool isMessagesLoading(String conversationId) =>
+      isLoading && activeConversationId == conversationId;
+
+  ConversationModel? conversationById(String conversationId) {
+    for (final conversation in conversations) {
+      if (conversation.id == conversationId) {
+        return conversation;
+      }
+    }
+    return null;
+  }
+
   ChatState copyWith({
     List<ConversationModel>? conversations,
-    List<MessageModel>? messages,
+    Map<String, List<MessageModel>>? messagesByConversation,
     bool? isLoading,
     String? activeConversationId,
     String? errorMessage,
@@ -35,7 +50,8 @@ class ChatState {
   }) {
     return ChatState(
       conversations: conversations ?? this.conversations,
-      messages: messages ?? this.messages,
+      messagesByConversation:
+          messagesByConversation ?? this.messagesByConversation,
       isLoading: isLoading ?? this.isLoading,
       activeConversationId: activeConversationId ?? this.activeConversationId,
       errorMessage: errorMessage,
@@ -119,11 +135,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
       activeConversationId: conversationId,
       errorMessage: null,
     );
+
     try {
       final msgs = await _repo.getMessages(conversationId);
       _realtime.joinConversation(conversationId);
       state = state.copyWith(
-        messages: msgs,
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          conversationId: msgs,
+        },
         isLoading: false,
         authRequired: false,
       );
@@ -137,16 +157,26 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void addMessage(MessageModel message) {
-    if (state.messages.any((m) => m.id == message.id)) {
+    final existing = state.messagesFor(message.conversationId);
+    if (existing.any((m) => m.id == message.id)) {
       return;
     }
-    state = state.copyWith(messages: [...state.messages, message]);
+
+    state = state.copyWith(
+      messagesByConversation: {
+        ...state.messagesByConversation,
+        message.conversationId: [...existing, message],
+      },
+    );
   }
 
   void removeMessage(String messageId) {
-    state = state.copyWith(
-      messages: state.messages.where((m) => m.id != messageId).toList(),
-    );
+    final updatedMessages = <String, List<MessageModel>>{};
+    for (final entry in state.messagesByConversation.entries) {
+      updatedMessages[entry.key] =
+          entry.value.where((m) => m.id != messageId).toList();
+    }
+    state = state.copyWith(messagesByConversation: updatedMessages);
   }
 
   Future<MessageModel> sendMessage({
@@ -161,12 +191,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
         content: content,
       );
 
-      // Replace the optimistic temp message with the real server response.
-      final updated = state.messages.map((m) {
+      final current = state.messagesFor(conversationId);
+      final updated = current.map((m) {
         if (m.id == tempId) return sent;
         return m;
       }).toList();
-      state = state.copyWith(messages: updated, authRequired: false);
+
+      state = state.copyWith(
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          conversationId: updated,
+        },
+        authRequired: false,
+      );
+
       _applyConversationPreview(sent);
       return sent;
     } catch (e) {
@@ -198,6 +236,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   Future<void> markAsRead(String conversationId) async {
     try {
       await _repo.markAsRead(conversationId);
+
       final updatedConversations = state.conversations.map((c) {
         if (c.id != conversationId) return c;
         return ConversationModel(
@@ -211,8 +250,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }).toList();
 
-      final updatedMessages = state.messages.map((m) {
-        if (m.conversationId != conversationId) return m;
+      final currentConversationMessages = state.messagesFor(conversationId);
+      final updatedMessages = currentConversationMessages.map((m) {
         if (m.senderId == _currentUserId) return m;
         return MessageModel(
           id: m.id,
@@ -227,9 +266,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       state = state.copyWith(
         conversations: updatedConversations,
-        messages: updatedMessages,
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          conversationId: updatedMessages,
+        },
       );
-    } catch (_) {}
+    } catch (_) {
+      // Non-blocking: keep UI responsive even if read receipt fails.
+    }
   }
 
   void clearError() {
@@ -263,16 +307,22 @@ class ChatNotifier extends StateNotifier<ChatState> {
       return;
     }
 
-    final isActiveConversation =
-        state.activeConversationId == message.conversationId;
-    final messageExists = state.messages.any((m) => m.id == message.id);
+    final currentMessages = state.messagesFor(message.conversationId);
+    final messageExists = currentMessages.any((m) => m.id == message.id);
 
-    if (isActiveConversation && !messageExists) {
-      state = state.copyWith(messages: [...state.messages, message]);
+    if (!messageExists) {
+      state = state.copyWith(
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          message.conversationId: [...currentMessages, message],
+        },
+      );
     }
 
     _applyConversationPreview(message);
 
+    final isActiveConversation =
+        state.activeConversationId == message.conversationId;
     if (isActiveConversation && message.senderId != _currentUserId) {
       unawaited(markAsRead(message.conversationId));
     }

@@ -16,6 +16,8 @@ class AuthState {
   final String? error;
   final bool otpRequired;
   final String? otpPhone;
+  final bool pinSetupRequired;
+  final String? pinSetupPhone;
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -23,6 +25,8 @@ class AuthState {
     this.error,
     this.otpRequired = false,
     this.otpPhone,
+    this.pinSetupRequired = false,
+    this.pinSetupPhone,
   });
 
   AuthState copyWith({
@@ -31,6 +35,8 @@ class AuthState {
     String? error,
     bool? otpRequired,
     String? otpPhone,
+    bool? pinSetupRequired,
+    String? pinSetupPhone,
   }) {
     return AuthState(
       status: status ?? this.status,
@@ -38,6 +44,8 @@ class AuthState {
       error: error,
       otpRequired: otpRequired ?? false,
       otpPhone: otpPhone,
+      pinSetupRequired: pinSetupRequired ?? false,
+      pinSetupPhone: pinSetupPhone,
     );
   }
 }
@@ -60,7 +68,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final user = await _repo.getProfile();
         if (!user.isPhoneVerified) {
           debugPrint('[Auth] checkAuth: phone not verified → OTP required');
-          await SecureStorage.clearAll();
+          await SecureStorage.clearAuthSession();
           state = const AuthState(status: AuthStatus.unauthenticated);
           return;
         }
@@ -72,7 +80,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         if (appError.isOtpRequired) {
           debugPrint('[Auth] checkAuth: OTP required (code=${appError.code})');
         }
-        await SecureStorage.clearAll();
+        await SecureStorage.clearAuthSession();
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
     } else {
@@ -80,10 +88,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> login({required String phone, required String password}) async {
+  Future<bool> login({required String phone, required String pinCode}) async {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
-      final data = await _repo.login(phone: phone, password: password);
+      final data = await _repo.login(phone: phone, pinCode: pinCode);
+      await SecureStorage.saveLastLoginPhone(phone);
       final tokens = _extractTokens(data);
       await SecureStorage.saveTokens(
         accessToken: tokens.$1,
@@ -114,15 +123,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Détecter OTP requis via le code stable
       if (appError.isOtpRequired) {
+        await SecureStorage.saveLastLoginPhone(phone);
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
           otpRequired: true,
           otpPhone: phone,
+          pinSetupRequired: false,
+          pinSetupPhone: null,
         );
         return false;
       }
+
+      if (appError.isPinSetupRequired) {
+        await SecureStorage.saveLastLoginPhone(phone);
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          otpRequired: false,
+          otpPhone: null,
+          pinSetupRequired: true,
+          pinSetupPhone: phone,
+          error: null,
+        );
+        return false;
+      }
+
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
+        otpRequired: false,
+        otpPhone: null,
+        pinSetupRequired: false,
+        pinSetupPhone: null,
         error: appError.userMessage,
       );
       return false;
@@ -131,7 +161,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<bool> registerArtisan({
     required String phone,
-    required String password,
+    required String pinCode,
     required String firstName,
     required String lastName,
     required String profession,
@@ -146,7 +176,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final data = await _repo.registerArtisan(
         phone: phone,
-        password: password,
+        pinCode: pinCode,
         firstName: firstName,
         lastName: lastName,
         profession: profession,
@@ -189,7 +219,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<bool> registerClient({
     required String phone,
-    required String password,
+    required String pinCode,
     required String firstName,
     required String lastName,
     required String city,
@@ -200,7 +230,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final data = await _repo.registerClient(
         phone: phone,
-        password: password,
+        pinCode: pinCode,
         firstName: firstName,
         lastName: lastName,
         city: city,
@@ -255,9 +285,52 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<bool> setupPin({
+    required String phone,
+    required String code,
+    required String pinCode,
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, error: null);
+    try {
+      final data = await _repo.setupPin(
+        phone: phone,
+        code: code,
+        pinCode: pinCode,
+      );
+
+      await SecureStorage.saveLastLoginPhone(phone);
+      final tokens = _extractTokens(data);
+      await SecureStorage.saveTokens(
+        accessToken: tokens.$1,
+        refreshToken: tokens.$2,
+      );
+
+      final userMap = data['user'] as Map<String, dynamic>? ?? {};
+      final role = (userMap['role'] ?? '').toString();
+      final userId = userMap['id']?.toString() ?? '';
+      await SecureStorage.saveUserInfo(
+        userId: userId,
+        role: role.toLowerCase(),
+      );
+
+      final user = UserModel.fromJson(userMap);
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+      PushNotificationService().initialize().catchError((_) {});
+      _connectRealtime(user.id);
+      return true;
+    } catch (e) {
+      final appError = mapException(e);
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        error: appError.userMessage,
+      );
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     ChatRealtimeService().disconnect();
-    await SecureStorage.clearAll();
+    await SecureStorage.clearAuthSession();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 

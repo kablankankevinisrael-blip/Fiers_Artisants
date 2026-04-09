@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,29 +16,11 @@ class ConversationsListScreen extends ConsumerStatefulWidget {
 
 class _ConversationsListScreenState
     extends ConsumerState<ConversationsListScreen> {
-  Timer? _pollTimer;
-
   @override
   void initState() {
     super.initState();
     Future.microtask(() async {
       await ref.read(chatProvider.notifier).loadConversations();
-      _startPolling();
-    });
-  }
-
-  @override
-  void dispose() {
-    _pollTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (!mounted) return;
-      if (ref.read(chatProvider).authRequired) return;
-      ref.read(chatProvider.notifier).loadConversations();
     });
   }
 
@@ -89,6 +69,16 @@ class _ConversationsListScreenState
               itemCount: chatState.conversations.length,
               itemBuilder: (context, index) {
                 final convo = chatState.conversations[index];
+                final queryParams = <String, String>{
+                  'name': convo.participantName,
+                };
+                final avatar = convo.participantAvatarUrl?.trim();
+                if (avatar != null && avatar.isNotEmpty) {
+                  queryParams['avatar'] = avatar;
+                }
+                final query = Uri(queryParameters: queryParams).query;
+                final route = '/chat/${convo.id}?$query';
+
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor:
@@ -134,7 +124,7 @@ class _ConversationsListScreenState
                       ],
                     ],
                   ),
-                  onTap: () => context.push('/chat/${convo.id}'),
+                  onTap: () => context.push(route),
                 );
               },
             ),

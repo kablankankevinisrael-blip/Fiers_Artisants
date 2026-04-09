@@ -33,6 +33,8 @@ enum AppErrorCode {
   authInvalidCredentials,
   authAccountDisabled,
   authOtpRequired,
+  authPinSetupRequired,
+  authPinBlocked,
   authInvalidToken,
   authPhoneAlreadyUsed,
 
@@ -76,6 +78,7 @@ class AppError implements Exception {
 
   /// Indique si l'erreur nécessite une vérification OTP.
   bool get isOtpRequired => code == AppErrorCode.authOtpRequired;
+  bool get isPinSetupRequired => code == AppErrorCode.authPinSetupRequired;
 
   @override
   String toString() =>

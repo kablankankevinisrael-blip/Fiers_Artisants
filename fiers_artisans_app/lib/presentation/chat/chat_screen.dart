@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,7 +10,15 @@ import '../../core/utils/formatters.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
-  const ChatScreen({super.key, required this.conversationId});
+  final String? participantName;
+  final String? participantAvatarUrl;
+
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    this.participantName,
+    this.participantAvatarUrl,
+  });
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -23,7 +29,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollCtrl = ScrollController();
   static final RegExp _conversationIdPattern = RegExp(r'^[a-fA-F0-9]{24}$');
   String? _currentUserId;
-  Timer? _pollTimer;
   int _lastMessageCount = 0;
   bool _invalidConversationId = false;
 
@@ -53,12 +58,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     await notifier.loadMessages(widget.conversationId);
     await notifier.markAsRead(widget.conversationId);
     _scrollToBottom();
-    _startPolling();
   }
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
     _messageCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -75,26 +78,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  void _startPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
-      if (!mounted) return;
-      if (ref.read(chatProvider).authRequired) return;
-      final beforeCount = ref.read(chatProvider).messages.length;
-      await ref.read(chatProvider.notifier).loadMessages(widget.conversationId);
-      ref.read(chatProvider.notifier).markAsRead(widget.conversationId);
-      final afterCount = ref.read(chatProvider).messages.length;
-      if (afterCount > beforeCount) {
-        _scrollToBottom();
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final chatState = ref.watch(chatProvider);
-    final messages = chatState.messages;
+    final messages = chatState.messagesFor(widget.conversationId);
+    final conversation = chatState.conversationById(widget.conversationId);
+    final hasKnownConversation = conversation != null;
+
+    final resolvedName = (conversation?.participantName.trim().isNotEmpty ?? false)
+      ? conversation!.participantName
+      : (widget.participantName?.trim().isNotEmpty ?? false)
+        ? widget.participantName!.trim()
+        : 'Conversation';
+
+    final resolvedAvatar = (conversation?.participantAvatarUrl?.trim().isNotEmpty ?? false)
+      ? conversation!.participantAvatarUrl!.trim()
+      : (widget.participantAvatarUrl?.trim().isNotEmpty ?? false)
+        ? widget.participantAvatarUrl!.trim()
+        : null;
+
+    final isConversationLoading =
+      chatState.isMessagesLoading(widget.conversationId) && messages.isEmpty;
 
     if (_invalidConversationId) {
       return Scaffold(
@@ -159,13 +164,53 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('chat.title'.tr()),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+              backgroundImage:
+                  resolvedAvatar != null ? NetworkImage(resolvedAvatar) : null,
+              child: resolvedAvatar == null
+                  ? Text(
+                      resolvedName.isNotEmpty
+                        ? resolvedName[0].toUpperCase()
+                        : '?',
+                      style: TextStyle(color: theme.colorScheme.primary),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    resolvedName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  Text(
+                    hasKnownConversation ? 'Messagerie SMS' : 'Chargement…',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
           // Messages list
           Expanded(
-            child: messages.isEmpty
+            child: isConversationLoading
+                ? const Center(child: CircularProgressIndicator())
+                : messages.isEmpty
                 ? Center(
                 child: Text(chatState.errorMessage ?? 'Aucun message',
                         style: theme.textTheme.bodySmall))
@@ -303,20 +348,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollToBottom();
 
     // Send via REST — replace temp on success, remove on failure
-    ref
-        .read(chatProvider.notifier)
-        .sendMessage(
-          conversationId: widget.conversationId,
-          content: text,
-          tempId: tempId,
-        )
-        .then((_) {
-          ref.read(chatProvider.notifier).loadMessages(widget.conversationId);
-          ref.read(chatProvider.notifier).loadConversations();
-        })
-        .catchError((_) {
+    try {
+      await ref.read(chatProvider.notifier).sendMessage(
+            conversationId: widget.conversationId,
+            content: text,
+            tempId: tempId,
+          );
+    } catch (_) {
       ref.read(chatProvider.notifier).removeMessage(tempId);
-    });
+    }
   }
 
   void _scrollToBottom() {

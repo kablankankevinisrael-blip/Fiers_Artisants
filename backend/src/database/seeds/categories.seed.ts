@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'node:crypto';
 
 const categories = [
   { name: 'Bâtiment & Construction', slug: 'batiment-construction', icon_url: '🧱', display_order: 1, subcategories: ['Maçon', 'Carreleur', 'Plâtrier', 'Ferblantier'] },
@@ -28,7 +28,7 @@ export async function seedCategories(dataSource: DataSource): Promise<void> {
     const existingCat = await categoryRepo.findOne({ where: { slug: cat.slug } });
     if (existingCat) continue;
 
-    const categoryId = uuid();
+    const categoryId = randomUUID();
     await categoryRepo.save({
       id: categoryId,
       name: cat.name,
@@ -47,7 +47,7 @@ export async function seedCategories(dataSource: DataSource): Promise<void> {
         .replace(/(^-|-$)/g, '');
 
       await subcategoryRepo.save({
-        id: uuid(),
+        id: randomUUID(),
         category_id: categoryId,
         name: subName,
         slug: subSlug,

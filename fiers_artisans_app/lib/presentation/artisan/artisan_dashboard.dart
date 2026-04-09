@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../config/theme.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/verification_provider.dart';
@@ -21,6 +24,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
   late AnimationController _animController;
   late Animation<double> _fadeIn;
   bool _isAvailable = true;
+  final ApiClient _api = ApiClient();
 
   @override
   void initState() {
@@ -38,6 +42,8 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
       ref.read(subscriptionProvider.notifier).loadStatus();
       ref.read(chatProvider.notifier).loadConversations();
       ref.read(verificationProvider.notifier).refresh();
+      _syncAvailabilityFromBackend();
+      _syncLocationToBackend();
     });
   }
 
@@ -47,10 +53,74 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
   }
 
   Future<void> _toggleAvailability(bool val) async {
+    final previous = _isAvailable;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('artisan_available', val);
     setState(() => _isAvailable = val);
-    // TODO: Sync availability with backend when endpoint is ready
+
+    try {
+      await _api.put(
+        ApiEndpoints.artisanProfile,
+        data: {'is_available': val},
+      );
+    } catch (_) {
+      await prefs.setBool('artisan_available', previous);
+      if (mounted) {
+        setState(() => _isAvailable = previous);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Synchronisation indisponible. Réessayez.'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _syncAvailabilityFromBackend() async {
+    try {
+      final response = await _api.get(ApiEndpoints.artisanProfile);
+      final profile = response.data as Map<String, dynamic>;
+      final remoteValue = profile['is_available'];
+      if (remoteValue is bool) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('artisan_available', remoteValue);
+        if (mounted) {
+          setState(() => _isAvailable = remoteValue);
+        }
+      }
+    } catch (_) {
+      // Keep local fallback when offline or backend unavailable.
+    }
+  }
+
+  Future<void> _syncLocationToBackend() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      await _api.put(
+        ApiEndpoints.updateUserLocation,
+        data: {
+          'lat': position.latitude,
+          'lng': position.longitude,
+        },
+      );
+    } catch (_) {
+      // Non-blocking: dashboard keeps working if location sync fails.
+    }
   }
 
   Future<void> _onRefresh() async {
@@ -65,6 +135,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(verificationProvider.notifier).refresh();
+      _syncLocationToBackend();
     }
   }
 
@@ -350,8 +421,17 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                           name: convo.participantName,
                           lastMessage: convo.lastMessage ?? '',
                           unread: convo.unreadCount,
-                          onTap: () =>
-                              context.push('/chat/${convo.id}'),
+                          onTap: () {
+                            final queryParams = <String, String>{
+                              'name': convo.participantName,
+                            };
+                            final avatar = convo.participantAvatarUrl?.trim();
+                            if (avatar != null && avatar.isNotEmpty) {
+                              queryParams['avatar'] = avatar;
+                            }
+                            final query = Uri(queryParameters: queryParams).query;
+                            context.push('/chat/${convo.id}?$query');
+                          },
                         );
                       },
                       childCount: chatState.conversations.length.clamp(0, 3),

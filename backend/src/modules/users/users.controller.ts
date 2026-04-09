@@ -14,6 +14,7 @@ import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { CurrentUser } from '../../common/decorators';
 import { RolesGuard, PhoneVerifiedGuard } from '../../common/guards';
 import { Roles } from '../../common/decorators';
+import { UpdateLocationDto } from './dto';
 
 @Controller()
 @UseGuards(AuthGuard('jwt'), PhoneVerifiedGuard)
@@ -27,6 +28,14 @@ export class UsersController {
     @Body('fcmToken') fcmToken: string,
   ) {
     return this.usersService.updateFcmToken(userId, fcmToken);
+  }
+
+  @Put('users/location')
+  updateMyLocation(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateLocationDto,
+  ) {
+    return this.usersService.updateUserLocation(userId, dto.lat, dto.lng);
   }
 
   // ── Artisan Profile ─────────────────────────────────────────────

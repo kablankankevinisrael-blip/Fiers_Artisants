@@ -1,10 +1,10 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { randomUUID } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
 import sharp from 'sharp';
-import { v4 as uuid } from 'uuid';
 import { MediaFile } from './schemas/media-file.schema';
 
 const ALLOWED_MIME_TYPES = [
@@ -61,7 +61,7 @@ export class MediaService {
       throw new BadRequestException('Le fichier dépasse la taille maximale de 10 MB.');
     }
 
-    const fileId = uuid();
+    const fileId = randomUUID();
     const ext = file.originalname.split('.').pop();
     const objectKey = `${fileId}.${ext}`;
     let thumbnailKey: string | undefined;

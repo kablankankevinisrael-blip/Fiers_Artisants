@@ -72,10 +72,21 @@ export class SearchService {
       qb = qb.orderBy('distance_meters', 'ASC');
     }
 
-    const [results, total] = await qb
+    const total = await qb.getCount();
+
+    const { entities, raw } = await qb
       .skip(offset)
       .take(limit)
-      .getManyAndCount();
+      .getRawAndEntities();
+
+    const results = entities.map((entity, index) => {
+      const distanceMeters = Number(raw[index]?.distance_meters);
+      // Expose distance in km for mobile cards and sorting transparency.
+      (entity as any).distance = Number.isFinite(distanceMeters)
+        ? distanceMeters / 1000
+        : null;
+      return entity;
+    });
 
     // Fire-and-forget analytics
     this.analyticsService.logActivity({

@@ -8,6 +8,7 @@ import {
   VerifyOtpDto,
   LoginDto,
   RefreshTokenDto,
+  SetupPinDto,
 } from './dto/auth.dto';
 import { CurrentUser } from '../../common/decorators';
 
@@ -38,6 +39,11 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('setup-pin')
+  setupPin(@Body() dto: SetupPinDto) {
+    return this.authService.setupPin(dto);
   }
 
   @Post('refresh')
