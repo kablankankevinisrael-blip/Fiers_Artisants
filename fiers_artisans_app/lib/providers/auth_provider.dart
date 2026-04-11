@@ -320,6 +320,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return true;
     } catch (e) {
       final appError = mapException(e);
+      debugPrint('[Auth] setupPin error: $appError');
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
         error: appError.userMessage,

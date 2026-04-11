@@ -5,8 +5,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/chat_provider.dart';
 import '../../providers/categories_provider.dart';
 import '../common/category_chip.dart';
+import '../common/recent_conversation_tile.dart';
 import '../common/skeleton_loader.dart';
 
 class ClientDashboard extends ConsumerStatefulWidget {
@@ -33,7 +35,12 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
     _animController.forward();
 
     _loadRecentlyViewed();
-    Future.microtask(() => ref.read(categoriesProvider.notifier).load());
+    Future.microtask(() async {
+      await Future.wait([
+        ref.read(categoriesProvider.notifier).load(),
+        ref.read(chatProvider.notifier).loadConversations(),
+      ]);
+    });
   }
 
   Future<void> _loadRecentlyViewed() async {
@@ -54,20 +61,25 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
     final theme = Theme.of(context);
     final user = ref.watch(authProvider).user;
     final catState = ref.watch(categoriesProvider);
+    final chatState = ref.watch(chatProvider);
 
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
           color: theme.colorScheme.primary,
           onRefresh: () async {
-            await ref.read(categoriesProvider.notifier).load();
-            await _loadRecentlyViewed();
+            await Future.wait([
+              ref.read(categoriesProvider.notifier).load(),
+              ref.read(chatProvider.notifier).loadConversations(),
+              _loadRecentlyViewed(),
+            ]);
           },
           child: FadeTransition(
             opacity: _fadeIn,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics()),
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
               slivers: [
                 // ── Greeting header ──
                 SliverToBoxAdapter(
@@ -77,9 +89,9 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'home.greeting'.tr(namedArgs: {
-                            'name': user?.firstName ?? ''
-                          }),
+                          'home.greeting'.tr(
+                            namedArgs: {'name': user?.firstName ?? ''},
+                          ),
                           style: theme.textTheme.headlineLarge,
                         ),
                         const SizedBox(height: 4),
@@ -101,7 +113,9 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                     child: Container(
                       margin: const EdgeInsets.all(20),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: theme.cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
@@ -109,8 +123,10 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.search_rounded,
-                              color: theme.textTheme.bodySmall?.color),
+                          Icon(
+                            Icons.search_rounded,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -131,19 +147,26 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                     child: GestureDetector(
-                      onTap: () => context.push('/client/search',
-                          extra: {'nearby': true, 'availableOnly': true}),
+                      onTap: () => context.push(
+                        '/client/search',
+                        extra: {'nearby': true, 'availableOnly': true},
+                      ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           gradient: AppTheme.goldGradient,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.flash_on_rounded,
-                                color: Colors.black, size: 22),
+                            const Icon(
+                              Icons.flash_on_rounded,
+                              color: Colors.black,
+                              size: 22,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -167,8 +190,11 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                                 ],
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios,
-                                color: Colors.black54, size: 16),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.black54,
+                              size: 16,
+                            ),
                           ],
                         ),
                       ),
@@ -183,8 +209,10 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('home.categories'.tr(),
-                            style: theme.textTheme.headlineMedium),
+                        Text(
+                          'home.categories'.tr(),
+                          style: theme.textTheme.headlineMedium,
+                        ),
                         TextButton(
                           onPressed: () => context.push('/client/search'),
                           child: Text('home.see_all'.tr()),
@@ -201,19 +229,20 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                     child: catState.isLoading
                         ? ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             itemCount: 5,
                             itemBuilder: (_, index) => Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: SkeletonLoader(
-                                  width: 100, height: 40, borderRadius: 20),
+                                width: 100,
+                                height: 40,
+                                borderRadius: 20,
+                              ),
                             ),
                           )
                         : ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             physics: const BouncingScrollPhysics(),
                             itemCount: catState.categories.length,
                             itemBuilder: (context, index) {
@@ -246,8 +275,10 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                           child: _QuickAction(
                             icon: Icons.location_on_outlined,
                             label: 'home.nearby'.tr(),
-                            onTap: () => context.push('/client/search',
-                                extra: {'nearby': true}),
+                            onTap: () => context.push(
+                              '/client/search',
+                              extra: {'nearby': true},
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -255,8 +286,10 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                           child: _QuickAction(
                             icon: Icons.star_outline_rounded,
                             label: 'home.top_rated'.tr(),
-                            onTap: () => context.push('/client/search',
-                                extra: {'topRated': true}),
+                            onTap: () => context.push(
+                              '/client/search',
+                              extra: {'topRated': true},
+                            ),
                           ),
                         ),
                       ],
@@ -270,8 +303,10 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text('dashboard.client.favorites'.tr(),
-                        style: theme.textTheme.headlineMedium),
+                    child: Text(
+                      'dashboard.client.favorites'.tr(),
+                      style: theme.textTheme.headlineMedium,
+                    ),
                   ),
                 ),
 
@@ -287,9 +322,11 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.favorite_outline,
-                              size: 36,
-                              color: theme.textTheme.bodySmall?.color),
+                          Icon(
+                            Icons.favorite_outline,
+                            size: 36,
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
                           const SizedBox(height: 10),
                           Text(
                             'dashboard.client.favorites_empty'.tr(),
@@ -330,28 +367,173 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                         child: Column(
                           children: _recentlyViewed
                               .take(3)
-                              .map((name) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 6),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.history,
-                                            size: 18,
-                                            color: theme
-                                                .textTheme.bodySmall?.color),
-                                        const SizedBox(width: 10),
-                                        Text(name,
-                                            style:
-                                                theme.textTheme.bodyMedium),
-                                      ],
-                                    ),
-                                  ))
+                              .map(
+                                (name) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 6,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.history,
+                                        size: 18,
+                                        color: theme.textTheme.bodySmall?.color,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        name,
+                                        style: theme.textTheme.bodyMedium,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
                               .toList(),
                         ),
                       ),
                     ),
                   ),
                 ],
+
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                // ── Recent conversations (with artisans) ──
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final textScale = MediaQuery.textScalerOf(
+                          context,
+                        ).scale(1);
+                        final isCompact =
+                            constraints.maxWidth < 380 || textScale > 1.08;
+
+                        final seeAllButton = TextButton(
+                          onPressed: () => context.push('/chat'),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                          ),
+                          child: Text(
+                            'home.see_all'.tr(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+
+                        if (isCompact) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'dashboard.client.inbox'.tr(),
+                                style: theme.textTheme.headlineMedium,
+                              ),
+                              if (chatState.conversations.isNotEmpty)
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: seeAllButton,
+                                ),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'dashboard.client.inbox'.tr(),
+                                style: theme.textTheme.headlineMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (chatState.conversations.isNotEmpty)
+                              seeAllButton,
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+                if (chatState.isLoading && chatState.conversations.isEmpty)
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                        child: SkeletonLoader(
+                          width: double.infinity,
+                          height: 72,
+                          borderRadius: 12,
+                        ),
+                      ),
+                      childCount: 3,
+                    ),
+                  )
+                else if (chatState.conversations.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: theme.cardTheme.color,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: theme.dividerColor),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 40,
+                              color: theme.textTheme.bodySmall?.color,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'chat.empty'.tr(),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.textTheme.bodySmall?.color,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index >= 3) return null;
+                      final convo = chatState.conversations[index];
+
+                      return RecentConversationTile(
+                        name: convo.participantName,
+                        lastMessage: convo.lastMessage ?? '',
+                        unread: convo.unreadCount,
+                        lastMessageAt: convo.lastMessageAt,
+                        avatarUrl: convo.participantAvatarUrl,
+                        onTap: () {
+                          final queryParams = <String, String>{
+                            'name': convo.participantName,
+                          };
+                          final avatar = convo.participantAvatarUrl?.trim();
+                          if (avatar != null && avatar.isNotEmpty) {
+                            queryParams['avatar'] = avatar;
+                          }
+                          final query = Uri(queryParameters: queryParams).query;
+                          context.push('/chat/${convo.id}?$query');
+                        },
+                      );
+                    }, childCount: chatState.conversations.length.clamp(0, 3)),
+                  ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
@@ -394,9 +576,11 @@ class _QuickAction extends StatelessWidget {
               child: Icon(icon, color: Colors.black, size: 24),
             ),
             const SizedBox(height: 12),
-            Text(label,
-                style: theme.textTheme.bodyMedium,
-                textAlign: TextAlign.center),
+            Text(
+              label,
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),

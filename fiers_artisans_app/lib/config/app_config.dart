@@ -22,11 +22,6 @@ class AppConfig {
 
   // ── Réseau (lues depuis .env avec fallback sûr) ────────────────────
   static String get _apiHost {
-    final sharedHost = _firstNonEmpty([dotenv.env['API_HOST']]);
-    if (sharedHost != null) {
-      return sharedHost;
-    }
-
     if (kIsWeb) {
       final webHost = _firstNonEmpty([dotenv.env['API_HOST_WEB']]);
       if (webHost != null) {
@@ -38,7 +33,17 @@ class AppConfig {
         return browserHost;
       }
 
+      final sharedHost = _firstNonEmpty([dotenv.env['API_HOST']]);
+      if (sharedHost != null) {
+        return sharedHost;
+      }
+
       return 'localhost';
+    }
+
+    final sharedHost = _firstNonEmpty([dotenv.env['API_HOST']]);
+    if (sharedHost != null) {
+      return sharedHost;
     }
 
     return _firstNonEmpty([dotenv.env['API_HOST_MOBILE']]) ?? '10.0.2.2';

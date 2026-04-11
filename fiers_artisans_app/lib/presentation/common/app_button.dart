@@ -48,20 +48,27 @@ class _AppButtonState extends State<AppButton>
     if (widget.isOutlined) {
       return SizedBox(
         width: widget.width ?? double.infinity,
-        height: 52,
-        child: OutlinedButton(
-          onPressed: widget.isLoading ? null : () {
-            HapticFeedback.lightImpact();
-            widget.onPressed?.call();
-          },
-          child: _buildChild(context),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 52),
+          child: OutlinedButton(
+            onPressed: widget.isLoading
+                ? null
+                : () {
+                    HapticFeedback.lightImpact();
+                    widget.onPressed?.call();
+                  },
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 52),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            child: _buildChild(context),
+          ),
         ),
       );
     }
 
     return SizedBox(
       width: widget.width ?? double.infinity,
-      height: 52,
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: widget.onPressed != null && !widget.isLoading
@@ -72,17 +79,24 @@ class _AppButtonState extends State<AppButton>
               : null,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: ElevatedButton(
-          onPressed: widget.isLoading ? null : () {
-            HapticFeedback.lightImpact();
-            widget.onPressed?.call();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            foregroundColor: Colors.black,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 52),
+          child: ElevatedButton(
+            onPressed: widget.isLoading
+                ? null
+                : () {
+                    HapticFeedback.lightImpact();
+                    widget.onPressed?.call();
+                  },
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(0, 52),
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            child: _buildChild(context),
           ),
-          child: _buildChild(context),
         ),
       ),
     );
@@ -93,24 +107,36 @@ class _AppButtonState extends State<AppButton>
       return const SizedBox(
         height: 22,
         width: 22,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.5,
-          color: Colors.white,
-        ),
+        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
       );
     }
 
     if (widget.icon != null) {
       return Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(widget.icon, size: 20),
           const SizedBox(width: 8),
-          Text(widget.text),
+          Flexible(
+            child: Text(
+              widget.text,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ),
         ],
       );
     }
 
-    return Text(widget.text);
+    return Text(
+      widget.text,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+    );
   }
 }

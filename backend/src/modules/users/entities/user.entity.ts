@@ -37,10 +37,10 @@ export class User {
   email: string;
 
   // Legacy password hash kept for migration compatibility.
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   password_hash: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   pin_hash: string | null;
 
   @Column({ type: 'enum', enum: UserRole })

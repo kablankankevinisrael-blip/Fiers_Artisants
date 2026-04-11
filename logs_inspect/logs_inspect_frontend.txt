@@ -1,0 +1,56 @@
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+D/TextSelection( 3614): onUseCache cache=false
+W/WindowOnBackDispatcher( 3614): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 3614): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/flutter ( 3614): → GET http://192.168.1.9:3000/api/v1/categories
+I/flutter ( 3614): ✗ null http://192.168.1.9:3000/api/v1/categories
+I/flutter ( 3614): → GET http://192.168.1.9:3000/api/v1/search/artisans?page=1&limit=20&lat=5.36&lng=-4.0083&radius_km=5.0
+I/flutter ( 3614): ✗ null http://192.168.1.9:3000/api/v1/search/artisans?page=1&limit=20&lat=5.36&lng=-4.0083&radius_km=5.0
+D/TextSelection( 3614): onUseCache cache=false
+I/flutter ( 3614): → GET http://192.168.1.9:3000/api/v1/search/artisans?page=1&limit=20&lat=5.36&lng=-4.0083&radius_km=5.0
+I/flutter ( 3614): ✗ null http://192.168.1.9:3000/api/v1/search/artisans?page=1&limit=20&lat=5.36&lng=-4.0083&radius_km=5.0
+D/TextSelection( 3614): onUseCache cache=false
+I/rs_artisans_app( 3614): Background concurrent mark compact GC freed 3490KB AllocSpace bytes, 122(4392KB) LOS objects, 66% free, 4124KB/12MB, paused 609us,7.511ms total 84.704ms
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /tr_preload/operator/app/HiTranslate/HiTranslate.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~9joJGn_3tjcsbiXDEdCKIg==/com.openai.chatgpt-a5Z2udQNl8sVFHZ8RbEn-g==/base.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~9joJGn_3tjcsbiXDEdCKIg==/com.openai.chatgpt-a5Z2udQNl8sVFHZ8RbEn-g==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~9joJGn_3tjcsbiXDEdCKIg==/com.openai.chatgpt-a5Z2udQNl8sVFHZ8RbEn-g==/split_config.fr.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~9joJGn_3tjcsbiXDEdCKIg==/com.openai.chatgpt-a5Z2udQNl8sVFHZ8RbEn-g==/split_config.xhdpi.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~JDQb_Kn27RJ9-ixemhLDNg==/com.google.android.marvin.talkback-wJ_usONHQLLByeyZ3Of-lg==/base.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~JDQb_Kn27RJ9-ixemhLDNg==/com.google.android.marvin.talkback-wJ_usONHQLLByeyZ3Of-lg==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /tr_preload/operator/app/Notepad/Notepad.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /system_ext/app/AiWriting/AiWriting.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/base.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.arm64_v8a.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.fr.apk' with 1 weak references
+W/rs_artisans_app( 3614): ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~g6gRwMTqOeN5T-mU7tyZ7g==/com.spaceship.screen.textcopy-VU5r3HHywvm0elq7BfOJzg==/split_config.xhdpi.apk' with 1 weak references
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): → GET http://192.168.1.9:3000/api/v1/search/artisans?page=1&limit=20&lat=5.36&lng=-4.0083&radius_km=5.0
+I/flutter ( 3614): ✗ null http://192.168.1.9:3000/api/v1/search/artisans?page=1&limit=20&lat=5.36&lng=-4.0083&radius_km=5.0
+D/TextSelection( 3614): onUseCache cache=false
+D/TextSelection( 3614): onUseCache cache=false
+D/TextSelection( 3614): onUseCache cache=false
+D/TextSelection( 3614): onUseCache cache=false
+W/WindowOnBackDispatcher( 3614): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 3614): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+D/TextSelection( 3614): onUseCache cache=false
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): → GET http://192.168.1.9:3000/api/v1/chat/conversations
+I/flutter ( 3614): ✗ null http://192.168.1.9:3000/api/v1/chat/conversations
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] connect error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+I/flutter ( 3614): [ChatRealtime] socket error: HttpException: Connection closed before full header was received, uri = http://192.168.1.9:3000/socket.io/?userId=62694d2e-0009-4673-9d26-babe1e0f7a5e&EIO=4&transport=websocket
+D/TextSelection( 3614): onUseCache cache=false

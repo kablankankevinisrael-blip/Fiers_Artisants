@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
-import '../../config/constants.dart';
 import '../../config/app_config.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/artisan_provider.dart';
@@ -16,6 +16,7 @@ import '../common/rating_stars.dart';
 import '../common/badge_verified.dart';
 import '../common/skeleton_loader.dart';
 import '../common/app_button.dart';
+import '../common/portfolio_item_card.dart';
 
 class ArtisanProfileScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -26,15 +27,22 @@ class ArtisanProfileScreen extends ConsumerStatefulWidget {
       _ArtisanProfileScreenState();
 }
 
-class _ArtisanProfileScreenState
-    extends ConsumerState<ArtisanProfileScreen> {
+class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
   bool _isOpeningChat = false;
+  final ScrollController _portfolioScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     Future.microtask(
-        () => ref.read(artisanDetailProvider.notifier).loadArtisan(widget.userId));
+      () => ref.read(artisanDetailProvider.notifier).loadArtisan(widget.userId),
+    );
+  }
+
+  @override
+  void dispose() {
+    _portfolioScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -70,9 +78,7 @@ class _ArtisanProfileScreenState
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: BoxDecoration(
-                  gradient: AppTheme.goldGradient,
-                ),
+                decoration: BoxDecoration(gradient: AppTheme.goldGradient),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -89,22 +95,33 @@ class _ArtisanProfileScreenState
                                   width: 80,
                                   height: 80,
                                   fit: BoxFit.cover,
+                                  errorWidget: (context, url, err) => Text(
+                                    '${artisan.firstName[0]}${artisan.lastName[0]}'
+                                        .toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               )
                             : Text(
                                 '${artisan.firstName[0]}${artisan.lastName[0]}'
                                     .toUpperCase(),
                                 style: const TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         artisan.fullName,
-                        style: theme.textTheme.headlineMedium
-                            ?.copyWith(color: Colors.black),
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: Colors.black,
+                        ),
                       ),
                     ],
                   ),
@@ -153,7 +170,8 @@ class _ArtisanProfileScreenState
                     const SizedBox(height: 4),
                     Text(
                       'artisan.experience'.tr(
-                          namedArgs: {'years': '${artisan.experienceYears}'}),
+                        namedArgs: {'years': '${artisan.experienceYears}'},
+                      ),
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -164,107 +182,172 @@ class _ArtisanProfileScreenState
                   ),
                   if (artisan.description != null) ...[
                     const SizedBox(height: 16),
-                    Text('artisan.about'.tr(),
-                        style: theme.textTheme.titleMedium),
+                    Text(
+                      'artisan.about'.tr(),
+                      style: theme.textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
-                    Text(artisan.description!,
-                        style: theme.textTheme.bodyMedium),
+                    Text(
+                      artisan.description!,
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   ],
                   const SizedBox(height: 24),
 
                   // Contact buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppButton(
-                          text: 'artisan.contact.chat'.tr(),
-                          icon: Icons.chat_bubble_outline,
-                          isLoading: _isOpeningChat,
-                          onPressed: () => _openChatWithArtisan(
-                            participantUserId: artisan.userId,
-                            participantName: artisan.fullName,
-                            participantAvatarUrl: artisan.profilePhotoUrl,
-                          ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final textScale = MediaQuery.textScalerOf(
+                        context,
+                      ).scale(1);
+                      final isCompactLayout =
+                          constraints.maxWidth < 340 || textScale > 1.15;
+
+                      final chatButton = AppButton(
+                        text: 'artisan.contact.chat'.tr(),
+                        icon: Icons.chat_bubble_outline,
+                        isLoading: _isOpeningChat,
+                        onPressed: () => _openChatWithArtisan(
+                          participantUserId: artisan.userId,
+                          participantName: artisan.fullName,
+                          participantAvatarUrl: artisan.profilePhotoUrl,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      _ContactIcon(
-                        icon: Icons.phone_outlined,
-                        onTap: () => _launchPhone(artisan.phone),
-                      ),
-                      const SizedBox(width: 8),
-                      _ContactIcon(
-                        icon: Icons.message_outlined, // WhatsApp
-                        onTap: () => _launchWhatsApp(artisan.phone),
-                      ),
-                    ],
+                      );
+
+                      final quickActions = Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _ContactIcon(
+                            icon: Icons.phone_outlined,
+                            onTap: () => _launchPhone(artisan.phone),
+                          ),
+                          const SizedBox(width: 8),
+                          _ContactIcon(
+                            icon: Icons.message_outlined, // WhatsApp
+                            onTap: () => _launchWhatsApp(artisan.phone),
+                          ),
+                        ],
+                      );
+
+                      if (isCompactLayout) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            chatButton,
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [quickActions],
+                            ),
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          Expanded(child: chatButton),
+                          const SizedBox(width: 12),
+                          quickActions,
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 32),
 
                   // Portfolio section
                   if (state.portfolio.isNotEmpty) ...[
-                    Text('artisan.portfolio'.tr(),
-                        style: theme.textTheme.headlineMedium),
+                    Text(
+                      'artisan.portfolio'.tr(),
+                      style: theme.textTheme.headlineMedium,
+                    ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      height: 180,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: state.portfolio.length,
-                        itemBuilder: (ctx, i) {
-                          final item = state.portfolio[i];
-                          return Container(
-                            width: 200,
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color: theme.cardTheme.color,
-                              borderRadius:
-                                  BorderRadius.circular(AppConstants.radiusMedium),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final textScale = MediaQuery.textScalerOf(
+                          context,
+                        ).scale(1);
+                        final maxWidth = constraints.maxWidth;
+                        final cardWidth = maxWidth >= 1100
+                            ? 320.0
+                            : maxWidth >= 700
+                            ? 280.0
+                            : (maxWidth * 0.76).clamp(220.0, 300.0);
+                        final cardHeight = textScale > 1.15 ? 280.0 : 260.0;
+                        const scrollAreaExtraHeight = 24.0;
+                        final styledScrollbarTheme = theme.scrollbarTheme
+                            .copyWith(
+                              thumbVisibility: const WidgetStatePropertyAll(
+                                true,
+                              ),
+                              trackVisibility: const WidgetStatePropertyAll(
+                                true,
+                              ),
+                              thickness: const WidgetStatePropertyAll(10),
+                              radius: const Radius.circular(999),
+                              minThumbLength: 42,
+                              mainAxisMargin: 4,
+                              crossAxisMargin: 2,
+                              thumbColor: WidgetStatePropertyAll(
+                                theme.colorScheme.primary.withValues(
+                                  alpha: 0.82,
+                                ),
+                              ),
+                              trackColor: WidgetStatePropertyAll(
+                                theme.colorScheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.68),
+                              ),
+                              trackBorderColor: WidgetStatePropertyAll(
+                                theme.colorScheme.primary.withValues(
+                                  alpha: 0.22,
+                                ),
+                              ),
+                            );
+
+                        return SizedBox(
+                          height: cardHeight + scrollAreaExtraHeight,
+                          child: Theme(
+                            data: theme.copyWith(
+                              scrollbarTheme: styledScrollbarTheme,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (item.imageUrls.isNotEmpty)
-                                  Hero(
-                                    tag: 'portfolio_${item.id}',
-                                    child: ClipRRect(
-                                      borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(12)),
-                                      child: CachedNetworkImage(
-                                        imageUrl: item.imageUrls.first,
-                                        width: 200,
-                                        height: 120,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item.title,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                  fontWeight: FontWeight.w600),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis),
-                                      if (item.price != null)
-                                        Text(Formatters.fcfa(item.price!),
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                                    color: theme
-                                                        .colorScheme.primary)),
-                                    ],
+                            child: ScrollConfiguration(
+                              behavior: const MaterialScrollBehavior().copyWith(
+                                dragDevices: {
+                                  PointerDeviceKind.touch,
+                                  PointerDeviceKind.mouse,
+                                  PointerDeviceKind.trackpad,
+                                  PointerDeviceKind.stylus,
+                                },
+                              ),
+                              child: Scrollbar(
+                                controller: _portfolioScrollController,
+                                scrollbarOrientation:
+                                    ScrollbarOrientation.bottom,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: ListView.separated(
+                                    controller: _portfolioScrollController,
+                                    scrollDirection: Axis.horizontal,
+                                    physics: const BouncingScrollPhysics(),
+                                    itemCount: state.portfolio.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(width: 12),
+                                    itemBuilder: (ctx, i) {
+                                      final item = state.portfolio[i];
+                                      return SizedBox(
+                                        width: cardWidth,
+                                        child: PortfolioItemCard(
+                                          key: ValueKey(item.id),
+                                          item: item,
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
                   ],
@@ -273,8 +356,10 @@ class _ArtisanProfileScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('artisan.reviews'.tr(),
-                          style: theme.textTheme.headlineMedium),
+                      Text(
+                        'artisan.reviews'.tr(),
+                        style: theme.textTheme.headlineMedium,
+                      ),
                       TextButton(
                         onPressed: () =>
                             context.push('/client/review/${artisan.id}'),
@@ -284,47 +369,54 @@ class _ArtisanProfileScreenState
                   ),
                   const SizedBox(height: 12),
                   if (state.reviews.isEmpty)
-                    Text('review.empty'.tr(),
-                        style: theme.textTheme.bodySmall)
+                    Text('review.empty'.tr(), style: theme.textTheme.bodySmall)
                   else
-                    ...state.reviews.take(5).map((review) => Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: theme.cardTheme.color,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      review.clientName ?? 'Client',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                              fontWeight: FontWeight.w600),
+                    ...state.reviews
+                        .take(5)
+                        .map(
+                          (review) => Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: theme.cardTheme.color,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        review.clientName ?? 'Client',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
                                     ),
-                                  ),
-                                  RatingStars(
+                                    RatingStars(
                                       rating: review.rating.toDouble(),
-                                      size: 14),
+                                      size: 14,
+                                    ),
+                                  ],
+                                ),
+                                if (review.comment != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    review.comment!,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
                                 ],
-                              ),
-                              if (review.comment != null) ...[
-                                const SizedBox(height: 8),
-                                Text(review.comment!,
-                                    style: theme.textTheme.bodyMedium),
+                                const SizedBox(height: 4),
+                                Text(
+                                  Formatters.relativeDate(review.createdAt),
+                                  style: theme.textTheme.labelSmall,
+                                ),
                               ],
-                              const SizedBox(height: 4),
-                              Text(
-                                Formatters.relativeDate(review.createdAt),
-                                style: theme.textTheme.labelSmall,
-                              ),
-                            ],
+                            ),
                           ),
-                        )),
+                        ),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -353,8 +445,7 @@ class _ArtisanProfileScreenState
       targetId: widget.userId,
       metadata: {'method': 'whatsapp'},
     );
-    final uri = Uri.parse(
-        'https://wa.me/${AppConfig.phonePrefix}$phone');
+    final uri = Uri.parse('https://wa.me/${AppConfig.phonePrefix}$phone');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -368,8 +459,9 @@ class _ArtisanProfileScreenState
     if (_isOpeningChat) return;
     setState(() => _isOpeningChat = true);
     try {
-      final convo =
-          await ref.read(chatProvider.notifier).createConversation(participantUserId);
+      final convo = await ref
+          .read(chatProvider.notifier)
+          .createConversation(participantUserId);
       if (!mounted) return;
       final queryParams = <String, String>{'name': participantName};
       final avatar = participantAvatarUrl?.trim();
@@ -381,7 +473,9 @@ class _ArtisanProfileScreenState
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible de demarrer la conversation.')),
+        const SnackBar(
+          content: Text('Impossible de demarrer la conversation.'),
+        ),
       );
     } finally {
       if (mounted) {

@@ -11,6 +11,9 @@ services:
       - ../backend/src:/app/src
     environment:
       - NODE_ENV=development
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-localhost}
+      - MINIO_PUBLIC_PORT=${MINIO_PUBLIC_PORT:-9002}
+      - MINIO_PUBLIC_USE_SSL=${MINIO_PUBLIC_USE_SSL:-false}
     command: npm run start:dev
     deploy:
       resources:

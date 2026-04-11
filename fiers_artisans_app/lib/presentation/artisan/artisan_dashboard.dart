@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/verification_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../common/recent_conversation_tile.dart';
 
 class ArtisanDashboard extends ConsumerStatefulWidget {
   const ArtisanDashboard({super.key});
@@ -59,10 +60,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     setState(() => _isAvailable = val);
 
     try {
-      await _api.put(
-        ApiEndpoints.artisanProfile,
-        data: {'is_available': val},
-      );
+      await _api.put(ApiEndpoints.artisanProfile, data: {'is_available': val});
     } catch (_) {
       await prefs.setBool('artisan_available', previous);
       if (mounted) {
@@ -113,10 +111,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
 
       await _api.put(
         ApiEndpoints.updateUserLocation,
-        data: {
-          'lat': position.latitude,
-          'lng': position.longitude,
-        },
+        data: {'lat': position.latitude, 'lng': position.longitude},
       );
     } catch (_) {
       // Non-blocking: dashboard keeps working if location sync fails.
@@ -155,8 +150,10 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     final vState = ref.watch(verificationProvider);
     final isDark = theme.brightness == Brightness.dark;
 
-    final unreadMessages = chatState.conversations
-        .fold<int>(0, (sum, c) => sum + c.unreadCount);
+    final unreadMessages = chatState.conversations.fold<int>(
+      0,
+      (sum, c) => sum + c.unreadCount,
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -167,7 +164,8 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
             opacity: _fadeIn,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics()),
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
               slivers: [
                 // ── Header + availability toggle ──
                 SliverToBoxAdapter(
@@ -180,9 +178,9 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'home.greeting'.tr(namedArgs: {
-                                  'name': user?.firstName ?? ''
-                                }),
+                                'home.greeting'.tr(
+                                  namedArgs: {'name': user?.firstName ?? ''},
+                                ),
                                 style: theme.textTheme.headlineLarge,
                               ),
                               const SizedBox(height: 4),
@@ -235,9 +233,13 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: _VerificationCard(
                       vState: vState,
-                      onTap: () => context.push('/artisan/verification').then(
-                        (_) => ref.read(verificationProvider.notifier).refresh(),
-                      ),
+                      onTap: () => context
+                          .push('/artisan/verification')
+                          .then(
+                            (_) => ref
+                                .read(verificationProvider.notifier)
+                                .refresh(),
+                          ),
                     ),
                   ),
                 ),
@@ -339,9 +341,13 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                           icon: Icons.verified_outlined,
                           label: 'artisan.verification.title'.tr(),
                           color: AppTheme.warning,
-                          onTap: () => context.push('/artisan/verification').then(
-                            (_) => ref.read(verificationProvider.notifier).refresh(),
-                          ),
+                          onTap: () => context
+                              .push('/artisan/verification')
+                              .then(
+                                (_) => ref
+                                    .read(verificationProvider.notifier)
+                                    .refresh(),
+                              ),
                         ),
                         _ActionTile(
                           icon: Icons.credit_card_outlined,
@@ -396,9 +402,11 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                         ),
                         child: Column(
                           children: [
-                            Icon(Icons.chat_bubble_outline,
-                                size: 40,
-                                color: theme.textTheme.bodySmall?.color),
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 40,
+                              color: theme.textTheme.bodySmall?.color,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'chat.empty'.tr(),
@@ -413,29 +421,28 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                   )
                 else
                   SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index >= 3) return null;
-                        final convo = chatState.conversations[index];
-                        return _ConversationTile(
-                          name: convo.participantName,
-                          lastMessage: convo.lastMessage ?? '',
-                          unread: convo.unreadCount,
-                          onTap: () {
-                            final queryParams = <String, String>{
-                              'name': convo.participantName,
-                            };
-                            final avatar = convo.participantAvatarUrl?.trim();
-                            if (avatar != null && avatar.isNotEmpty) {
-                              queryParams['avatar'] = avatar;
-                            }
-                            final query = Uri(queryParameters: queryParams).query;
-                            context.push('/chat/${convo.id}?$query');
-                          },
-                        );
-                      },
-                      childCount: chatState.conversations.length.clamp(0, 3),
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      if (index >= 3) return null;
+                      final convo = chatState.conversations[index];
+                      return RecentConversationTile(
+                        name: convo.participantName,
+                        lastMessage: convo.lastMessage ?? '',
+                        unread: convo.unreadCount,
+                        lastMessageAt: convo.lastMessageAt,
+                        avatarUrl: convo.participantAvatarUrl,
+                        onTap: () {
+                          final queryParams = <String, String>{
+                            'name': convo.participantName,
+                          };
+                          final avatar = convo.participantAvatarUrl?.trim();
+                          if (avatar != null && avatar.isNotEmpty) {
+                            queryParams['avatar'] = avatar;
+                          }
+                          final query = Uri(queryParameters: queryParams).query;
+                          context.push('/chat/${convo.id}?$query');
+                        },
+                      );
+                    }, childCount: chatState.conversations.length.clamp(0, 3)),
                   ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -472,7 +479,9 @@ class _SubscriptionCard extends StatelessWidget {
           gradient: isActive ? AppTheme.goldGradient : null,
           color: isActive ? null : theme.cardTheme.color,
           borderRadius: BorderRadius.circular(16),
-          border: isActive ? null : Border.all(color: AppTheme.error.withValues(alpha: 0.5)),
+          border: isActive
+              ? null
+              : Border.all(color: AppTheme.error.withValues(alpha: 0.5)),
         ),
         child: Row(
           children: [
@@ -507,9 +516,9 @@ class _SubscriptionCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     isActive
-                        ? 'subscription.expires_in'.tr(namedArgs: {
-                            'days': '${sub!.daysRemaining}'
-                          })
+                        ? 'subscription.expires_in'.tr(
+                            namedArgs: {'days': '${sub!.daysRemaining}'},
+                          )
                         : 'subscription.expired'.tr(),
                     style: TextStyle(
                       fontSize: 13,
@@ -521,8 +530,10 @@ class _SubscriptionCard extends StatelessWidget {
             ),
             if (!isActive)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.gold,
                   borderRadius: BorderRadius.circular(8),
@@ -556,28 +567,31 @@ class _VerificationCard extends StatelessWidget {
     final theme = Theme.of(context);
     final label = vState.dashboardLabel;
 
-    final (Color statusColor, String statusText, IconData statusIcon) =
-        switch (label) {
+    final (
+      Color statusColor,
+      String statusText,
+      IconData statusIcon,
+    ) = switch (label) {
       'VERIFIED' || 'CERTIFIED' => (
-          AppTheme.success,
-          'artisan.verification.approved'.tr(),
-          Icons.check_circle_outline,
-        ),
+        AppTheme.success,
+        'artisan.verification.approved'.tr(),
+        Icons.check_circle_outline,
+      ),
       'PENDING' => (
-          AppTheme.warning,
-          'artisan.verification.pending'.tr(),
-          Icons.schedule_outlined,
-        ),
+        AppTheme.warning,
+        'artisan.verification.pending'.tr(),
+        Icons.schedule_outlined,
+      ),
       'REJECTED' => (
-          AppTheme.error,
-          'artisan.verification.rejected'.tr(),
-          Icons.cancel_outlined,
-        ),
+        AppTheme.error,
+        'artisan.verification.rejected'.tr(),
+        Icons.cancel_outlined,
+      ),
       _ => (
-          theme.textTheme.bodySmall?.color ?? Colors.grey,
-          'artisan.verification.not_submitted'.tr(),
-          Icons.upload_file_outlined,
-        ),
+        theme.textTheme.bodySmall?.color ?? Colors.grey,
+        'artisan.verification.not_submitted'.tr(),
+        Icons.upload_file_outlined,
+      ),
     };
 
     return GestureDetector(
@@ -619,8 +633,7 @@ class _VerificationCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right,
-                color: theme.textTheme.bodySmall?.color),
+            Icon(Icons.chevron_right, color: theme.textTheme.bodySmall?.color),
           ],
         ),
       ),
@@ -725,94 +738,6 @@ class _ActionTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ConversationTile extends StatelessWidget {
-  final String name;
-  final String lastMessage;
-  final int unread;
-  final VoidCallback onTap;
-
-  const _ConversationTile({
-    required this.name,
-    required this.lastMessage,
-    required this.unread,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: theme.dividerColor),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor:
-                    theme.colorScheme.primary.withValues(alpha: 0.15),
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    if (lastMessage.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        lastMessage,
-                        style: theme.textTheme.bodySmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (unread > 0)
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: const BoxDecoration(
-                    color: AppTheme.gold,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$unread',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );

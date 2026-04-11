@@ -19,6 +19,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
   private readonly minioClient: Minio.Client;
+  private readonly minioSigningClient: Minio.Client;
 
   constructor(
     @InjectModel(MediaFile.name)
@@ -29,6 +30,23 @@ export class MediaService {
       endPoint: this.configService.get<string>('minio.endpoint') || 'localhost',
       port: this.configService.get<number>('minio.port') || 9000,
       useSSL: this.configService.get<boolean>('minio.useSSL') || false,
+      accessKey: this.configService.get<string>('minio.accessKey') || '',
+      secretKey: this.configService.get<string>('minio.secretKey') || '',
+    });
+
+    this.minioSigningClient = new Minio.Client({
+      endPoint:
+        this.configService.get<string>('minio.publicEndpoint') ||
+        this.configService.get<string>('minio.endpoint') ||
+        'localhost',
+      port:
+        this.configService.get<number>('minio.publicPort') ||
+        this.configService.get<number>('minio.port') ||
+        9000,
+      useSSL:
+        this.configService.get<boolean>('minio.publicUseSSL') ||
+        this.configService.get<boolean>('minio.useSSL') ||
+        false,
       accessKey: this.configService.get<string>('minio.accessKey') || '',
       secretKey: this.configService.get<string>('minio.secretKey') || '',
     });
@@ -105,8 +123,20 @@ export class MediaService {
   }
 
   async getSignedUrl(bucket: string, objectKey: string): Promise<string> {
-    // URL signée valide 1 heure
-    return this.minioClient.presignedGetObject(bucket, objectKey, 3600);
+    // URL signée valide 1 heure.
+    // In Docker, public endpoint can be unreachable from inside the container.
+    try {
+      return await this.minioSigningClient.presignedGetObject(
+        bucket,
+        objectKey,
+        3600,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Public signing endpoint unavailable for ${bucket}/${objectKey}, fallback to internal MinIO endpoint`,
+      );
+      return this.minioClient.presignedGetObject(bucket, objectKey, 3600);
+    }
   }
 
   async streamFile(

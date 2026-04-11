@@ -17,7 +17,9 @@ class ArtisanRepository {
       ApiEndpoints.reviewsByArtisan(artisanId),
       queryParameters: {'page': page},
     );
-    final list = response.data is List ? response.data : response.data['data'] ?? [];
+    final list = response.data is List
+        ? response.data
+        : response.data['data'] ?? [];
     return (list as List).map((e) => ReviewModel.fromJson(e)).toList();
   }
 
@@ -26,10 +28,7 @@ class ArtisanRepository {
     required int rating,
     String? comment,
   }) async {
-    final body = <String, dynamic>{
-      'artisan_id': artisanId,
-      'rating': rating,
-    };
+    final body = <String, dynamic>{'artisan_id': artisanId, 'rating': rating};
     if (comment != null) body['comment'] = comment;
 
     await _api.post(ApiEndpoints.reviews, data: body);
@@ -37,7 +36,9 @@ class ArtisanRepository {
 
   Future<List<PortfolioModel>> getPortfolio(String artisanId) async {
     final response = await _api.get(ApiEndpoints.portfolioByArtisan(artisanId));
-    final list = response.data is List ? response.data : response.data['data'] ?? [];
+    final list = response.data is List
+        ? response.data
+        : response.data['data'] ?? [];
     return (list as List).map((e) => PortfolioModel.fromJson(e)).toList();
   }
 
@@ -45,10 +46,12 @@ class ArtisanRepository {
     required String title,
     String? description,
     double? price,
+    required List<Map<String, String>> imageObjects,
     required List<String> imageUrls,
   }) async {
     final body = <String, dynamic>{
       'title': title,
+      'imageObjects': imageObjects,
       'imageUrls': imageUrls,
     };
     if (description != null) body['description'] = description;

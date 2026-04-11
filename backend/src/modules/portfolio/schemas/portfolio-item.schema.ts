@@ -18,6 +18,17 @@ export class PortfolioItem extends Document {
   @Prop({ type: [String] })
   imageUrls: string[];
 
+  @Prop({
+    type: [
+      {
+        bucket: { type: String, required: true },
+        objectKey: { type: String, required: true },
+      },
+    ],
+    default: [],
+  })
+  imageObjects: Array<{ bucket: string; objectKey: string }>;
+
   @Prop({ type: [String], index: true })
   tags: string[];
 
