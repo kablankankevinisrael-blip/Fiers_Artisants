@@ -29,7 +29,10 @@
     "login": "Log in",
     "register": "Sign up",
     "phone": "Phone number",
+    "phone_required": "Phone number is required.",
+    "phone_invalid": "Enter a complete phone number.",
     "pin": "PIN code",
+    "pin_required": "PIN code is required.",
     "confirm_pin": "Confirm PIN code",
     "pin_5_digits": "PIN must be exactly 5 digits.",
     "pin_mismatch": "PIN codes do not match.",
@@ -85,6 +88,7 @@
       "unread_messages": "Unread messages",
       "avg_rating": "Average rating",
       "total_reviews": "Total reviews",
+      "reviews_history_title": "Reviews history",
       "quick_actions": "Quick actions",
       "inbox": "Inbox"
     },
@@ -93,6 +97,8 @@
       "urgent_subtitle": "Available craftsmen nearby",
       "favorites": "My favorites",
       "favorites_empty": "Add craftsmen to favorites to find them easily.",
+      "favorite_added": "Added to favorites.",
+      "favorite_removed": "Removed from favorites.",
       "inbox": "Recent messages",
       "recently_viewed": "Recently viewed"
     }
@@ -104,6 +110,7 @@
     "results": "{count} craftsman(s) found",
     "no_results": "No craftsmen found in this area",
     "filter": "Filter",
+    "all_categories": "All categories",
     "sort_by": "Sort by",
     "distance": "Distance",
     "rating": "Rating",
@@ -173,11 +180,20 @@
   "review": {
     "title": "Reviews",
     "leave": "Leave a review",
+    "reply_action": "Reply",
+    "reply_dialog_title": "Reply to this review",
+    "reply_dialog_hint": "Write your reply to the client...",
+    "reply_success": "Reply sent.",
+    "reply_already_exists": "A reply already exists for this review.",
+    "artisan_reply_label": "Artisan reply",
     "your_rating": "Your rating",
+    "tap_again_to_clear": "Tap the same star again to clear your rating.",
     "your_comment": "Your comment",
     "submit": "Submit",
+    "submitted_success": "Review submitted successfully.",
     "already_done": "You have already reviewed this craftsman.",
-    "empty": "No reviews yet"
+    "empty": "No reviews yet",
+    "no_comment": "No comment"
   },
   "chat": {
     "title": "Messages",

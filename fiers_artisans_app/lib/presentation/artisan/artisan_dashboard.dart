@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../config/theme.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/utils/formatters.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../providers/verification_provider.dart';
@@ -25,6 +26,11 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
   late AnimationController _animController;
   late Animation<double> _fadeIn;
   bool _isAvailable = true;
+  bool _isReviewMetricsLoading = true;
+  bool _isStatsLoading = true;
+  double _avgRating = 0;
+  int _totalReviews = 0;
+  int _profileViews48h = 0;
   final ApiClient _api = ApiClient();
 
   @override
@@ -45,6 +51,8 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
       ref.read(verificationProvider.notifier).refresh();
       _syncAvailabilityFromBackend();
       _syncLocationToBackend();
+      _loadArtisanStats();
+      _loadReviewMetrics();
     });
   }
 
@@ -123,7 +131,65 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
       ref.read(subscriptionProvider.notifier).loadStatus(),
       ref.read(chatProvider.notifier).loadConversations(),
       ref.read(verificationProvider.notifier).refresh(),
+      _loadArtisanStats(),
+      _loadReviewMetrics(),
     ]);
+  }
+
+  Future<void> _loadArtisanStats() async {
+    setState(() => _isStatsLoading = true);
+    try {
+      final response = await _api.get(ApiEndpoints.artisanStats);
+      final data = response.data as Map<String, dynamic>;
+      final profileViewsRaw =
+          data['profile_views_48h'] ?? data['profileViews48h'] ?? 0;
+
+      if (!mounted) return;
+      setState(() {
+        _profileViews48h = _toInt(profileViewsRaw) ?? 0;
+        _isStatsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isStatsLoading = false);
+    }
+  }
+
+  Future<void> _loadReviewMetrics() async {
+    setState(() => _isReviewMetricsLoading = true);
+    try {
+      final response = await _api.get(ApiEndpoints.artisanProfile);
+      final profile = response.data as Map<String, dynamic>;
+
+      final avgRaw = profile['rating_avg'] ?? profile['averageRating'];
+      final totalRaw = profile['total_reviews'] ?? profile['totalReviews'];
+
+      if (!mounted) return;
+      setState(() {
+        _avgRating = _toDouble(avgRaw) ?? 0;
+        _totalReviews = _toInt(totalRaw) ?? 0;
+        _isReviewMetricsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isReviewMetricsLoading = false);
+    }
+  }
+
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 
   @override
@@ -131,6 +197,8 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     if (state == AppLifecycleState.resumed) {
       ref.read(verificationProvider.notifier).refresh();
       _syncLocationToBackend();
+      _loadArtisanStats();
+      _loadReviewMetrics();
     }
   }
 
@@ -149,6 +217,12 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     final chatState = ref.watch(chatProvider);
     final vState = ref.watch(verificationProvider);
     final isDark = theme.brightness == Brightness.dark;
+    final isSubActive = subState.subscription?.isActive == true;
+    final subDaysRemaining = subState.subscription?.daysRemaining ?? 0;
+    final showSubscriptionAlert =
+      subState.hasLoaded &&
+      subState.error == null &&
+      (!isSubActive || subDaysRemaining <= 4);
 
     final unreadMessages = chatState.conversations.fold<int>(
       0,
@@ -218,19 +292,25 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                 ),
 
                 // ── Account status cards ──
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                    child: _SubscriptionCard(
-                      subState: subState,
-                      onTap: () => context.push('/artisan/subscription'),
+                if (showSubscriptionAlert)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: _SubscriptionCard(
+                        subState: subState,
+                        onTap: () => context.push('/artisan/subscription'),
+                      ),
                     ),
                   ),
-                ),
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      20,
+                      showSubscriptionAlert ? 12 : 20,
+                      20,
+                      0,
+                    ),
                     child: _VerificationCard(
                       vState: vState,
                       onTap: () => context
@@ -263,9 +343,8 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                         Expanded(
                           child: _KpiCard(
                             icon: Icons.visibility_outlined,
-                            value: '--',
+                            value: _isStatsLoading ? '--' : '$_profileViews48h',
                             label: 'dashboard.artisan.profile_views'.tr(),
-                            // TODO: Wire to backend analytics endpoint
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -275,6 +354,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                             value: '$unreadMessages',
                             label: 'dashboard.artisan.unread_messages'.tr(),
                             highlight: unreadMessages > 0,
+                            onTap: () => context.push('/chat'),
                           ),
                         ),
                       ],
@@ -290,18 +370,24 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                         Expanded(
                           child: _KpiCard(
                             icon: Icons.star_outline_rounded,
-                            value: user != null ? '—' : '--',
+                            value: _isReviewMetricsLoading
+                                ? '--'
+                                : Formatters.rating(_avgRating),
                             label: 'dashboard.artisan.avg_rating'.tr(),
-                            // TODO: Wire to artisan profile averageRating
+                            onTap: () => context.push('/artisan/reviews'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _KpiCard(
                             icon: Icons.rate_review_outlined,
-                            value: user != null ? '—' : '--',
+                            value: _isReviewMetricsLoading
+                                ? '--'
+                                : '$_totalReviews',
                             label: 'dashboard.artisan.total_reviews'.tr(),
-                            // TODO: Wire to artisan profile totalReviews
+                            highlight:
+                                !_isReviewMetricsLoading && _totalReviews > 0,
+                            onTap: () => context.push('/artisan/reviews'),
                           ),
                         ),
                       ],
@@ -646,18 +732,20 @@ class _KpiCard extends StatelessWidget {
   final String value;
   final String label;
   final bool highlight;
+  final VoidCallback? onTap;
 
   const _KpiCard({
     required this.icon,
     required this.value,
     required this.label,
     this.highlight = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
+    final content = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
@@ -687,6 +775,19 @@ class _KpiCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: content,
       ),
     );
   }

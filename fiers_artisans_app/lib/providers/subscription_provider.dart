@@ -5,22 +5,26 @@ import '../data/repositories/subscription_repository.dart';
 class SubscriptionState {
   final SubscriptionModel? subscription;
   final bool isLoading;
+  final bool hasLoaded;
   final String? error;
 
   const SubscriptionState({
     this.subscription,
     this.isLoading = false,
+    this.hasLoaded = false,
     this.error,
   });
 
   SubscriptionState copyWith({
     SubscriptionModel? subscription,
     bool? isLoading,
+    bool? hasLoaded,
     String? error,
   }) {
     return SubscriptionState(
       subscription: subscription ?? this.subscription,
       isLoading: isLoading ?? this.isLoading,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
       error: error,
     );
   }
@@ -40,9 +44,17 @@ class SubscriptionNotifier extends StateNotifier<SubscriptionState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final sub = await _repo.getStatus();
-      state = state.copyWith(subscription: sub, isLoading: false);
+      state = state.copyWith(
+        subscription: sub,
+        isLoading: false,
+        hasLoaded: true,
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(
+        isLoading: false,
+        hasLoaded: true,
+        error: e.toString(),
+      );
     }
   }
 

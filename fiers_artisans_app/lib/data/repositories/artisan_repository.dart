@@ -1,8 +1,24 @@
+import 'package:dio/dio.dart';
+
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../models/artisan_model.dart';
 import '../models/review_model.dart';
 import '../models/portfolio_model.dart';
+
+enum ReviewSubmitErrorType { duplicate, network, backend, unknown }
+
+class ReviewSubmitException implements Exception {
+  final ReviewSubmitErrorType type;
+  final String? message;
+  final int? statusCode;
+
+  const ReviewSubmitException({
+    required this.type,
+    this.message,
+    this.statusCode,
+  });
+}
 
 class ArtisanRepository {
   final ApiClient _api = ApiClient();
@@ -31,7 +47,57 @@ class ArtisanRepository {
     final body = <String, dynamic>{'artisan_id': artisanId, 'rating': rating};
     if (comment != null) body['comment'] = comment;
 
-    await _api.post(ApiEndpoints.reviews, data: body);
+    try {
+      await _api.post(ApiEndpoints.reviews, data: body);
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final message = e.response?.data is Map<String, dynamic>
+          ? (e.response?.data['message']?.toString())
+          : null;
+
+      if (statusCode == 409) {
+        throw ReviewSubmitException(
+          type: ReviewSubmitErrorType.duplicate,
+          message: message,
+          statusCode: statusCode,
+        );
+      }
+
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw ReviewSubmitException(
+          type: ReviewSubmitErrorType.network,
+          message: message,
+          statusCode: statusCode,
+        );
+      }
+
+      if (statusCode != null) {
+        throw ReviewSubmitException(
+          type: ReviewSubmitErrorType.backend,
+          message: message,
+          statusCode: statusCode,
+        );
+      }
+
+      throw ReviewSubmitException(
+        type: ReviewSubmitErrorType.unknown,
+        message: message,
+        statusCode: statusCode,
+      );
+    }
+  }
+
+  Future<void> replyToReview({
+    required String reviewId,
+    required String reply,
+  }) async {
+    await _api.put(
+      ApiEndpoints.reviewReply(reviewId),
+      data: {'reply': reply.trim()},
+    );
   }
 
   Future<List<PortfolioModel>> getPortfolio(String artisanId) async {

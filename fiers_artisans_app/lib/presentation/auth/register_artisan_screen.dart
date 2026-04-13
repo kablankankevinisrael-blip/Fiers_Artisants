@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -7,6 +6,7 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/categories_provider.dart';
 import '../common/app_button.dart';
+import '../common/pin_code_field.dart';
 import '../common/app_text_field.dart';
 
 class RegisterArtisanScreen extends ConsumerStatefulWidget {
@@ -59,7 +59,9 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    final success = await ref.read(authProvider.notifier).registerArtisan(
+    final success = await ref
+        .read(authProvider.notifier)
+        .registerArtisan(
           phone: _phoneCtrl.text.trim(),
           pinCode: _pinCtrl.text,
           firstName: _firstNameCtrl.text.trim(),
@@ -84,8 +86,7 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              ref.read(authProvider).error ?? 'error.generic'.tr()),
+          content: Text(ref.read(authProvider).error ?? 'error.generic'.tr()),
           backgroundColor: AppTheme.error,
         ),
       );
@@ -155,21 +156,24 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
 
                 // Category dropdown
                 if (categories.isNotEmpty) ...[
-                  Text('Catégorie',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          )),
+                  Text(
+                    'Catégorie',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedCategoryId,
                     items: categories
-                        .map((c) => DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.name),
-                            ))
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c.id,
+                            child: Text(c.name),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (v) =>
-                        setState(() => _selectedCategoryId = v),
+                    onChanged: (v) => setState(() => _selectedCategoryId = v),
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.category_outlined, size: 20),
                     ),
@@ -231,15 +235,11 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                AppTextField(
+                PinCodeField(
                   controller: _pinCtrl,
                   label: 'auth.pin'.tr(),
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 5,
                   textInputAction: TextInputAction.next,
+                  onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'auth.pin'.tr();
                     if (v.length != 5) return 'auth.pin_5_digits'.tr();
@@ -248,14 +248,9 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                AppTextField(
+                PinCodeField(
                   controller: _confirmPinCtrl,
                   label: 'auth.confirm_pin'.tr(),
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 5,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _register(),
                   validator: (v) {

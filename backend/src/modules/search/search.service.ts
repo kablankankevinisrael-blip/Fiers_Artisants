@@ -15,7 +15,7 @@ export class SearchService {
 
   async searchArtisans(dto: SearchArtisansDto) {
     const {
-      lat, lng, radius_km = 10, category, query,
+      lat, lng, radius_km = 10, min_rating, category, query,
       sort_by = 'distance', available_only = false,
       page = 1, limit = 20,
     } = dto;
@@ -27,6 +27,7 @@ export class SearchService {
       .leftJoinAndSelect('ap.category', 'c')
       .where('ap.is_subscription_active = :active', { active: true })
       .andWhere('u.is_active = :isActive', { isActive: true })
+      .andWhere('ap.is_available = :isAvailable', { isAvailable: true })
       // PostGIS : filtrer par rayon en km
       .andWhere(
         `ST_DWithin(
@@ -45,8 +46,15 @@ export class SearchService {
         'distance_meters',
       );
 
+    // Conservé pour compatibilité de contrat; tous les résultats sont désormais disponibles.
     if (available_only) {
       qb = qb.andWhere('ap.is_available = :avail', { avail: true });
+    }
+
+    if (min_rating != null) {
+      qb = qb.andWhere('ap.rating_avg >= :minRating', {
+        minRating: min_rating,
+      });
     }
 
     if (category) {
@@ -92,7 +100,15 @@ export class SearchService {
     this.analyticsService.logActivity({
       actorId: 'anonymous',
       action: 'SEARCH',
-      metadata: { category, query, lat, lng, results: total },
+      metadata: {
+        category,
+        query,
+        lat,
+        lng,
+        min_rating,
+        available_only,
+        results: total,
+      },
     }).catch(() => {});
 
     return {

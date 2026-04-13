@@ -46,7 +46,8 @@ class SubscriptionModel {
 
   int get daysRemaining {
     if (endDate == null) return 0;
-    final diff = endDate!.difference(DateTime.now()).inDays;
-    return diff > 0 ? diff : 0;
+    final diffMs = endDate!.difference(DateTime.now()).inMilliseconds;
+    if (diffMs <= 0) return 0;
+    return (diffMs / Duration.millisecondsPerDay).ceil();
   }
 }

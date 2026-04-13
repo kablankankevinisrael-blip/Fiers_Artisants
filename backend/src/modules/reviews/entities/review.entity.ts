@@ -39,6 +39,12 @@ export class Review {
   @Column({ type: 'text', nullable: true })
   comment: string;
 
+  @Column({ type: 'text', nullable: true })
+  artisan_reply: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  artisan_reply_at: Date | null;
+
   @CreateDateColumn()
   created_at: Date;
 }

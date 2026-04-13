@@ -29,7 +29,10 @@
     "login": "Se connecter",
     "register": "S'inscrire",
     "phone": "Numéro de téléphone",
+    "phone_required": "Le numéro de téléphone est requis.",
+    "phone_invalid": "Entrez un numéro de téléphone complet.",
     "pin": "Code PIN",
+    "pin_required": "Le code PIN est requis.",
     "confirm_pin": "Confirmer le code PIN",
     "pin_5_digits": "Le code PIN doit contenir 5 chiffres.",
     "pin_mismatch": "Les codes PIN ne correspondent pas.",
@@ -85,6 +88,7 @@
       "unread_messages": "Messages non lus",
       "avg_rating": "Note moyenne",
       "total_reviews": "Total avis",
+      "reviews_history_title": "Historique des avis",
       "quick_actions": "Actions rapides",
       "inbox": "Messagerie"
     },
@@ -93,6 +97,8 @@
       "urgent_subtitle": "Artisans disponibles à proximité",
       "favorites": "Mes favoris",
       "favorites_empty": "Ajoutez des artisans en favoris pour les retrouver facilement.",
+      "favorite_added": "Ajoute aux favoris.",
+      "favorite_removed": "Retire des favoris.",
       "inbox": "Messages récents",
       "recently_viewed": "Consultés récemment"
     }
@@ -104,6 +110,7 @@
     "results": "{count} artisan(s) trouvé(s)",
     "no_results": "Aucun artisan trouvé dans ce rayon",
     "filter": "Filtrer",
+    "all_categories": "Toutes les catégories",
     "sort_by": "Trier par",
     "distance": "Distance",
     "rating": "Note",
@@ -173,11 +180,20 @@
   "review": {
     "title": "Avis",
     "leave": "Laisser un avis",
+    "reply_action": "Répondre",
+    "reply_dialog_title": "Répondre à cet avis",
+    "reply_dialog_hint": "Écrivez votre réponse au client...",
+    "reply_success": "Réponse envoyée.",
+    "reply_already_exists": "Une réponse existe déjà pour cet avis.",
+    "artisan_reply_label": "Réponse de l'artisan",
     "your_rating": "Votre note",
+    "tap_again_to_clear": "Touchez la même étoile pour annuler la note.",
     "your_comment": "Votre commentaire",
     "submit": "Soumettre",
+    "submitted_success": "Avis envoyé avec succès.",
     "already_done": "Vous avez déjà laissé un avis pour cet artisan.",
-    "empty": "Aucun avis pour le moment"
+    "empty": "Aucun avis pour le moment",
+    "no_comment": "Aucun commentaire"
   },
   "chat": {
     "title": "Messages",

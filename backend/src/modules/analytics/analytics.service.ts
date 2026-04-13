@@ -21,6 +21,19 @@ export class AnalyticsService {
     await this.activityLogModel.create(data);
   }
 
+  async countProfileViewsInLastHours(
+    profileId: string,
+    hours: number,
+  ): Promise<number> {
+    const now = new Date();
+    const since = new Date(now.getTime() - hours * 60 * 60 * 1000);
+    return this.activityLogModel.countDocuments({
+      action: 'PROFILE_VIEW',
+      targetId: profileId,
+      timestamp: { $gte: since },
+    });
+  }
+
   async getDashboardStats() {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

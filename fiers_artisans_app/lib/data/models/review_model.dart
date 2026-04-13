@@ -5,6 +5,8 @@ class ReviewModel {
   final String? clientName;
   final int rating;
   final String? comment;
+  final String? artisanReply;
+  final DateTime? artisanReplyAt;
   final DateTime createdAt;
 
   ReviewModel({
@@ -14,6 +16,8 @@ class ReviewModel {
     this.clientName,
     required this.rating,
     this.comment,
+    this.artisanReply,
+    this.artisanReplyAt,
     required this.createdAt,
   });
 
@@ -25,6 +29,12 @@ class ReviewModel {
       clientName: json['client']?['first_name'] ?? json['clientName'] ?? json['client']?['firstName'],
       rating: json['rating'] ?? 0,
       comment: json['comment'],
+        artisanReply: json['artisan_reply'] ?? json['artisanReply'],
+        artisanReplyAt: json['artisan_reply_at'] != null
+          ? DateTime.tryParse(json['artisan_reply_at'])
+          : json['artisanReplyAt'] != null
+            ? DateTime.tryParse(json['artisanReplyAt'])
+            : null,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : json['createdAt'] != null

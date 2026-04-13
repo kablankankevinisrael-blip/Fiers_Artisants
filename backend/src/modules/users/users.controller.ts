@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Put,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -56,6 +57,13 @@ export class UsersController {
     return this.usersService.updateArtisanProfile(userId, dto);
   }
 
+  @Get('artisan/stats')
+  @UseGuards(RolesGuard)
+  @Roles('ARTISAN')
+  getMyArtisanStats(@CurrentUser('id') userId: string) {
+    return this.usersService.getArtisanStats(userId);
+  }
+
   // ── Client Profile ──────────────────────────────────────────────
   @Get('client/profile')
   @UseGuards(RolesGuard)
@@ -72,6 +80,43 @@ export class UsersController {
     @Body() dto: UpdateClientProfileDto,
   ) {
     return this.usersService.updateClientProfile(userId, dto);
+  }
+
+  @Get('client/favorites')
+  @UseGuards(RolesGuard)
+  @Roles('CLIENT')
+  getFavoriteArtisans(@CurrentUser('id') userId: string) {
+    return this.usersService.listFavoriteArtisans(userId);
+  }
+
+  @Get('client/favorites/:artisanUserId/status')
+  @UseGuards(RolesGuard)
+  @Roles('CLIENT')
+  getFavoriteStatus(
+    @CurrentUser('id') userId: string,
+    @Param('artisanUserId', ParseUUIDPipe) artisanUserId: string,
+  ) {
+    return this.usersService.getFavoriteStatus(userId, artisanUserId);
+  }
+
+  @Put('client/favorites/:artisanUserId')
+  @UseGuards(RolesGuard)
+  @Roles('CLIENT')
+  addFavoriteArtisan(
+    @CurrentUser('id') userId: string,
+    @Param('artisanUserId', ParseUUIDPipe) artisanUserId: string,
+  ) {
+    return this.usersService.setFavoriteArtisan(userId, artisanUserId, true);
+  }
+
+  @Delete('client/favorites/:artisanUserId')
+  @UseGuards(RolesGuard)
+  @Roles('CLIENT')
+  removeFavoriteArtisan(
+    @CurrentUser('id') userId: string,
+    @Param('artisanUserId', ParseUUIDPipe) artisanUserId: string,
+  ) {
+    return this.usersService.setFavoriteArtisan(userId, artisanUserId, false);
   }
 }
 

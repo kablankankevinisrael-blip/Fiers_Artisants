@@ -15,6 +15,7 @@ import {
   CreditCard,
   BadgeSwissFranc,
   ShieldAlert,
+  Star,
   ArrowRight,
 } from 'lucide-react';
 import type { DashboardStats } from '@/types';
@@ -71,7 +72,7 @@ export default function DashboardPage() {
       )}
 
       {/* KPI Grid */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCard
           title={t('total_users')}
           value={stats?.totalUsers ?? 0}
@@ -102,6 +103,12 @@ export default function DashboardPage() {
           icon={ShieldAlert}
           loading={loading}
         />
+        <KpiCard
+          title={t('total_reviews')}
+          value={stats?.totalReviews ?? 0}
+          icon={Star}
+          loading={loading}
+        />
       </div>
 
       {/* Quick actions */}
@@ -129,6 +136,14 @@ export default function DashboardPage() {
           >
             <Hammer className="mr-2 h-4 w-4" />
             {t('view_artisans')}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+          <Link
+            href="/reviews"
+            className={cn(buttonVariants({ variant: 'outline' }), 'no-underline')}
+          >
+            <Star className="mr-2 h-4 w-4" />
+            {t('view_reviews')}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </CardContent>

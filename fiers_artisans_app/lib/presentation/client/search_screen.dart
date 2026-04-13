@@ -21,10 +21,14 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
+  static const double _nearbyRadiusKm = 20;
+  static const double _topRatedMinRating = 3;
+
   final _searchCtrl = TextEditingController();
   String? _selectedCategoryId;
   String? _sortBy;
-  bool _availableOnly = false;
+  double? _minRating;
+  bool _isNearbyPreset = false;
   double _radius = AppConfig.defaultSearchRadius;
   double? _latitude;
   double? _longitude;
@@ -42,10 +46,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         final cat = params['categoryId'] as String?;
         if (cat != null) _selectedCategoryId = cat;
 
-        if (params['topRated'] == true) _sortBy = 'rating';
-        if (params['availableOnly'] == true) _availableOnly = true;
+        if (params['topRated'] == true) {
+          _sortBy = 'rating';
+          _minRating = _topRatedMinRating;
+        }
         if (params['nearby'] == true) {
-          _radius = 5; // Tighter radius for "nearby" intent
+          _isNearbyPreset = true;
+          _radius = _nearbyRadiusKm;
         }
       }
 
@@ -78,7 +85,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _search() {
-    ref.read(searchProvider.notifier).search(
+    ref
+        .read(searchProvider.notifier)
+        .search(
           latitude: _latitude,
           longitude: _longitude,
           radius: _radius,
@@ -87,7 +96,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ? _searchCtrl.text.trim()
               : null,
           sortBy: _sortBy,
-          availableOnly: _availableOnly ? true : null,
+          minRating: _minRating,
         );
   }
 
@@ -102,6 +111,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final theme = Theme.of(context);
     final searchState = ref.watch(searchProvider);
     final catState = ref.watch(categoriesProvider);
+    String? selectedCategoryName;
+    if (_selectedCategoryId != null) {
+      for (final category in catState.categories) {
+        if (category.id == _selectedCategoryId) {
+          selectedCategoryName = category.name;
+          break;
+        }
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text('search.title'.tr())),
@@ -140,8 +158,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     isSelected: _selectedCategoryId == cat.id,
                     onTap: () {
                       setState(() {
-                        _selectedCategoryId =
-                            _selectedCategoryId == cat.id ? null : cat.id;
+                        _selectedCategoryId = _selectedCategoryId == cat.id
+                            ? null
+                            : cat.id;
                       });
                       _search();
                     },
@@ -153,29 +172,32 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const SizedBox(height: 8),
 
           // Active filter chips
-          if (_sortBy != null || _availableOnly)
+          if (_sortBy != null || _selectedCategoryId != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
                 spacing: 8,
                 children: [
+                  if (_selectedCategoryId != null)
+                    InputChip(
+                      label: Text(selectedCategoryName ?? 'search.filter'.tr()),
+                      avatar: const Icon(Icons.category_outlined, size: 16),
+                      selected: true,
+                      onDeleted: () {
+                        setState(() => _selectedCategoryId = null);
+                        _search();
+                      },
+                    ),
                   if (_sortBy == 'rating')
                     InputChip(
                       label: Text('search.top_rated'.tr()),
                       avatar: const Icon(Icons.star_rounded, size: 16),
                       selected: true,
                       onDeleted: () {
-                        setState(() => _sortBy = null);
-                        _search();
-                      },
-                    ),
-                  if (_availableOnly)
-                    InputChip(
-                      label: Text('search.available_only'.tr()),
-                      avatar: const Icon(Icons.check_circle_outline, size: 16),
-                      selected: true,
-                      onDeleted: () {
-                        setState(() => _availableOnly = false);
+                        setState(() {
+                          _sortBy = null;
+                          _minRating = null;
+                        });
                         _search();
                       },
                     ),
@@ -189,9 +211,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: Row(
               children: [
                 Text(
-                  'search.radius'.tr(namedArgs: {
-                    'km': _radius.toStringAsFixed(0)
-                  }),
+                  'search.radius'.tr(
+                    namedArgs: {'km': _radius.toStringAsFixed(0)},
+                  ),
                   style: theme.textTheme.bodySmall,
                 ),
                 if (searchState.results.isNotEmpty)
@@ -215,29 +237,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                   )
                 : searchState.results.isEmpty
-                    ? EmptyState(
-                        icon: Icons.search_off_rounded,
-                        title: 'search.no_results'.tr(),
-                        actionLabel: 'common.retry'.tr(),
-                        onAction: _search,
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: searchState.results.length,
-                        itemBuilder: (context, index) {
-                          final artisan = searchState.results[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: ArtisanCard(
-                              artisan: artisan,
-                              onTap: () => context.push(
-                                '/client/artisan/${artisan.userId}',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                ? EmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'search.no_results'.tr(),
+                    actionLabel: 'common.retry'.tr(),
+                    onAction: _search,
+                  )
+                : ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: searchState.results.length,
+                    itemBuilder: (context, index) {
+                      final artisan = searchState.results[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ArtisanCard(
+                          artisan: artisan,
+                          onTap: () =>
+                              context.push('/client/artisan/${artisan.userId}'),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -254,19 +275,29 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('search.filter'.tr(),
-                  style: Theme.of(ctx).textTheme.headlineMedium),
+              Text(
+                'search.filter'.tr(),
+                style: Theme.of(ctx).textTheme.headlineMedium,
+              ),
               const SizedBox(height: 24),
               Text(
                 'search.radius'.tr(
-                    namedArgs: {'km': _radius.toStringAsFixed(0)}),
+                  namedArgs: {'km': _radius.toStringAsFixed(0)},
+                ),
                 style: Theme.of(ctx).textTheme.bodyMedium,
               ),
               Slider(
                 value: _radius,
                 min: 1,
-                max: AppConfig.maxSearchRadius,
-                divisions: 49,
+                max: _isNearbyPreset
+                    ? _nearbyRadiusKm
+                    : AppConfig.maxSearchRadius,
+                divisions:
+                    (_isNearbyPreset
+                            ? _nearbyRadiusKm
+                            : AppConfig.maxSearchRadius)
+                        .toInt() -
+                    1,
                 label: '${_radius.toStringAsFixed(0)} km',
                 onChanged: (v) {
                   setState(() => _radius = v);
@@ -274,23 +305,40 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              DropdownButtonFormField<String?>(
+                initialValue: _selectedCategoryId,
+                decoration: InputDecoration(labelText: 'home.categories'.tr()),
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('search.all_categories'.tr()),
+                  ),
+                  ...ref
+                      .read(categoriesProvider)
+                      .categories
+                      .map(
+                        (c) => DropdownMenuItem<String?>(
+                          value: c.id,
+                          child: Text(c.name),
+                        ),
+                      ),
+                ],
+                onChanged: (v) {
+                  setState(() => _selectedCategoryId = v);
+                  setSheetState(() {});
+                },
+              ),
+              const SizedBox(height: 12),
               SwitchListTile(
                 title: Text('search.top_rated'.tr()),
                 subtitle: Text('search.top_rated_desc'.tr()),
                 value: _sortBy == 'rating',
                 contentPadding: EdgeInsets.zero,
                 onChanged: (v) {
-                  setState(() => _sortBy = v ? 'rating' : null);
-                  setSheetState(() {});
-                },
-              ),
-              SwitchListTile(
-                title: Text('search.available_only'.tr()),
-                subtitle: Text('search.available_only_desc'.tr()),
-                value: _availableOnly,
-                contentPadding: EdgeInsets.zero,
-                onChanged: (v) {
-                  setState(() => _availableOnly = v);
+                  setState(() {
+                    _sortBy = v ? 'rating' : null;
+                    _minRating = v ? _topRatedMinRating : null;
+                  });
                   setSheetState(() {});
                 },
               ),

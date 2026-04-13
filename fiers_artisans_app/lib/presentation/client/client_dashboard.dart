@@ -7,6 +7,8 @@ import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/categories_provider.dart';
+import '../../providers/favorites_provider.dart';
+import '../common/artisan_card.dart';
 import '../common/category_chip.dart';
 import '../common/recent_conversation_tile.dart';
 import '../common/skeleton_loader.dart';
@@ -39,6 +41,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
       await Future.wait([
         ref.read(categoriesProvider.notifier).load(),
         ref.read(chatProvider.notifier).loadConversations(),
+        ref.read(favoritesProvider.notifier).loadFavorites(),
       ]);
     });
   }
@@ -62,6 +65,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
     final user = ref.watch(authProvider).user;
     final catState = ref.watch(categoriesProvider);
     final chatState = ref.watch(chatProvider);
+    final favoritesState = ref.watch(favoritesProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -71,6 +75,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
             await Future.wait([
               ref.read(categoriesProvider.notifier).load(),
               ref.read(chatProvider.notifier).loadConversations(),
+              ref.read(favoritesProvider.notifier).loadFavorites(),
               _loadRecentlyViewed(),
             ]);
           },
@@ -149,7 +154,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                     child: GestureDetector(
                       onTap: () => context.push(
                         '/client/search',
-                        extra: {'nearby': true, 'availableOnly': true},
+                        extra: {'nearby': true},
                       ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -299,7 +304,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
 
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                // ── Favorites placeholder ──
+                // ── Favorites ──
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -311,34 +316,69 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                 ),
 
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: theme.cardTheme.color,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.favorite_outline,
-                            size: 36,
-                            color: theme.textTheme.bodySmall?.color,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'dashboard.client.favorites_empty'.tr(),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.textTheme.bodySmall?.color,
+                  child:
+                      favoritesState.isLoading &&
+                          favoritesState.favorites.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: Column(
+                            children: List.generate(
+                              2,
+                              (_) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: SkeletonLoader.artisanCard(),
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
+                        )
+                      : favoritesState.favorites.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: theme.cardTheme.color,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: theme.dividerColor),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.favorite_outline,
+                                  size: 36,
+                                  color: theme.textTheme.bodySmall?.color,
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'dashboard.client.favorites_empty'.tr(),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.textTheme.bodySmall?.color,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: Column(
+                            children: favoritesState.favorites
+                                .take(3)
+                                .map(
+                                  (artisan) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: ArtisanCard(
+                                      artisan: artisan,
+                                      onTap: () => context.push(
+                                        '/client/artisan/${artisan.userId}',
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
                 ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),

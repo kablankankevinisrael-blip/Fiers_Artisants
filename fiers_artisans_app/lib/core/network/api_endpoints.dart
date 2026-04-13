@@ -12,8 +12,14 @@ class ApiEndpoints {
 
   // Profiles
   static const String artisanProfile = '/artisan/profile';
+  static const String artisanStats = '/artisan/stats';
   static const String clientProfile = '/client/profile';
   static String artisanById(String id) => '/artisan/$id';
+  static const String clientFavorites = '/client/favorites';
+  static String clientFavoriteByArtisanUser(String artisanUserId) =>
+      '/client/favorites/$artisanUserId';
+  static String clientFavoriteStatus(String artisanUserId) =>
+      '/client/favorites/$artisanUserId/status';
 
   // Categories
   static const String categories = '/categories';
@@ -24,6 +30,7 @@ class ApiEndpoints {
 
   // Reviews
   static const String reviews = '/reviews';
+    static String reviewReply(String reviewId) => '/reviews/$reviewId/reply';
   static String reviewsByArtisan(String artisanId) =>
       '/artisan/$artisanId/reviews';
 

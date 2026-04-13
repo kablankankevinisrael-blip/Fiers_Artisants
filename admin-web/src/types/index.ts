@@ -22,6 +22,7 @@ export interface DashboardStats {
   activeSubscriptions: number;
   totalRevenueFcfa: number;
   pendingVerifications: number;
+  totalReviews: number;
 }
 
 export interface VerificationDocumentPage {
@@ -127,6 +128,8 @@ export interface ReviewRecord {
   id: string;
   rating: number;
   comment: string;
+  artisan_reply?: string | null;
+  artisan_reply_at?: string | null;
   created_at: string;
   client: {
     id: string;

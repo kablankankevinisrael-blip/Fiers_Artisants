@@ -11,7 +11,7 @@ class SearchState {
   final String? categoryId;
   final double? radius;
   final String? sortBy;
-  final bool availableOnly;
+  final double? minRating;
   final int page;
   final bool hasMore;
 
@@ -23,7 +23,7 @@ class SearchState {
     this.categoryId,
     this.radius,
     this.sortBy,
-    this.availableOnly = false,
+    this.minRating,
     this.page = 1,
     this.hasMore = true,
   });
@@ -36,7 +36,7 @@ class SearchState {
     String? categoryId,
     double? radius,
     String? sortBy,
-    bool? availableOnly,
+    double? minRating,
     int? page,
     bool? hasMore,
   }) {
@@ -48,15 +48,16 @@ class SearchState {
       categoryId: categoryId ?? this.categoryId,
       radius: radius ?? this.radius,
       sortBy: sortBy ?? this.sortBy,
-      availableOnly: availableOnly ?? this.availableOnly,
+      minRating: minRating ?? this.minRating,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
     );
   }
 }
 
-final searchProvider =
-    StateNotifierProvider<SearchNotifier, SearchState>((ref) {
+final searchProvider = StateNotifierProvider<SearchNotifier, SearchState>((
+  ref,
+) {
   return SearchNotifier();
 });
 
@@ -72,7 +73,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     String? categoryId,
     String? query,
     String? sortBy,
-    bool? availableOnly,
+    double? minRating,
   }) async {
     state = SearchState(
       isLoading: true,
@@ -80,7 +81,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
       categoryId: categoryId,
       radius: radius,
       sortBy: sortBy,
-      availableOnly: availableOnly ?? false,
+      minRating: minRating,
     );
 
     try {
@@ -91,7 +92,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         categoryId: categoryId,
         query: query,
         sortBy: sortBy,
-        availableOnly: availableOnly,
+        minRating: minRating,
         page: 1,
       );
       state = state.copyWith(
@@ -101,17 +102,11 @@ class SearchNotifier extends StateNotifier<SearchState> {
         hasMore: results.length >= AppConfig.defaultPageSize,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  Future<void> loadMore({
-    double? latitude,
-    double? longitude,
-  }) async {
+  Future<void> loadMore({double? latitude, double? longitude}) async {
     if (state.isLoading || !state.hasMore) return;
     state = state.copyWith(isLoading: true);
 
@@ -124,7 +119,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         categoryId: state.categoryId,
         query: state.query,
         sortBy: state.sortBy,
-        availableOnly: state.availableOnly ? true : null,
+        minRating: state.minRating,
         page: nextPage,
       );
       state = state.copyWith(

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,6 +8,7 @@ import '../../config/theme.dart';
 import '../../core/storage/secure_storage.dart';
 import '../../providers/auth_provider.dart';
 import '../common/app_button.dart';
+import '../common/pin_code_field.dart';
 import '../common/app_text_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -63,15 +63,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isCredentialsValidForAutoLogin() {
     final phone = _phoneController.text.trim();
     final pinCode = _pinController.text;
-    return phone.isNotEmpty && pinCode.length == 5;
+    return _isPhoneComplete(phone) && pinCode.length == 5;
   }
 
-  void _scheduleAutoLoginIfReady() {
+  bool _isPhoneComplete(String value) {
+    final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+    return digitsOnly.length >= 10;
+  }
+
+  void _dismissKeyboard() {
+    final focusScope = FocusScope.of(context);
+    if (!focusScope.hasPrimaryFocus) {
+      focusScope.unfocus();
+    }
+  }
+
+  void _scheduleAutoLoginIfReady({bool fromPinInput = false}) {
     if (_isLoading) return;
     _autoLoginDebounce?.cancel();
 
     if (!_isCredentialsValidForAutoLogin()) {
       return;
+    }
+
+    if (fromPinInput && _pinController.text.length == 5) {
+      _dismissKeyboard();
     }
 
     final signature = '${_phoneController.text.trim()}|${_pinController.text}';
@@ -81,14 +97,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     _autoLoginDebounce = Timer(const Duration(milliseconds: 500), () {
       if (!mounted || _isLoading) return;
-      final latestSignature = '${_phoneController.text.trim()}|${_pinController.text}';
+      final latestSignature =
+          '${_phoneController.text.trim()}|${_pinController.text}';
       if (latestSignature != signature) return;
+      _dismissKeyboard();
       _login(triggeredByAuto: true);
     });
   }
 
   Future<void> _login({bool triggeredByAuto = false}) async {
     if (_isLoading) return;
+
+    if (triggeredByAuto) {
+      _dismissKeyboard();
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     final signature = '${_phoneController.text.trim()}|${_pinController.text}';
@@ -99,7 +122,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _lastAutoAttemptSignature = signature;
 
     setState(() => _isLoading = true);
-    final success = await ref.read(authProvider.notifier).login(
+    final success = await ref
+        .read(authProvider.notifier)
+        .login(
           phone: _phoneController.text.trim(),
           pinCode: _pinController.text,
         );
@@ -198,7 +223,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onChanged: (_) => _scheduleAutoLoginIfReady(),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
-                      return 'auth.phone'.tr();
+                      return 'auth.phone_required'.tr();
+                    }
+                    if (!_isPhoneComplete(v)) {
+                      return 'auth.phone_invalid'.tr();
                     }
                     return null;
                   },
@@ -206,25 +234,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 20),
 
                 // PIN
-                AppTextField(
+                PinCodeField(
                   controller: _pinController,
                   label: 'auth.pin'.tr(),
                   hint: '•••••',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 5,
-                  autofillHints: const <String>[],
-                  enableSuggestions: false,
-                  autocorrect: false,
-                  enableIMEPersonalizedLearning: false,
-                  onChanged: (_) => _scheduleAutoLoginIfReady(),
+                  onChanged: (_) =>
+                      _scheduleAutoLoginIfReady(fromPinInput: true),
                   onSubmitted: (_) => _login(),
                   validator: (v) {
                     if (v == null || v.isEmpty) {
-                      return 'auth.pin'.tr();
+                      return 'auth.pin_required'.tr();
                     }
                     if (v.length != 5) {
                       return 'auth.pin_5_digits'.tr();

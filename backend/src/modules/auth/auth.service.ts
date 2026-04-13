@@ -142,7 +142,11 @@ export class AuthService {
     });
     if (!user) {
       await this.pinLoginGuardService.registerFailure(dto.phone_number);
-      throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
+      throw new BusinessException(
+        'AUTH_INVALID_CREDENTIALS',
+        'Numero de telephone ou code PIN incorrect.',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     if (!user.pin_hash) {
@@ -156,7 +160,11 @@ export class AuthService {
     const isPinValid = await bcrypt.compare(dto.pin_code, user.pin_hash);
     if (!isPinValid) {
       await this.pinLoginGuardService.registerFailure(dto.phone_number);
-      throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
+      throw new BusinessException(
+        'AUTH_INVALID_CREDENTIALS',
+        'Numero de telephone ou code PIN incorrect.',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     await this.pinLoginGuardService.clearFailures(dto.phone_number);
@@ -185,7 +193,11 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new BusinessException('AUTH_INVALID_CREDENTIALS', 'Identifiants invalides.', HttpStatus.UNAUTHORIZED);
+      throw new BusinessException(
+        'AUTH_INVALID_CREDENTIALS',
+        'Numero de telephone ou code PIN incorrect.',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     await this.otpService.verifyOtp(dto.phone_number, dto.code);

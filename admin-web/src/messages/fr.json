@@ -42,9 +42,11 @@
     "active_subscriptions": "Abonnements actifs",
     "total_revenue": "Revenus (FCFA)",
     "pending_verifications": "Vérifications en attente",
+    "total_reviews": "Total avis",
     "quick_actions": "Actions rapides",
     "view_pending": "Voir les documents en attente",
-    "view_artisans": "Gérer les artisans"
+    "view_artisans": "Gérer les artisans",
+    "view_reviews": "Gérer les avis"
   },
   "verifications": {
     "title": "Vérifications",
@@ -150,6 +152,7 @@
     "artisan": "Artisan",
     "rating": "Note",
     "comment": "Commentaire",
+    "artisan_reply": "Réponse artisan",
     "date": "Date",
     "actions": "Actions",
     "delete": "Supprimer",

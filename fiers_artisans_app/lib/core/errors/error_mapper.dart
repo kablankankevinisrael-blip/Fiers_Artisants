@@ -61,7 +61,7 @@ String _defaultUserMessage(AppErrorCode code) {
 
     // Auth
     case AppErrorCode.authInvalidCredentials:
-      return 'Identifiants incorrects.';
+      return 'Numero de telephone ou code PIN incorrect.';
     case AppErrorCode.authAccountDisabled:
       return 'Ce compte a été désactivé.';
     case AppErrorCode.authOtpRequired:
@@ -237,8 +237,17 @@ AppError _mapBadResponse(DioException e) {
     code = _fallbackCodeFromStatus(statusCode);
   }
 
-  // Message : préférer le default propre, mais utiliser le backend si plus précis
-  final userMessage = backendMessage ?? _defaultUserMessage(code);
+  final backendMessageTrimmed = backendMessage?.trim();
+  final hasBackendMessage =
+      backendMessageTrimmed != null && backendMessageTrimmed.isNotEmpty;
+
+  // Pour AUTH_INVALID_CREDENTIALS, on conserve un wording UX local stable
+  // afin d'éviter les variantes backend génériques ou ambiguës.
+  final userMessage = code == AppErrorCode.authInvalidCredentials
+      ? _defaultUserMessage(code)
+      : (hasBackendMessage
+            ? backendMessageTrimmed
+            : _defaultUserMessage(code));
 
   return AppError(
     code: code,

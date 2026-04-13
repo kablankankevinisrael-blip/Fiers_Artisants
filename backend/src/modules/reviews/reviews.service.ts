@@ -9,6 +9,7 @@ import { Review } from './entities/review.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { ClientProfile } from '../users/entities/client-profile.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { ReplyReviewDto } from './dto/reply-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -61,6 +62,38 @@ export class ReviewsService {
       relations: ['client'],
       order: { created_at: 'DESC' },
     });
+  }
+
+  async replyToReview(
+    artisanUserId: string,
+    reviewId: string,
+    dto: ReplyReviewDto,
+  ): Promise<Review> {
+    const artisanProfile = await this.artisanProfileRepository.findOne({
+      where: { user_id: artisanUserId },
+      select: ['id'],
+    });
+
+    if (!artisanProfile) {
+      throw new NotFoundException('Profil artisan non trouvé.');
+    }
+
+    const review = await this.reviewRepository.findOne({
+      where: { id: reviewId, artisan_id: artisanProfile.id },
+      relations: ['client'],
+    });
+
+    if (!review) {
+      throw new NotFoundException('Avis introuvable.');
+    }
+
+    if ((review.artisan_reply ?? '').trim().length > 0) {
+      throw new ConflictException('Une réponse existe déjà pour cet avis.');
+    }
+
+    review.artisan_reply = dto.reply.trim();
+    review.artisan_reply_at = new Date();
+    return this.reviewRepository.save(review);
   }
 
   private async updateArtisanRating(artisanId: string): Promise<void> {

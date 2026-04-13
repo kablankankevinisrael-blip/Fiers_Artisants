@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
@@ -37,6 +37,7 @@ export class AdminService {
       activeSubscriptions,
       totalRevenue,
       pendingVerifications,
+      totalReviews,
     ] = await Promise.all([
       this.userRepository.count(),
       this.artisanProfileRepository.count(),
@@ -50,6 +51,7 @@ export class AdminService {
         .getRawOne()
         .then((r) => parseInt(r.total, 10)),
       this.verificationService.getPendingDocuments().then((d) => d.length),
+      this.reviewRepository.count(),
     ]);
 
     return {
@@ -58,6 +60,7 @@ export class AdminService {
       activeSubscriptions,
       totalRevenueFcfa: totalRevenue,
       pendingVerifications,
+      totalReviews,
     };
   }
 
@@ -105,7 +108,29 @@ export class AdminService {
   }
 
   async deleteReview(reviewId: string) {
+    const review = await this.reviewRepository.findOne({
+      where: { id: reviewId },
+      select: ['id', 'artisan_id'],
+    });
+
+    if (!review) {
+      throw new NotFoundException('Avis non trouvé.');
+    }
+
     await this.reviewRepository.delete(reviewId);
+
+    const result = await this.reviewRepository
+      .createQueryBuilder('review')
+      .select('AVG(review.rating)', 'avg')
+      .addSelect('COUNT(review.id)', 'count')
+      .where('review.artisan_id = :artisanId', { artisanId: review.artisan_id })
+      .getRawOne<{ avg: string | null; count: string }>();
+
+    await this.artisanProfileRepository.update(review.artisan_id, {
+      rating_avg: parseFloat(result?.avg ?? '0') || 0,
+      total_reviews: parseInt(result?.count ?? '0', 10) || 0,
+    });
+
     return { deleted: true };
   }
 

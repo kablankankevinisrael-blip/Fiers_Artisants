@@ -4,6 +4,20 @@ import '../data/models/review_model.dart';
 import '../data/models/portfolio_model.dart';
 import '../data/repositories/artisan_repository.dart';
 
+enum ReviewSubmitFailure { duplicate, network, backend, unknown }
+
+class ReviewSubmitResult {
+  final bool success;
+  final ReviewSubmitFailure? errorType;
+
+  const ReviewSubmitResult._({required this.success, this.errorType});
+
+  const ReviewSubmitResult.success() : this._(success: true);
+
+  const ReviewSubmitResult.failure(ReviewSubmitFailure type)
+    : this._(success: false, errorType: type);
+}
+
 class ArtisanDetailState {
   final ArtisanModel? artisan;
   final List<ReviewModel> reviews;
@@ -38,8 +52,8 @@ class ArtisanDetailState {
 
 final artisanDetailProvider =
     StateNotifierProvider<ArtisanDetailNotifier, ArtisanDetailState>((ref) {
-  return ArtisanDetailNotifier();
-});
+      return ArtisanDetailNotifier();
+    });
 
 class ArtisanDetailNotifier extends StateNotifier<ArtisanDetailState> {
   final ArtisanRepository _repo = ArtisanRepository();
@@ -52,10 +66,7 @@ class ArtisanDetailNotifier extends StateNotifier<ArtisanDetailState> {
       final artisan = await _repo.getArtisan(userId);
       state = state.copyWith(artisan: artisan, isLoading: false);
       // Load reviews and portfolio in parallel
-      await Future.wait([
-        _loadReviews(artisan.id),
-        _loadPortfolio(artisan.id),
-      ]);
+      await Future.wait([_loadReviews(artisan.id), _loadPortfolio(artisan.id)]);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -75,18 +86,54 @@ class ArtisanDetailNotifier extends StateNotifier<ArtisanDetailState> {
     } catch (_) {}
   }
 
-  Future<bool> submitReview({
+  Future<void> refreshReviewsAndSummary(String artisanId) async {
+    try {
+      final results = await Future.wait<dynamic>([
+        _repo.getArtisan(artisanId),
+        _repo.getReviews(artisanId),
+      ]);
+      state = state.copyWith(
+        artisan: results[0] as ArtisanModel,
+        reviews: results[1] as List<ReviewModel>,
+        error: null,
+      );
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  Future<ReviewSubmitResult> submitReview({
     required String artisanId,
     required int rating,
     String? comment,
   }) async {
     try {
       await _repo.submitReview(
-          artisanId: artisanId, rating: rating, comment: comment);
-      await _loadReviews(artisanId);
-      return true;
+        artisanId: artisanId,
+        rating: rating,
+        comment: comment,
+      );
+      await refreshReviewsAndSummary(artisanId);
+      return const ReviewSubmitResult.success();
+    } on ReviewSubmitException catch (e) {
+      final failure = switch (e.type) {
+        ReviewSubmitErrorType.duplicate => ReviewSubmitFailure.duplicate,
+        ReviewSubmitErrorType.network => ReviewSubmitFailure.network,
+        ReviewSubmitErrorType.backend => ReviewSubmitFailure.backend,
+        ReviewSubmitErrorType.unknown => ReviewSubmitFailure.unknown,
+      };
+      return ReviewSubmitResult.failure(failure);
     } catch (_) {
-      return false;
+      return const ReviewSubmitResult.failure(ReviewSubmitFailure.unknown);
     }
+  }
+
+  Future<void> replyToReview({
+    required String reviewId,
+    required String reply,
+    required String artisanId,
+  }) async {
+    await _repo.replyToReview(reviewId: reviewId, reply: reply);
+    await refreshReviewsAndSummary(artisanId);
   }
 }

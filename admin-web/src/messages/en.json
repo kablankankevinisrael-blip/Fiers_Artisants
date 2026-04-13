@@ -42,9 +42,11 @@
     "active_subscriptions": "Active subscriptions",
     "total_revenue": "Revenue (FCFA)",
     "pending_verifications": "Pending verifications",
+    "total_reviews": "Total reviews",
     "quick_actions": "Quick actions",
     "view_pending": "View pending documents",
-    "view_artisans": "Manage artisans"
+    "view_artisans": "Manage artisans",
+    "view_reviews": "Manage reviews"
   },
   "verifications": {
     "title": "Verifications",
@@ -150,6 +152,7 @@
     "artisan": "Artisan",
     "rating": "Rating",
     "comment": "Comment",
+    "artisan_reply": "Artisan reply",
     "date": "Date",
     "actions": "Actions",
     "delete": "Delete",

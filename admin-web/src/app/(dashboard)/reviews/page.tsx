@@ -171,7 +171,15 @@ export default function ReviewsPage() {
                         <StarRating rating={r.rating} />
                       </TableCell>
                       <TableCell className="max-w-xs truncate">
-                        {r.comment || '—'}
+                        <div className="space-y-1">
+                          <div className="truncate">{r.comment || '—'}</div>
+                          {r.artisan_reply && (
+                            <div className="rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-xs">
+                              <span className="font-semibold">{t('artisan_reply')}:</span>{' '}
+                              {r.artisan_reply}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {new Date(r.created_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}

@@ -14,6 +14,7 @@ import '../presentation/client/artisan_profile_screen.dart';
 import '../presentation/client/review_screen.dart';
 import '../presentation/artisan/artisan_dashboard.dart';
 import '../presentation/artisan/portfolio_screen.dart';
+import '../presentation/artisan/artisan_reviews_history_screen.dart';
 import '../presentation/artisan/verification_screen.dart';
 import '../presentation/artisan/subscription_screen.dart';
 import '../presentation/chat/conversations_list.dart';
@@ -26,10 +27,7 @@ final _clientShellKey = GlobalKey<NavigatorState>(debugLabel: 'clientShell');
 final _artisanShellKey = GlobalKey<NavigatorState>(debugLabel: 'artisanShell');
 
 // Custom slide+fade transition
-CustomTransitionPage<void> _buildTransition(
-  GoRouterState state,
-  Widget child,
-) {
+CustomTransitionPage<void> _buildTransition(GoRouterState state, Widget child) {
   return CustomTransitionPage(
     key: state.pageKey,
     child: child,
@@ -38,11 +36,13 @@ CustomTransitionPage<void> _buildTransition(
       return FadeTransition(
         opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
         child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0.05, 0),
-            end: Offset.zero,
-          ).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+          position:
+              Tween<Offset>(
+                begin: const Offset(0.05, 0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         ),
       );
@@ -106,8 +106,7 @@ final GoRouter appRouter = GoRouter(
     // ──────────── CLIENT SHELL ────────────
     ShellRoute(
       navigatorKey: _clientShellKey,
-      builder: (context, state, child) =>
-          _ClientShell(child: child),
+      builder: (context, state, child) => _ClientShell(child: child),
       routes: [
         GoRoute(
           path: '/client',
@@ -119,23 +118,22 @@ final GoRouter appRouter = GoRouter(
               pageBuilder: (context, state) => _buildTransition(
                 state,
                 SearchScreen(
-                    initialParams: state.extra as Map<String, dynamic>?),
+                  initialParams: state.extra as Map<String, dynamic>?,
+                ),
               ),
             ),
             GoRoute(
               path: 'artisan/:userId',
               pageBuilder: (context, state) => _buildTransition(
                 state,
-                ArtisanProfileScreen(
-                    userId: state.pathParameters['userId']!),
+                ArtisanProfileScreen(userId: state.pathParameters['userId']!),
               ),
             ),
             GoRoute(
               path: 'review/:artisanId',
               pageBuilder: (context, state) => _buildTransition(
                 state,
-                ReviewScreen(
-                    artisanId: state.pathParameters['artisanId']!),
+                ReviewScreen(artisanId: state.pathParameters['artisanId']!),
               ),
             ),
           ],
@@ -146,8 +144,7 @@ final GoRouter appRouter = GoRouter(
     // ──────────── ARTISAN SHELL ────────────
     ShellRoute(
       navigatorKey: _artisanShellKey,
-      builder: (context, state, child) =>
-          _ArtisanShell(child: child),
+      builder: (context, state, child) => _ArtisanShell(child: child),
       routes: [
         GoRoute(
           path: '/artisan',
@@ -158,6 +155,11 @@ final GoRouter appRouter = GoRouter(
               path: 'portfolio',
               pageBuilder: (context, state) =>
                   _buildTransition(state, const PortfolioScreen()),
+            ),
+            GoRoute(
+              path: 'reviews',
+              pageBuilder: (context, state) =>
+                  _buildTransition(state, const ArtisanReviewsHistoryScreen()),
             ),
             GoRoute(
               path: 'verification',
@@ -211,8 +213,7 @@ class _ClientShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location =
-        GoRouterState.of(context).uri.toString();
+    final location = GoRouterState.of(context).uri.toString();
 
     int currentIndex = 0;
     if (location.contains('/chat')) currentIndex = 1;
@@ -269,8 +270,7 @@ class _ArtisanShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location =
-        GoRouterState.of(context).uri.toString();
+    final location = GoRouterState.of(context).uri.toString();
 
     int currentIndex = 0;
     if (location.contains('/chat')) currentIndex = 1;

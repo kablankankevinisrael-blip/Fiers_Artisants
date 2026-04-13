@@ -10,7 +10,9 @@ import '../../config/theme.dart';
 import '../../config/app_config.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/artisan_provider.dart';
+import '../../providers/favorites_provider.dart';
 import '../../core/utils/formatters.dart';
+import '../../data/models/artisan_model.dart';
 import '../../data/repositories/analytics_repository.dart';
 import '../common/rating_stars.dart';
 import '../common/badge_verified.dart';
@@ -34,9 +36,12 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(artisanDetailProvider.notifier).loadArtisan(widget.userId),
-    );
+    Future.microtask(() async {
+      await Future.wait([
+        ref.read(artisanDetailProvider.notifier).loadArtisan(widget.userId),
+        ref.read(favoritesProvider.notifier).refreshFavoriteStatus(widget.userId),
+      ]);
+    });
   }
 
   @override
@@ -49,7 +54,12 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = ref.watch(artisanDetailProvider);
+    final favoritesState = ref.watch(favoritesProvider);
     final artisan = state.artisan;
+    final isFavorite = favoritesState.favoriteUserIds.contains(widget.userId);
+    final isFavoriteLoading = favoritesState.loadingUserIds.contains(
+      widget.userId,
+    );
 
     if (state.isLoading || artisan == null) {
       return Scaffold(
@@ -76,6 +86,29 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
             expandedHeight: 200,
             floating: false,
             pinned: true,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: isFavoriteLoading
+                      ? null
+                      : () => _toggleFavorite(artisan),
+                  icon: isFavoriteLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          isFavorite
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          color: isFavorite ? AppTheme.error : Colors.white,
+                        ),
+                  tooltip: 'dashboard.client.favorites'.tr(),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(gradient: AppTheme.goldGradient),
@@ -361,8 +394,13 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
                         style: theme.textTheme.headlineMedium,
                       ),
                       TextButton(
-                        onPressed: () =>
-                            context.push('/client/review/${artisan.id}'),
+                        onPressed: () => context
+                            .push('/client/review/${artisan.id}')
+                            .then(
+                              (_) => ref
+                                  .read(artisanDetailProvider.notifier)
+                                  .refreshReviewsAndSummary(artisan.id),
+                            ),
                         child: Text('review.leave'.tr()),
                       ),
                     ],
@@ -406,6 +444,53 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
                                   Text(
                                     review.comment!,
                                     style: theme.textTheme.bodyMedium,
+                                  ),
+                                ],
+                                if ((review.artisanReply ?? '').trim().isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.6),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.35),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'review.artisan_reply_label'.tr(),
+                                          style: theme.textTheme.labelMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                color:
+                                                    theme.colorScheme.primary,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          review.artisanReply!,
+                                          style: theme.textTheme.bodyMedium,
+                                        ),
+                                        if (review.artisanReplyAt != null) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            Formatters.relativeDate(
+                                              review.artisanReplyAt!,
+                                            ),
+                                            style: theme.textTheme.labelSmall,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
                                 ],
                                 const SizedBox(height: 4),
@@ -482,6 +567,23 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
         setState(() => _isOpeningChat = false);
       }
     }
+  }
+
+  Future<void> _toggleFavorite(ArtisanModel artisan) async {
+    final updated = await ref
+        .read(favoritesProvider.notifier)
+        .toggleFavorite(artisan);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          updated
+              ? 'dashboard.client.favorite_added'.tr()
+              : 'dashboard.client.favorite_removed'.tr(),
+        ),
+      ),
+    );
   }
 }
 

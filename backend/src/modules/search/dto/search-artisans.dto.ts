@@ -18,6 +18,13 @@ export class SearchArtisansDto {
   radius_km?: number = 10;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(5)
+  min_rating?: number;
+
+  @IsOptional()
   @IsString()
   category?: string;
 
