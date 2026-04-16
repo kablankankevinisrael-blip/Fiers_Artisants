@@ -21,6 +21,8 @@ class ArtisanModel {
   final bool hasActiveSubscription;
   final String? categoryId;
   final String? categoryName;
+  final String? subcategoryId;
+  final String? subcategoryName;
   final double? distance; // Calculated by backend search
   final DateTime? createdAt;
 
@@ -47,55 +49,119 @@ class ArtisanModel {
     this.hasActiveSubscription = false,
     this.categoryId,
     this.categoryName,
+    this.subcategoryId,
+    this.subcategoryName,
     this.distance,
     this.createdAt,
   });
 
   factory ArtisanModel.fromJson(Map<String, dynamic> json) {
     // Handle nested profile object from backend
-    final profile = json['artisan_profile'] ?? json['artisanProfile'] ?? json['profile'] ?? json;
+    final profile =
+        json['artisan_profile'] ??
+        json['artisanProfile'] ??
+        json['profile'] ??
+        json;
     final user = json['user'] ?? json;
 
     return ArtisanModel(
       id: profile['id']?.toString() ?? json['id']?.toString() ?? '',
-      userId: user['id']?.toString() ?? json['user_id']?.toString() ?? json['userId']?.toString() ?? '',
-      firstName: profile['first_name'] ?? profile['firstName'] ?? user['first_name'] ?? '',
-      lastName: profile['last_name'] ?? profile['lastName'] ?? user['last_name'] ?? '',
-      phone: user['phone_number'] ?? user['phone'] ?? json['phone_number'] ?? '',
+      userId:
+          user['id']?.toString() ??
+          json['user_id']?.toString() ??
+          json['userId']?.toString() ??
+          '',
+      firstName:
+          profile['first_name'] ??
+          profile['firstName'] ??
+          user['first_name'] ??
+          '',
+      lastName:
+          profile['last_name'] ??
+          profile['lastName'] ??
+          user['last_name'] ??
+          '',
+      phone:
+          user['phone_number'] ?? user['phone'] ?? json['phone_number'] ?? '',
       email: user['email'] ?? json['email'],
-      profession: profile['business_name'] ?? profile['profession'] ?? json['business_name'] ?? '',
-      description: profile['bio'] ?? profile['description'] ?? json['bio'] ?? json['description'],
+      profession:
+          profile['business_name'] ??
+          profile['profession'] ??
+          profile['subcategory']?['name'] ??
+          profile['category']?['name'] ??
+          json['business_name'] ??
+          '',
+      description:
+          profile['bio'] ??
+          profile['description'] ??
+          json['bio'] ??
+          json['description'],
       experienceYears:
-          profile['years_experience'] ?? profile['experienceYears'] ?? json['years_experience'] ?? 0,
+          _toInt(
+            profile['years_experience'] ??
+                profile['experienceYears'] ??
+                json['years_experience'],
+          ) ??
+          0,
       city: profile['city'] ?? json['city'] ?? '',
       commune: profile['commune'] ?? json['commune'] ?? '',
       latitude: _toDouble(profile['latitude'] ?? json['latitude']),
       longitude: _toDouble(profile['longitude'] ?? json['longitude']),
       averageRating:
-          _toDouble(profile['rating_avg'] ?? profile['averageRating'] ?? json['rating_avg']) ?? 0.0,
-      totalReviews: profile['total_reviews'] ?? profile['totalReviews'] ?? json['total_reviews'] ?? 0,
+          _toDouble(
+            profile['rating_avg'] ??
+                profile['averageRating'] ??
+                json['rating_avg'],
+          ) ??
+          0.0,
+      totalReviews:
+          _toInt(
+            profile['total_reviews'] ??
+                profile['totalReviews'] ??
+                json['total_reviews'],
+          ) ??
+          0,
       profilePhotoUrl:
-          profile['profile_photo_url'] ?? profile['profilePhotoUrl'] ?? json['profilePhotoUrl'],
-      isVerified: (user['verification_status'] ?? json['verification_status']) == 'VERIFIED' ||
-          (user['verification_status'] ?? json['verification_status']) == 'CERTIFIED' ||
+          profile['profile_photo_url'] ??
+          profile['profilePhotoUrl'] ??
+          json['profilePhotoUrl'],
+      isVerified:
+          (user['verification_status'] ?? json['verification_status']) ==
+              'VERIFIED' ||
+          (user['verification_status'] ?? json['verification_status']) ==
+              'CERTIFIED' ||
           (profile['isVerified'] ?? json['isVerified'] ?? false) == true,
-      isCertified: (user['verification_status'] ?? json['verification_status']) == 'CERTIFIED' ||
+      isCertified:
+          (user['verification_status'] ?? json['verification_status']) ==
+              'CERTIFIED' ||
           (profile['isCertified'] ?? json['isCertified'] ?? false) == true,
-      isAvailable: profile['is_available'] ?? profile['isAvailable'] ?? json['is_available'] ?? true,
-      hasActiveSubscription: profile['is_subscription_active'] ??
+      isAvailable:
+          profile['is_available'] ??
+          profile['isAvailable'] ??
+          json['is_available'] ??
+          true,
+      hasActiveSubscription:
+          profile['is_subscription_active'] ??
           profile['hasActiveSubscription'] ??
           json['is_subscription_active'] ??
           false,
-      categoryId: profile['category_id']?.toString() ??
+      categoryId:
+          profile['category_id']?.toString() ??
           profile['categoryId']?.toString() ??
           json['category_id']?.toString(),
       categoryName: profile['category']?['name'] ?? json['categoryName'],
+      subcategoryId:
+          profile['subcategory_id']?.toString() ??
+          profile['subcategoryId']?.toString() ??
+          json['subcategory_id']?.toString(),
+      subcategoryName:
+          profile['subcategory']?['name'] ?? json['subcategoryName'],
       distance: _toDouble(json['distance']),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
           : json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'])
-              : null,
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
     );
   }
 
@@ -104,6 +170,14 @@ class ArtisanModel {
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value);
     return null;
   }
 

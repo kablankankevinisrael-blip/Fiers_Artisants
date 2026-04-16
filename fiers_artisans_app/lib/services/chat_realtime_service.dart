@@ -20,10 +20,14 @@ class ChatRealtimeService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _messagesReadController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _participantAvailabilityController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get newMessages => _newMessageController.stream;
   Stream<Map<String, dynamic>> get messagesRead =>
       _messagesReadController.stream;
+  Stream<Map<String, dynamic>> get participantAvailabilityUpdates =>
+      _participantAvailabilityController.stream;
 
   bool get isConnected => _socket?.connected == true;
 
@@ -81,6 +85,13 @@ class ChatRealtimeService {
       final parsed = _toMap(payload);
       if (parsed.isNotEmpty) {
         _messagesReadController.add(parsed);
+      }
+    });
+
+    socket.on('participantAvailabilityUpdated', (payload) {
+      final parsed = _toMap(payload);
+      if (parsed.isNotEmpty) {
+        _participantAvailabilityController.add(parsed);
       }
     });
   }

@@ -10,8 +10,7 @@ class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({super.key});
 
   @override
-  ConsumerState<SubscriptionScreen> createState() =>
-      _SubscriptionScreenState();
+  ConsumerState<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
 class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
@@ -25,8 +24,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
   Future<void> _handlePayment() async {
     final messenger = ScaffoldMessenger.of(context);
-    final data =
-        await ref.read(subscriptionProvider.notifier).initiatePayment();
+    final data = await ref
+        .read(subscriptionProvider.notifier)
+        .initiatePayment();
     if (!mounted) return;
 
     final checkoutUrl = data?['checkout_url']?.toString();
@@ -53,6 +53,11 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final subState = ref.watch(subscriptionProvider);
+    final subscription = subState.subscription;
+    final isActive = subscription?.isActive == true;
+    final daysRemaining = subscription?.daysRemaining ?? 0;
+    final canRenewNow = !isActive || daysRemaining <= 4;
+    final daysUntilRenewWindow = (daysRemaining - 4).clamp(0, 3650);
 
     return Scaffold(
       appBar: AppBar(title: Text('subscription.title'.tr())),
@@ -72,8 +77,11 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                     ),
                     child: Column(
                       children: [
-                        const Icon(Icons.workspace_premium,
-                            size: 56, color: Colors.black),
+                        const Icon(
+                          Icons.workspace_premium,
+                          size: 56,
+                          color: Colors.black,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'subscription.amount'.tr(),
@@ -83,7 +91,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          subState.subscription?.isActive == true
+                          isActive
                               ? 'subscription.active'.tr()
                               : 'subscription.expired'.tr(),
                           style: const TextStyle(
@@ -91,13 +99,12 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                             fontSize: 16,
                           ),
                         ),
-                        if (subState.subscription?.isActive == true) ...[
+                        if (isActive) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'subscription.expires_in'.tr(namedArgs: {
-                              'days':
-                                  '${subState.subscription!.daysRemaining}'
-                            }),
+                            'subscription.expires_in'.tr(
+                              namedArgs: {'days': '$daysRemaining'},
+                            ),
                             style: const TextStyle(color: Colors.black54),
                           ),
                         ],
@@ -113,20 +120,31 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                         style: TextStyle(color: theme.colorScheme.error),
                       ),
                     ),
-                  if (subState.subscription?.isActive != true)
+                  if (!isActive)
                     AppButton(
                       text: 'subscription.pay'.tr(),
                       icon: Icons.payment,
                       isLoading: subState.isLoading,
                       onPressed: _handlePayment,
                     )
-                  else
+                  else ...[
                     AppButton(
                       text: 'subscription.renew'.tr(),
                       isOutlined: true,
                       isLoading: subState.isLoading,
-                      onPressed: _handlePayment,
+                      onPressed: canRenewNow ? _handlePayment : null,
                     ),
+                    if (!canRenewNow) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'subscription.renew_available_in'.tr(
+                          namedArgs: {'days': '$daysUntilRenewWindow'},
+                        ),
+                        style: theme.textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
                   const SizedBox(height: 32),
                 ],
               ),

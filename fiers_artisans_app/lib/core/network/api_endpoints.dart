@@ -30,7 +30,7 @@ class ApiEndpoints {
 
   // Reviews
   static const String reviews = '/reviews';
-    static String reviewReply(String reviewId) => '/reviews/$reviewId/reply';
+  static String reviewReply(String reviewId) => '/reviews/$reviewId/reply';
   static String reviewsByArtisan(String artisanId) =>
       '/artisan/$artisanId/reviews';
 

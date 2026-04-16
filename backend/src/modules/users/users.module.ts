@@ -6,7 +6,9 @@ import { User } from './entities/user.entity';
 import { ArtisanProfile } from './entities/artisan-profile.entity';
 import { ClientProfile } from './entities/client-profile.entity';
 import { FavoriteArtisan } from './entities/favorite-artisan.entity';
+import { Subcategory } from '../categories/entities/subcategory.entity';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -15,8 +17,10 @@ import { AnalyticsModule } from '../analytics/analytics.module';
       ArtisanProfile,
       ClientProfile,
       FavoriteArtisan,
+      Subcategory,
     ]),
     AnalyticsModule,
+    ChatModule,
   ],
   controllers: [UsersController, PublicArtisanController],
   providers: [UsersService],

@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserRole } from '../users/entities/user.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { ClientProfile } from '../users/entities/client-profile.entity';
+import { Subcategory } from '../categories/entities/subcategory.entity';
 import { OtpService } from './otp/otp.service';
 import {
   RegisterArtisanDto,
@@ -33,6 +34,8 @@ export class AuthService {
     private readonly artisanProfileRepository: Repository<ArtisanProfile>,
     @InjectRepository(ClientProfile)
     private readonly clientProfileRepository: Repository<ClientProfile>,
+    @InjectRepository(Subcategory)
+    private readonly subcategoryRepository: Repository<Subcategory>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly otpService: OtpService,
@@ -61,12 +64,44 @@ export class AuthService {
     });
     const savedUser = await this.userRepository.save(user);
 
+    let resolvedCategoryId = dto.category_id;
+    const resolvedSubcategoryId = dto.subcategory_id;
+
+    if (resolvedSubcategoryId) {
+      const subcategory = await this.subcategoryRepository.findOne({
+        where: { id: resolvedSubcategoryId },
+        select: ['id', 'category_id'],
+      });
+
+      if (!subcategory) {
+        throw new BusinessException(
+          'AUTH_INVALID_SUBCATEGORY',
+          'Metier invalide.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (resolvedCategoryId && subcategory.category_id !== resolvedCategoryId) {
+        throw new BusinessException(
+          'AUTH_CATEGORY_SUBCATEGORY_MISMATCH',
+          'La categorie ne correspond pas au metier selectionne.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      resolvedCategoryId = resolvedCategoryId ?? subcategory.category_id;
+    }
+
     // Créer le profil artisan
     const profile = this.artisanProfileRepository.create({
       user_id: savedUser.id,
       first_name: dto.first_name,
       last_name: dto.last_name,
       business_name: dto.business_name,
+      bio: dto.bio,
+      years_experience: dto.years_experience ?? 0,
+      category_id: resolvedCategoryId,
+      subcategory_id: resolvedSubcategoryId,
       city: dto.city,
       commune: dto.commune,
       whatsapp_number: dto.whatsapp_number || dto.phone_number,

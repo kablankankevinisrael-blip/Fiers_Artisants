@@ -9,6 +9,7 @@ class SearchState {
   final String? error;
   final String? query;
   final String? categoryId;
+  final String? subcategoryId;
   final double? radius;
   final String? sortBy;
   final double? minRating;
@@ -21,6 +22,7 @@ class SearchState {
     this.error,
     this.query,
     this.categoryId,
+    this.subcategoryId,
     this.radius,
     this.sortBy,
     this.minRating,
@@ -34,6 +36,7 @@ class SearchState {
     String? error,
     String? query,
     String? categoryId,
+    String? subcategoryId,
     double? radius,
     String? sortBy,
     double? minRating,
@@ -46,6 +49,7 @@ class SearchState {
       error: error,
       query: query ?? this.query,
       categoryId: categoryId ?? this.categoryId,
+      subcategoryId: subcategoryId ?? this.subcategoryId,
       radius: radius ?? this.radius,
       sortBy: sortBy ?? this.sortBy,
       minRating: minRating ?? this.minRating,
@@ -71,6 +75,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
     double? longitude,
     double? radius,
     String? categoryId,
+    String? subcategoryId,
     String? query,
     String? sortBy,
     double? minRating,
@@ -79,6 +84,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
       isLoading: true,
       query: query,
       categoryId: categoryId,
+      subcategoryId: subcategoryId,
       radius: radius,
       sortBy: sortBy,
       minRating: minRating,
@@ -90,6 +96,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         longitude: longitude,
         radius: radius,
         categoryId: categoryId,
+        subcategoryId: subcategoryId,
         query: query,
         sortBy: sortBy,
         minRating: minRating,
@@ -117,6 +124,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         longitude: longitude,
         radius: state.radius,
         categoryId: state.categoryId,
+        subcategoryId: state.subcategoryId,
         query: state.query,
         sortBy: state.sortBy,
         minRating: state.minRating,

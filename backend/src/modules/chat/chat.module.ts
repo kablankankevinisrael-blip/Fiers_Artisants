@@ -23,6 +23,6 @@ import { ClientProfile } from '../users/entities/client-profile.entity';
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],
-  exports: [ChatService],
+  exports: [ChatService, ChatGateway],
 })
 export class ChatModule {}

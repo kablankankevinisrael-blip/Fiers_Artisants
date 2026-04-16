@@ -36,6 +36,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = client.handshake.query.userId as string;
     if (userId) {
       this.userSockets.set(userId, client.id);
+      client.join(`user:${userId}`);
       this.logger.log(`User ${userId} connected`);
     }
   }
@@ -99,5 +100,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server
       .to(`conversation:${data.conversationId}`)
       .emit('messagesRead', { conversationId: data.conversationId, userId: data.userId });
+  }
+
+  async emitParticipantAvailabilityUpdated(
+    participantId: string,
+    isAvailable: boolean,
+  ) {
+    const targetUserIds = await this.chatService.findConversationParticipantIds(
+      participantId,
+    );
+
+    const payload = {
+      participantId,
+      participantRole: 'ARTISAN',
+      participantIsAvailable: isAvailable,
+    };
+
+    for (const userId of targetUserIds) {
+      this.server.to(`user:${userId}`).emit('participantAvailabilityUpdated', payload);
+    }
   }
 }

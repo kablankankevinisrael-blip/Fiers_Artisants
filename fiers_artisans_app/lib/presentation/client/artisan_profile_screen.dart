@@ -19,6 +19,7 @@ import '../common/badge_verified.dart';
 import '../common/skeleton_loader.dart';
 import '../common/app_button.dart';
 import '../common/portfolio_item_card.dart';
+import '../common/availability_badge.dart';
 
 class ArtisanProfileScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -39,7 +40,9 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
     Future.microtask(() async {
       await Future.wait([
         ref.read(artisanDetailProvider.notifier).loadArtisan(widget.userId),
-        ref.read(favoritesProvider.notifier).refreshFavoriteStatus(widget.userId),
+        ref
+            .read(favoritesProvider.notifier)
+            .refreshFavoriteStatus(widget.userId),
       ]);
     });
   }
@@ -184,6 +187,10 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
                         const SizedBox(width: 4),
                         const BadgeVerified(type: BadgeType.certified),
                       ],
+                      if (!artisan.isAvailable) ...[
+                        const SizedBox(width: 6),
+                        const UnavailableBadge(compact: true),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -244,6 +251,8 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
                           participantUserId: artisan.userId,
                           participantName: artisan.fullName,
                           participantAvatarUrl: artisan.profilePhotoUrl,
+                          participantRole: 'ARTISAN',
+                          participantIsAvailable: artisan.isAvailable,
                         ),
                       );
 
@@ -446,7 +455,9 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
                                     style: theme.textTheme.bodyMedium,
                                   ),
                                 ],
-                                if ((review.artisanReply ?? '').trim().isNotEmpty) ...[
+                                if ((review.artisanReply ?? '')
+                                    .trim()
+                                    .isNotEmpty) ...[
                                   const SizedBox(height: 10),
                                   Container(
                                     width: double.infinity,
@@ -540,6 +551,8 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
     required String participantUserId,
     required String participantName,
     String? participantAvatarUrl,
+    String? participantRole,
+    bool? participantIsAvailable,
   }) async {
     if (_isOpeningChat) return;
     setState(() => _isOpeningChat = true);
@@ -549,6 +562,13 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
           .createConversation(participantUserId);
       if (!mounted) return;
       final queryParams = <String, String>{'name': participantName};
+      final role = participantRole?.trim();
+      if (role != null && role.isNotEmpty) {
+        queryParams['participantRole'] = role;
+      }
+      if (participantIsAvailable != null) {
+        queryParams['participantIsAvailable'] = '$participantIsAvailable';
+      }
       final avatar = participantAvatarUrl?.trim();
       if (avatar != null && avatar.isNotEmpty) {
         queryParams['avatar'] = avatar;

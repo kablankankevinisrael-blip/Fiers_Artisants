@@ -5,9 +5,15 @@ import { Model } from 'mongoose';
 import { Repository, In } from 'typeorm';
 import { Conversation } from './schemas/conversation.schema';
 import { Message } from './schemas/message.schema';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { ClientProfile } from '../users/entities/client-profile.entity';
+
+type ParticipantMeta = {
+  name: string;
+  role: UserRole | string;
+  isAvailable: boolean | null;
+};
 
 @Injectable()
 export class ChatService {
@@ -54,7 +60,9 @@ export class ChatService {
     }
 
     // Resolve names from profiles
-    const nameMap = await this.resolveParticipantNames(Array.from(otherIds));
+    const participantMetaMap = await this.resolveParticipantMeta(
+      Array.from(otherIds),
+    );
 
     // Count unread per conversation
     const convoIds = conversations.map((c) => c._id.toString());
@@ -75,10 +83,14 @@ export class ChatService {
 
     return conversations.map((c) => {
       const otherId = c.participants.find((p: string) => p !== userId) || '';
+      const participantMeta = participantMetaMap.get(otherId);
+
       return {
         _id: c._id,
         participantId: otherId,
-        participantName: nameMap.get(otherId) || 'Utilisateur',
+        participantName: participantMeta?.name || 'Utilisateur',
+        participantRole: participantMeta?.role || null,
+        participantIsAvailable: participantMeta?.isAvailable,
         lastMessage: c.lastMessage,
         unreadCount: unreadMap.get(c._id.toString()) || 0,
         updatedAt: (c as any).updatedAt,
@@ -86,20 +98,18 @@ export class ChatService {
     });
   }
 
-  private async resolveParticipantNames(
+  private async resolveParticipantMeta(
     userIds: string[],
-  ): Promise<Map<string, string>> {
+  ): Promise<Map<string, ParticipantMeta>> {
     if (userIds.length === 0) return new Map();
 
-    const nameMap = new Map<string, string>();
+    const participantMetaMap = new Map<string, ParticipantMeta>();
 
     // Fetch user roles
     const users = await this.userRepository.find({
       where: { id: In(userIds) },
       select: ['id', 'role', 'phone_number'],
     });
-    const roleMap = new Map(users.map((u) => [u.id, u]));
-
     const artisanIds = users
       .filter((u) => u.role === 'ARTISAN')
       .map((u) => u.id);
@@ -110,13 +120,21 @@ export class ChatService {
     if (artisanIds.length > 0) {
       const profiles = await this.artisanProfileRepository.find({
         where: { user_id: In(artisanIds) },
-        select: ['id', 'user_id', 'first_name', 'last_name', 'business_name'],
+        select: [
+          'id',
+          'user_id',
+          'first_name',
+          'last_name',
+          'business_name',
+          'is_available',
+        ],
       });
       for (const p of profiles) {
-        nameMap.set(
-          p.user_id,
-          p.business_name || `${p.first_name} ${p.last_name}`,
-        );
+        participantMetaMap.set(p.user_id, {
+          name: p.business_name || `${p.first_name} ${p.last_name}`,
+          role: UserRole.ARTISAN,
+          isAvailable: p.is_available,
+        });
       }
     }
 
@@ -126,18 +144,26 @@ export class ChatService {
         select: ['id', 'user_id', 'first_name', 'last_name'],
       });
       for (const p of profiles) {
-        nameMap.set(p.user_id, `${p.first_name} ${p.last_name}`);
+        participantMetaMap.set(p.user_id, {
+          name: `${p.first_name} ${p.last_name}`,
+          role: UserRole.CLIENT,
+          isAvailable: null,
+        });
       }
     }
 
     // Fallback to phone for users without a profile
     for (const u of users) {
-      if (!nameMap.has(u.id)) {
-        nameMap.set(u.id, u.phone_number);
+      if (!participantMetaMap.has(u.id)) {
+        participantMetaMap.set(u.id, {
+          name: u.phone_number,
+          role: u.role,
+          isAvailable: null,
+        });
       }
     }
 
-    return nameMap;
+    return participantMetaMap;
   }
 
   async getMessages(
@@ -193,5 +219,23 @@ export class ChatService {
       { conversationId, senderId: { $ne: userId }, isRead: false },
       { isRead: true },
     );
+  }
+
+  async findConversationParticipantIds(userId: string): Promise<string[]> {
+    const conversations = await this.conversationModel
+      .find({ participants: userId })
+      .select({ participants: 1 })
+      .lean()
+      .exec();
+
+    const participantIds = new Set<string>();
+    for (const conversation of conversations) {
+      for (const participantId of conversation.participants ?? []) {
+        participantIds.add(participantId);
+      }
+    }
+
+    participantIds.add(userId);
+    return Array.from(participantIds);
   }
 }

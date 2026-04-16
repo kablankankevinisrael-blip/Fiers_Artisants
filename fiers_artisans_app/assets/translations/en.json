@@ -111,6 +111,8 @@
     "no_results": "No craftsmen found in this area",
     "filter": "Filter",
     "all_categories": "All categories",
+    "all_trades": "All trades",
+    "select_category_for_trade": "Choose a category first to filter by trade.",
     "sort_by": "Sort by",
     "distance": "Distance",
     "rating": "Rating",
@@ -174,6 +176,7 @@
     "expires_in": "Expires in {days} days",
     "expired": "Subscription expired",
     "renew": "Renew",
+    "renew_available_in": "Renewal available in {days} day(s).",
     "error_open_wave": "Unable to open Wave. Please check the app is installed.",
     "error_payment": "Error initiating payment."
   },

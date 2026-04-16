@@ -29,6 +29,7 @@ class AuthRepository {
     String? description,
     int? experienceYears,
     String? categoryId,
+    String? subcategoryId,
   }) async {
     final body = <String, dynamic>{
       'phone_number': phone,
@@ -40,11 +41,12 @@ class AuthRepository {
       'commune': commune,
     };
     if (email != null) body['email'] = email;
+    if (description != null) body['bio'] = description;
+    if (experienceYears != null) body['years_experience'] = experienceYears;
+    if (categoryId != null) body['category_id'] = categoryId;
+    if (subcategoryId != null) body['subcategory_id'] = subcategoryId;
 
-    final response = await _api.post(
-      ApiEndpoints.registerArtisan,
-      data: body,
-    );
+    final response = await _api.post(ApiEndpoints.registerArtisan, data: body);
     return response.data;
   }
 
@@ -67,10 +69,7 @@ class AuthRepository {
     };
     if (email != null) body['email'] = email;
 
-    final response = await _api.post(
-      ApiEndpoints.registerClient,
-      data: body,
-    );
+    final response = await _api.post(ApiEndpoints.registerClient, data: body);
     return response.data;
   }
 
@@ -96,11 +95,7 @@ class AuthRepository {
   }) async {
     final response = await _api.post(
       ApiEndpoints.setupPin,
-      data: {
-        'phone_number': phone,
-        'code': code,
-        'pin_code': pinCode,
-      },
+      data: {'phone_number': phone, 'code': code, 'pin_code': pinCode},
     );
     return response.data;
   }

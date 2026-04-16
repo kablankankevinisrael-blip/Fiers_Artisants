@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../providers/chat_provider.dart';
 import '../../core/utils/formatters.dart';
 import '../common/empty_state.dart';
+import '../common/availability_badge.dart';
 
 class ConversationsListScreen extends ConsumerStatefulWidget {
   const ConversationsListScreen({super.key});
@@ -72,17 +73,29 @@ class _ConversationsListScreenState
                 final queryParams = <String, String>{
                   'name': convo.participantName,
                 };
+                final role = convo.participantRole?.trim();
+                if (role != null && role.isNotEmpty) {
+                  queryParams['participantRole'] = role;
+                }
+                if (convo.participantIsAvailable != null) {
+                  queryParams['participantIsAvailable'] =
+                      '${convo.participantIsAvailable}';
+                }
                 final avatar = convo.participantAvatarUrl?.trim();
                 if (avatar != null && avatar.isNotEmpty) {
                   queryParams['avatar'] = avatar;
                 }
                 final query = Uri(queryParameters: queryParams).query;
                 final route = '/chat/${convo.id}?$query';
+                final showUnavailableBadge =
+                    convo.participantRole == 'ARTISAN' &&
+                    convo.participantIsAvailable == false;
 
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor:
-                        theme.colorScheme.primary.withValues(alpha: 0.2),
+                    backgroundColor: theme.colorScheme.primary.withValues(
+                      alpha: 0.2,
+                    ),
                     child: Text(
                       convo.participantName.isNotEmpty
                           ? convo.participantName[0].toUpperCase()
@@ -90,8 +103,20 @@ class _ConversationsListScreenState
                       style: TextStyle(color: theme.colorScheme.primary),
                     ),
                   ),
-                  title: Text(convo.participantName,
-                      style: theme.textTheme.titleMedium),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          convo.participantName,
+                          style: theme.textTheme.titleMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (showUnavailableBadge)
+                        const UnavailableBadge(compact: true),
+                    ],
+                  ),
                   subtitle: convo.lastMessage != null
                       ? Text(
                           Formatters.truncate(convo.lastMessage!, 40),
@@ -110,7 +135,9 @@ class _ConversationsListScreenState
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary,
                             borderRadius: BorderRadius.circular(10),
@@ -118,7 +145,9 @@ class _ConversationsListScreenState
                           child: Text(
                             '${convo.unreadCount}',
                             style: const TextStyle(
-                                color: Colors.black, fontSize: 11),
+                              color: Colors.black,
+                              fontSize: 11,
+                            ),
                           ),
                         ),
                       ],

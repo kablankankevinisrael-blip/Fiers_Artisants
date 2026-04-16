@@ -30,6 +30,7 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
   bool _isStatsLoading = true;
   double _avgRating = 0;
   int _totalReviews = 0;
+  int _experienceYears = 0;
   int _profileViews48h = 0;
   final ApiClient _api = ApiClient();
 
@@ -163,11 +164,14 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
 
       final avgRaw = profile['rating_avg'] ?? profile['averageRating'];
       final totalRaw = profile['total_reviews'] ?? profile['totalReviews'];
+      final experienceRaw =
+          profile['years_experience'] ?? profile['experienceYears'];
 
       if (!mounted) return;
       setState(() {
         _avgRating = _toDouble(avgRaw) ?? 0;
         _totalReviews = _toInt(totalRaw) ?? 0;
+        _experienceYears = _toInt(experienceRaw) ?? 0;
         _isReviewMetricsLoading = false;
       });
     } catch (_) {
@@ -220,9 +224,9 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
     final isSubActive = subState.subscription?.isActive == true;
     final subDaysRemaining = subState.subscription?.daysRemaining ?? 0;
     final showSubscriptionAlert =
-      subState.hasLoaded &&
-      subState.error == null &&
-      (!isSubActive || subDaysRemaining <= 4);
+        subState.hasLoaded &&
+        subState.error == null &&
+        (!isSubActive || subDaysRemaining <= 4);
 
     final unreadMessages = chatState.conversations.fold<int>(
       0,
@@ -264,6 +268,15 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                                   color: theme.textTheme.bodySmall?.color,
                                 ),
                               ),
+                              if (_experienceYears > 0) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'artisan.experience'.tr(
+                                    namedArgs: {'years': '$_experienceYears'},
+                                  ),
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -516,10 +529,21 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                         unread: convo.unreadCount,
                         lastMessageAt: convo.lastMessageAt,
                         avatarUrl: convo.participantAvatarUrl,
+                        showUnavailableBadge:
+                            convo.participantRole == 'ARTISAN' &&
+                            convo.participantIsAvailable == false,
                         onTap: () {
                           final queryParams = <String, String>{
                             'name': convo.participantName,
                           };
+                          final role = convo.participantRole?.trim();
+                          if (role != null && role.isNotEmpty) {
+                            queryParams['participantRole'] = role;
+                          }
+                          if (convo.participantIsAvailable != null) {
+                            queryParams['participantIsAvailable'] =
+                                '${convo.participantIsAvailable}';
+                          }
                           final avatar = convo.participantAvatarUrl?.trim();
                           if (avatar != null && avatar.isNotEmpty) {
                             queryParams['avatar'] = avatar;

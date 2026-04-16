@@ -1,6 +1,7 @@
 class CategoryModel {
   final String id;
   final String name;
+  final String? slug;
   final String? icon;
   final String? description;
   final List<SubcategoryModel> subcategories;
@@ -8,6 +9,7 @@ class CategoryModel {
   CategoryModel({
     required this.id,
     required this.name,
+    this.slug,
     this.icon,
     this.description,
     this.subcategories = const [],
@@ -17,9 +19,11 @@ class CategoryModel {
     return CategoryModel(
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
+      slug: json['slug']?.toString(),
       icon: json['icon'],
       description: json['description'],
-      subcategories: (json['subcategories'] as List<dynamic>?)
+      subcategories:
+          (json['subcategories'] as List<dynamic>?)
               ?.map((s) => SubcategoryModel.fromJson(s))
               .toList() ??
           [],
@@ -30,11 +34,13 @@ class CategoryModel {
 class SubcategoryModel {
   final String id;
   final String name;
+  final String? slug;
   final String? categoryId;
 
   SubcategoryModel({
     required this.id,
     required this.name,
+    this.slug,
     this.categoryId,
   });
 
@@ -42,7 +48,9 @@ class SubcategoryModel {
     return SubcategoryModel(
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
-      categoryId: json['categoryId']?.toString(),
+      slug: json['slug']?.toString(),
+      categoryId:
+          json['category_id']?.toString() ?? json['categoryId']?.toString(),
     );
   }
 }

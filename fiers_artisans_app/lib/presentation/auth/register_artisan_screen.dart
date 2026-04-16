@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/categories_provider.dart';
+import '../../data/models/category_model.dart';
 import '../common/app_button.dart';
 import '../common/pin_code_field.dart';
 import '../common/app_text_field.dart';
@@ -31,6 +32,7 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
   final _descriptionCtrl = TextEditingController();
   final _experienceCtrl = TextEditingController();
   String? _selectedCategoryId;
+  String? _selectedSubcategoryId;
   bool _isLoading = false;
 
   @override
@@ -77,6 +79,7 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
               : null,
           experienceYears: int.tryParse(_experienceCtrl.text),
           categoryId: _selectedCategoryId,
+          subcategoryId: _selectedSubcategoryId,
         );
     setState(() => _isLoading = false);
 
@@ -96,6 +99,17 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider).categories;
+    CategoryModel? selectedCategory;
+    if (_selectedCategoryId != null) {
+      for (final category in categories) {
+        if (category.id == _selectedCategoryId) {
+          selectedCategory = category;
+          break;
+        }
+      }
+    }
+    final List<SubcategoryModel> subcategories =
+        selectedCategory?.subcategories ?? const [];
 
     return Scaffold(
       appBar: AppBar(title: Text('auth.artisan'.tr())),
@@ -173,9 +187,37 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
                           ),
                         )
                         .toList(),
-                    onChanged: (v) => setState(() => _selectedCategoryId = v),
+                    onChanged: (v) {
+                      setState(() {
+                        _selectedCategoryId = v;
+                        _selectedSubcategoryId = null;
+                      });
+                    },
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.category_outlined, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String?>(
+                    initialValue: _selectedSubcategoryId,
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('search.all_trades'.tr()),
+                      ),
+                      ...subcategories.map(
+                        (s) => DropdownMenuItem<String?>(
+                          value: s.id,
+                          child: Text(s.name),
+                        ),
+                      ),
+                    ],
+                    onChanged: _selectedCategoryId == null
+                        ? null
+                        : (v) => setState(() => _selectedSubcategoryId = v),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.handyman_outlined, size: 20),
+                      labelText: 'search.filter'.tr(),
                     ),
                   ),
                   const SizedBox(height: 16),

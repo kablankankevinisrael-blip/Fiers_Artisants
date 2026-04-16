@@ -30,6 +30,10 @@ export class UpdateArtisanProfileDto {
   category_id?: string;
 
   @IsOptional()
+  @IsUUID()
+  subcategory_id?: string | null;
+
+  @IsOptional()
   @IsString()
   city?: string;
 

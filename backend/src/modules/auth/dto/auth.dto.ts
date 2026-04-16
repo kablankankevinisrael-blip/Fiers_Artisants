@@ -3,6 +3,10 @@ import {
   Matches,
   IsOptional,
   IsEmail,
+  IsInt,
+  Min,
+  Max,
+  IsUUID,
 } from 'class-validator';
 
 const PIN_REGEX = /^\d{5}$/;
@@ -24,6 +28,24 @@ export class RegisterArtisanDto {
   @IsOptional()
   @IsString()
   business_name?: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(60)
+  years_experience?: number;
+
+  @IsOptional()
+  @IsUUID()
+  category_id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  subcategory_id?: string;
 
   @IsOptional()
   @IsString()

@@ -10,6 +10,7 @@ class SearchRepository {
     double? longitude,
     double? radius,
     String? categoryId,
+    String? subcategoryId,
     String? query,
     String? sortBy,
     double? minRating,
@@ -21,6 +22,7 @@ class SearchRepository {
     if (longitude != null) params['lng'] = longitude;
     if (radius != null) params['radius_km'] = radius;
     if (categoryId != null) params['category'] = categoryId;
+    if (subcategoryId != null) params['subcategory'] = subcategoryId;
     if (query != null && query.isNotEmpty) params['query'] = query;
     if (sortBy != null) params['sort_by'] = sortBy;
     if (minRating != null) params['min_rating'] = minRating;

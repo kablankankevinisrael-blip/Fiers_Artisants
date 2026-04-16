@@ -7,17 +7,22 @@ import '../../data/models/message_model.dart';
 import '../../providers/chat_provider.dart';
 import '../../core/storage/secure_storage.dart';
 import '../../core/utils/formatters.dart';
+import '../common/availability_badge.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
   final String? participantName;
   final String? participantAvatarUrl;
+  final String? participantRole;
+  final bool? participantIsAvailable;
 
   const ChatScreen({
     super.key,
     required this.conversationId,
     this.participantName,
     this.participantAvatarUrl,
+    this.participantRole,
+    this.participantIsAvailable,
   });
 
   @override
@@ -86,20 +91,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final conversation = chatState.conversationById(widget.conversationId);
     final hasKnownConversation = conversation != null;
 
-    final resolvedName = (conversation?.participantName.trim().isNotEmpty ?? false)
-      ? conversation!.participantName
-      : (widget.participantName?.trim().isNotEmpty ?? false)
+    final resolvedName =
+        (conversation?.participantName.trim().isNotEmpty ?? false)
+        ? conversation!.participantName
+        : (widget.participantName?.trim().isNotEmpty ?? false)
         ? widget.participantName!.trim()
         : 'Conversation';
 
-    final resolvedAvatar = (conversation?.participantAvatarUrl?.trim().isNotEmpty ?? false)
-      ? conversation!.participantAvatarUrl!.trim()
-      : (widget.participantAvatarUrl?.trim().isNotEmpty ?? false)
+    final resolvedAvatar =
+        (conversation?.participantAvatarUrl?.trim().isNotEmpty ?? false)
+        ? conversation!.participantAvatarUrl!.trim()
+        : (widget.participantAvatarUrl?.trim().isNotEmpty ?? false)
         ? widget.participantAvatarUrl!.trim()
         : null;
 
+    final resolvedParticipantRole =
+        conversation?.participantRole ?? widget.participantRole;
+    final resolvedParticipantIsAvailable =
+        conversation?.participantIsAvailable ?? widget.participantIsAvailable;
+
+    final showUnavailableBadge =
+        resolvedParticipantRole == 'ARTISAN' &&
+        resolvedParticipantIsAvailable == false;
+
     final isConversationLoading =
-      chatState.isMessagesLoading(widget.conversationId) && messages.isEmpty;
+        chatState.isMessagesLoading(widget.conversationId) && messages.isEmpty;
 
     if (_invalidConversationId) {
       return Scaffold(
@@ -169,13 +185,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             CircleAvatar(
               radius: 16,
               backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
-              backgroundImage:
-                  resolvedAvatar != null ? NetworkImage(resolvedAvatar) : null,
+              backgroundImage: resolvedAvatar != null
+                  ? NetworkImage(resolvedAvatar)
+                  : null,
               child: resolvedAvatar == null
                   ? Text(
                       resolvedName.isNotEmpty
-                        ? resolvedName[0].toUpperCase()
-                        : '?',
+                          ? resolvedName[0].toUpperCase()
+                          : '?',
                       style: TextStyle(color: theme.colorScheme.primary),
                     )
                   : null,
@@ -186,11 +203,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    resolvedName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          resolvedName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ),
+                      if (showUnavailableBadge)
+                        const UnavailableBadge(compact: true),
+                    ],
                   ),
                   Text(
                     hasKnownConversation ? 'Messagerie SMS' : 'Chargement…',
@@ -212,8 +237,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : messages.isEmpty
                 ? Center(
-                child: Text(chatState.errorMessage ?? 'Aucun message',
-                        style: theme.textTheme.bodySmall))
+                    child: Text(
+                      chatState.errorMessage ?? 'Aucun message',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  )
                 : ListView.builder(
                     controller: _scrollCtrl,
                     physics: const BouncingScrollPhysics(),
@@ -232,7 +260,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             constraints: BoxConstraints(
                               maxWidth:
                                   MediaQuery.of(context).size.width * 0.75,
@@ -244,10 +274,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               borderRadius: BorderRadius.only(
                                 topLeft: const Radius.circular(16),
                                 topRight: const Radius.circular(16),
-                                bottomLeft:
-                                    Radius.circular(isMine ? 16 : 4),
-                                bottomRight:
-                                    Radius.circular(isMine ? 4 : 16),
+                                bottomLeft: Radius.circular(isMine ? 16 : 4),
+                                bottomRight: Radius.circular(isMine ? 4 : 16),
                               ),
                             ),
                             child: Column(
@@ -256,8 +284,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 Text(
                                   msg.content,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color:
-                                        isMine ? Colors.black : null,
+                                    color: isMine ? Colors.black : null,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -281,8 +308,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
           // Message input
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: theme.cardTheme.color,
               border: Border(top: BorderSide(color: theme.dividerColor)),
@@ -297,16 +323,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       decoration: InputDecoration(
                         hintText: 'chat.type_message'.tr(),
                         border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
                       ),
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.send_rounded,
-                        color: theme.colorScheme.primary),
+                    icon: Icon(
+                      Icons.send_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
                     onPressed: _send,
                   ),
                 ],
@@ -327,7 +356,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if ((_currentUserId ?? '').isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session invalide. Veuillez vous reconnecter.')),
+        const SnackBar(
+          content: Text('Session invalide. Veuillez vous reconnecter.'),
+        ),
       );
       return;
     }
@@ -349,7 +380,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     // Send via REST — replace temp on success, remove on failure
     try {
-      await ref.read(chatProvider.notifier).sendMessage(
+      await ref
+          .read(chatProvider.notifier)
+          .sendMessage(
             conversationId: widget.conversationId,
             content: text,
             tempId: tempId,

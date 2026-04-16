@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../config/app_config.dart';
 import '../../providers/search_provider.dart';
 import '../../providers/categories_provider.dart';
+import '../../data/models/category_model.dart';
 import '../common/app_text_field.dart';
 import '../common/artisan_card.dart';
 import '../common/category_chip.dart';
@@ -26,6 +27,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   final _searchCtrl = TextEditingController();
   String? _selectedCategoryId;
+  String? _selectedSubcategoryId;
   String? _sortBy;
   double? _minRating;
   bool _isNearbyPreset = false;
@@ -45,6 +47,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         final params = widget.initialParams!;
         final cat = params['categoryId'] as String?;
         if (cat != null) _selectedCategoryId = cat;
+        final subcat = params['subcategoryId'] as String?;
+        if (subcat != null) _selectedSubcategoryId = subcat;
 
         if (params['topRated'] == true) {
           _sortBy = 'rating';
@@ -92,6 +96,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           longitude: _longitude,
           radius: _radius,
           categoryId: _selectedCategoryId,
+          subcategoryId: _selectedSubcategoryId,
           query: _searchCtrl.text.trim().isNotEmpty
               ? _searchCtrl.text.trim()
               : null,
@@ -111,11 +116,34 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final theme = Theme.of(context);
     final searchState = ref.watch(searchProvider);
     final catState = ref.watch(categoriesProvider);
+
+    CategoryModel? selectedCategory;
+    if (_selectedCategoryId != null) {
+      for (final category in catState.categories) {
+        if (category.id == _selectedCategoryId) {
+          selectedCategory = category;
+          break;
+        }
+      }
+    }
+    final List<SubcategoryModel> availableSubcategories =
+        selectedCategory?.subcategories ?? const [];
+
     String? selectedCategoryName;
     if (_selectedCategoryId != null) {
       for (final category in catState.categories) {
         if (category.id == _selectedCategoryId) {
           selectedCategoryName = category.name;
+          break;
+        }
+      }
+    }
+
+    String? selectedSubcategoryName;
+    if (_selectedSubcategoryId != null) {
+      for (final subcategory in availableSubcategories) {
+        if (subcategory.id == _selectedSubcategoryId) {
+          selectedSubcategoryName = subcategory.name;
           break;
         }
       }
@@ -161,6 +189,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         _selectedCategoryId = _selectedCategoryId == cat.id
                             ? null
                             : cat.id;
+                        _selectedSubcategoryId = null;
                       });
                       _search();
                     },
@@ -172,7 +201,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const SizedBox(height: 8),
 
           // Active filter chips
-          if (_sortBy != null || _selectedCategoryId != null)
+          if (_sortBy != null ||
+              _selectedCategoryId != null ||
+              _selectedSubcategoryId != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
@@ -184,7 +215,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       avatar: const Icon(Icons.category_outlined, size: 16),
                       selected: true,
                       onDeleted: () {
-                        setState(() => _selectedCategoryId = null);
+                        setState(() {
+                          _selectedCategoryId = null;
+                          _selectedSubcategoryId = null;
+                        });
+                        _search();
+                      },
+                    ),
+                  if (_selectedSubcategoryId != null)
+                    InputChip(
+                      label: Text(
+                        selectedSubcategoryName ?? 'auth.profession'.tr(),
+                      ),
+                      avatar: const Icon(Icons.handyman_outlined, size: 16),
+                      selected: true,
+                      onDeleted: () {
+                        setState(() => _selectedSubcategoryId = null);
                         _search();
                       },
                     ),
@@ -268,95 +314,155 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showFilters() {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'search.filter'.tr(),
-                style: Theme.of(ctx).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'search.radius'.tr(
-                  namedArgs: {'km': _radius.toStringAsFixed(0)},
-                ),
-                style: Theme.of(ctx).textTheme.bodyMedium,
-              ),
-              Slider(
-                value: _radius,
-                min: 1,
-                max: _isNearbyPreset
-                    ? _nearbyRadiusKm
-                    : AppConfig.maxSearchRadius,
-                divisions:
-                    (_isNearbyPreset
-                            ? _nearbyRadiusKm
-                            : AppConfig.maxSearchRadius)
-                        .toInt() -
-                    1,
-                label: '${_radius.toStringAsFixed(0)} km',
-                onChanged: (v) {
-                  setState(() => _radius = v);
-                  setSheetState(() {});
-                },
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String?>(
-                initialValue: _selectedCategoryId,
-                decoration: InputDecoration(labelText: 'home.categories'.tr()),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('search.all_categories'.tr()),
-                  ),
-                  ...ref
-                      .read(categoriesProvider)
-                      .categories
-                      .map(
-                        (c) => DropdownMenuItem<String?>(
-                          value: c.id,
-                          child: Text(c.name),
-                        ),
+      builder: (ctx) => Consumer(
+        builder: (ctx, modalRef, _) {
+          final categoriesState = modalRef.watch(categoriesProvider);
+          final categories = categoriesState.categories;
+
+          return StatefulBuilder(
+            builder: (ctx, setSheetState) {
+              CategoryModel? selectedCategoryForSheet;
+              if (_selectedCategoryId != null) {
+                for (final category in categories) {
+                  if (category.id == _selectedCategoryId) {
+                    selectedCategoryForSheet = category;
+                    break;
+                  }
+                }
+              }
+              final availableSubcategoriesForSheet =
+                  selectedCategoryForSheet?.subcategories ??
+                  const <SubcategoryModel>[];
+
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'search.filter'.tr(),
+                      style: Theme.of(ctx).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'search.radius'.tr(
+                        namedArgs: {'km': _radius.toStringAsFixed(0)},
                       ),
-                ],
-                onChanged: (v) {
-                  setState(() => _selectedCategoryId = v);
-                  setSheetState(() {});
-                },
-              ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                title: Text('search.top_rated'.tr()),
-                subtitle: Text('search.top_rated_desc'.tr()),
-                value: _sortBy == 'rating',
-                contentPadding: EdgeInsets.zero,
-                onChanged: (v) {
-                  setState(() {
-                    _sortBy = v ? 'rating' : null;
-                    _minRating = v ? _topRatedMinRating : null;
-                  });
-                  setSheetState(() {});
-                },
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _search();
-                  },
-                  child: Text('search.apply_filters'.tr()),
+                      style: Theme.of(ctx).textTheme.bodyMedium,
+                    ),
+                    Slider(
+                      value: _radius,
+                      min: 1,
+                      max: _isNearbyPreset
+                          ? _nearbyRadiusKm
+                          : AppConfig.maxSearchRadius,
+                      divisions:
+                          (_isNearbyPreset
+                                  ? _nearbyRadiusKm
+                                  : AppConfig.maxSearchRadius)
+                              .toInt() -
+                          1,
+                      label: '${_radius.toStringAsFixed(0)} km',
+                      onChanged: (v) {
+                        setState(() => _radius = v);
+                        setSheetState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String?>(
+                      initialValue: _selectedCategoryId,
+                      decoration: InputDecoration(
+                        labelText: 'home.categories'.tr(),
+                      ),
+                      items: [
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text(
+                            categoriesState.isLoading
+                                ? '${'common.loading'.tr()}...'
+                                : 'search.all_categories'.tr(),
+                          ),
+                        ),
+                        ...categories.map(
+                          (c) => DropdownMenuItem<String?>(
+                            value: c.id,
+                            child: Text(c.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        setState(() {
+                          _selectedCategoryId = v;
+                          _selectedSubcategoryId = null;
+                        });
+                        setSheetState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String?>(
+                      initialValue: _selectedSubcategoryId,
+                      decoration: InputDecoration(
+                        labelText: 'auth.profession'.tr(),
+                      ),
+                      items: [
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('search.all_trades'.tr()),
+                        ),
+                        ...availableSubcategoriesForSheet.map(
+                          (s) => DropdownMenuItem<String?>(
+                            value: s.id,
+                            child: Text(s.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: _selectedCategoryId == null
+                          ? null
+                          : (v) {
+                              setState(() => _selectedSubcategoryId = v);
+                              setSheetState(() {});
+                            },
+                    ),
+                    if (_selectedCategoryId == null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'search.select_category_for_trade'.tr(),
+                        style: Theme.of(ctx).textTheme.bodySmall,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      title: Text('search.top_rated'.tr()),
+                      subtitle: Text('search.top_rated_desc'.tr()),
+                      value: _sortBy == 'rating',
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (v) {
+                        setState(() {
+                          _sortBy = v ? 'rating' : null;
+                          _minRating = v ? _topRatedMinRating : null;
+                        });
+                        setSheetState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _search();
+                        },
+                        child: Text('search.apply_filters'.tr()),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }

@@ -15,7 +15,13 @@ export class SearchService {
 
   async searchArtisans(dto: SearchArtisansDto) {
     const {
-      lat, lng, radius_km = 10, min_rating, category, query,
+      lat,
+      lng,
+      radius_km = 10,
+      min_rating,
+      category,
+      subcategory,
+      query,
       sort_by = 'distance', available_only = false,
       page = 1, limit = 20,
     } = dto;
@@ -25,6 +31,7 @@ export class SearchService {
       .createQueryBuilder('ap')
       .innerJoinAndSelect('ap.user', 'u')
       .leftJoinAndSelect('ap.category', 'c')
+      .leftJoinAndSelect('ap.subcategory', 'sc')
       .where('ap.is_subscription_active = :active', { active: true })
       .andWhere('u.is_active = :isActive', { isActive: true })
       .andWhere('ap.is_available = :isAvailable', { isAvailable: true })
@@ -67,6 +74,16 @@ export class SearchService {
       }
     }
 
+    if (subcategory) {
+      // Accept both subcategory slug and UUID id from mobile
+      const isSubcategoryUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(subcategory);
+      if (isSubcategoryUuid) {
+        qb = qb.andWhere('sc.id = :subcategory', { subcategory });
+      } else {
+        qb = qb.andWhere('sc.slug = :subcategory', { subcategory });
+      }
+    }
+
     if (query) {
       qb = qb.andWhere(
         `(ap.first_name ILIKE :query OR ap.last_name ILIKE :query OR ap.business_name ILIKE :query)`,
@@ -102,6 +119,7 @@ export class SearchService {
       action: 'SEARCH',
       metadata: {
         category,
+        subcategory,
         query,
         lat,
         lng,

@@ -111,6 +111,8 @@
     "no_results": "Aucun artisan trouvé dans ce rayon",
     "filter": "Filtrer",
     "all_categories": "Toutes les catégories",
+    "all_trades": "Tous les métiers",
+    "select_category_for_trade": "Choisissez d'abord une catégorie pour filtrer par métier.",
     "sort_by": "Trier par",
     "distance": "Distance",
     "rating": "Note",
@@ -174,6 +176,7 @@
     "expires_in": "Expire dans {days} jours",
     "expired": "Abonnement expiré",
     "renew": "Renouveler",
+    "renew_available_in": "Renouvellement disponible dans {days} jour(s).",
     "error_open_wave": "Impossible d'ouvrir Wave. Vérifiez que l'application est installée.",
     "error_payment": "Erreur lors de l'initiation du paiement."
   },

@@ -190,6 +190,11 @@ final GoRouter appRouter = GoRouter(
           conversationId: state.pathParameters['conversationId']!,
           participantName: state.uri.queryParameters['name'],
           participantAvatarUrl: state.uri.queryParameters['avatar'],
+          participantRole: state.uri.queryParameters['participantRole'],
+          participantIsAvailable:
+              state.uri.queryParameters['participantIsAvailable'] == null
+              ? null
+              : state.uri.queryParameters['participantIsAvailable'] == 'true',
         ),
       ),
     ),

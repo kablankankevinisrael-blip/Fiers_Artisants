@@ -70,6 +70,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   StreamSubscription<Map<String, dynamic>>? _newMessageSub;
   StreamSubscription<Map<String, dynamic>>? _messagesReadSub;
+  StreamSubscription<Map<String, dynamic>>? _participantAvailabilitySub;
   String? _currentUserId;
 
   ChatNotifier() : super(const ChatState()) {
@@ -80,6 +81,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void dispose() {
     _newMessageSub?.cancel();
     _messagesReadSub?.cancel();
+    _participantAvailabilitySub?.cancel();
     super.dispose();
   }
 
@@ -93,9 +95,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     await _newMessageSub?.cancel();
     await _messagesReadSub?.cancel();
+    await _participantAvailabilitySub?.cancel();
 
     _newMessageSub = _realtime.newMessages.listen(_onSocketNewMessage);
     _messagesReadSub = _realtime.messagesRead.listen(_onSocketMessagesRead);
+    _participantAvailabilitySub = _realtime.participantAvailabilityUpdates
+        .listen(_onSocketParticipantAvailabilityUpdated);
   }
 
   Future<void> _ensureRealtimeConnected() async {
@@ -173,8 +178,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
   void removeMessage(String messageId) {
     final updatedMessages = <String, List<MessageModel>>{};
     for (final entry in state.messagesByConversation.entries) {
-      updatedMessages[entry.key] =
-          entry.value.where((m) => m.id != messageId).toList();
+      updatedMessages[entry.key] = entry.value
+          .where((m) => m.id != messageId)
+          .toList();
     }
     state = state.copyWith(messagesByConversation: updatedMessages);
   }
@@ -244,6 +250,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           participantId: c.participantId,
           participantName: c.participantName,
           participantAvatarUrl: c.participantAvatarUrl,
+          participantRole: c.participantRole,
+          participantIsAvailable: c.participantIsAvailable,
           lastMessage: c.lastMessage,
           lastMessageAt: c.lastMessageAt,
           unreadCount: 0,
@@ -347,6 +355,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           participantId: c.participantId,
           participantName: c.participantName,
           participantAvatarUrl: c.participantAvatarUrl,
+          participantRole: c.participantRole,
+          participantIsAvailable: c.participantIsAvailable,
           lastMessage: c.lastMessage,
           lastMessageAt: c.lastMessageAt,
           unreadCount: 0,
@@ -369,6 +379,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
         participantId: c.participantId,
         participantName: c.participantName,
         participantAvatarUrl: c.participantAvatarUrl,
+        participantRole: c.participantRole,
+        participantIsAvailable: c.participantIsAvailable,
         lastMessage: message.content,
         lastMessageAt: message.createdAt,
         unreadCount: shouldIncrementUnread ? c.unreadCount + 1 : c.unreadCount,
@@ -376,5 +388,48 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }).toList();
 
     state = state.copyWith(conversations: updated);
+  }
+
+  void _onSocketParticipantAvailabilityUpdated(Map<String, dynamic> payload) {
+    final participantId = payload['participantId']?.toString();
+    if (participantId == null || participantId.isEmpty) {
+      return;
+    }
+
+    final availabilityRaw = payload['participantIsAvailable'];
+    bool? isAvailable;
+    if (availabilityRaw is bool) {
+      isAvailable = availabilityRaw;
+    } else if (availabilityRaw is String) {
+      if (availabilityRaw == 'true') {
+        isAvailable = true;
+      } else if (availabilityRaw == 'false') {
+        isAvailable = false;
+      }
+    }
+
+    if (isAvailable == null) {
+      return;
+    }
+
+    final updatedConversations = state.conversations.map((c) {
+      if (c.participantId != participantId) {
+        return c;
+      }
+
+      return ConversationModel(
+        id: c.id,
+        participantId: c.participantId,
+        participantName: c.participantName,
+        participantAvatarUrl: c.participantAvatarUrl,
+        participantRole: c.participantRole,
+        participantIsAvailable: isAvailable,
+        lastMessage: c.lastMessage,
+        lastMessageAt: c.lastMessageAt,
+        unreadCount: c.unreadCount,
+      );
+    }).toList();
+
+    state = state.copyWith(conversations: updatedConversations);
   }
 }

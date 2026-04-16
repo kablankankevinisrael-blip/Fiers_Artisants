@@ -30,6 +30,10 @@ export class SearchArtisansDto {
 
   @IsOptional()
   @IsString()
+  subcategory?: string;
+
+  @IsOptional()
+  @IsString()
   query?: string;
 
   @IsOptional()

@@ -171,6 +171,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? description,
     int? experienceYears,
     String? categoryId,
+    String? subcategoryId,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
@@ -186,6 +187,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         description: description,
         experienceYears: experienceYears,
         categoryId: categoryId,
+        subcategoryId: subcategoryId,
       );
       final tokens = _extractTokens(data);
       await SecureStorage.saveTokens(

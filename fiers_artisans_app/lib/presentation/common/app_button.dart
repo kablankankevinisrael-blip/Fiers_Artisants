@@ -51,7 +51,7 @@ class _AppButtonState extends State<AppButton>
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 52),
           child: OutlinedButton(
-            onPressed: widget.isLoading
+            onPressed: (widget.isLoading || widget.onPressed == null)
                 ? null
                 : () {
                     HapticFeedback.lightImpact();
@@ -82,7 +82,7 @@ class _AppButtonState extends State<AppButton>
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 52),
           child: ElevatedButton(
-            onPressed: widget.isLoading
+            onPressed: (widget.isLoading || widget.onPressed == null)
                 ? null
                 : () {
                     HapticFeedback.lightImpact();

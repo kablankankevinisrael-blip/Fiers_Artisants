@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../core/utils/formatters.dart';
+import 'availability_badge.dart';
 
 class RecentConversationTile extends StatelessWidget {
   final String name;
@@ -8,6 +9,7 @@ class RecentConversationTile extends StatelessWidget {
   final int unread;
   final DateTime? lastMessageAt;
   final String? avatarUrl;
+  final bool showUnavailableBadge;
   final VoidCallback onTap;
 
   const RecentConversationTile({
@@ -18,6 +20,7 @@ class RecentConversationTile extends StatelessWidget {
     required this.onTap,
     this.lastMessageAt,
     this.avatarUrl,
+    this.showUnavailableBadge = false,
   });
 
   @override
@@ -51,6 +54,10 @@ class RecentConversationTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (showUnavailableBadge) ...[
+                      const SizedBox(height: 4),
+                      const UnavailableBadge(compact: true),
+                    ],
                     if (lastMessage.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(

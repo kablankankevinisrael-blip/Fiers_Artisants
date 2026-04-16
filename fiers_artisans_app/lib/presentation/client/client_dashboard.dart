@@ -560,10 +560,21 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                         unread: convo.unreadCount,
                         lastMessageAt: convo.lastMessageAt,
                         avatarUrl: convo.participantAvatarUrl,
+                        showUnavailableBadge:
+                            convo.participantRole == 'ARTISAN' &&
+                            convo.participantIsAvailable == false,
                         onTap: () {
                           final queryParams = <String, String>{
                             'name': convo.participantName,
                           };
+                          final role = convo.participantRole?.trim();
+                          if (role != null && role.isNotEmpty) {
+                            queryParams['participantRole'] = role;
+                          }
+                          if (convo.participantIsAvailable != null) {
+                            queryParams['participantIsAvailable'] =
+                                '${convo.participantIsAvailable}';
+                          }
                           final avatar = convo.participantAvatarUrl?.trim();
                           if (avatar != null && avatar.isNotEmpty) {
                             queryParams['avatar'] = avatar;

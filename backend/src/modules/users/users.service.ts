@@ -5,9 +5,11 @@ import { User } from './entities/user.entity';
 import { ArtisanProfile } from './entities/artisan-profile.entity';
 import { ClientProfile } from './entities/client-profile.entity';
 import { FavoriteArtisan } from './entities/favorite-artisan.entity';
+import { Subcategory } from '../categories/entities/subcategory.entity';
 import { UpdateArtisanProfileDto } from './dto/update-artisan-profile.dto';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @Injectable()
 export class UsersService {
@@ -20,7 +22,10 @@ export class UsersService {
     private readonly clientProfileRepository: Repository<ClientProfile>,
     @InjectRepository(FavoriteArtisan)
     private readonly favoriteArtisanRepository: Repository<FavoriteArtisan>,
+    @InjectRepository(Subcategory)
+    private readonly subcategoryRepository: Repository<Subcategory>,
     private readonly analyticsService: AnalyticsService,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   async findById(id: string): Promise<User> {
@@ -44,7 +49,7 @@ export class UsersService {
   async getArtisanProfile(userId: string): Promise<ArtisanProfile> {
     const profile = await this.artisanProfileRepository.findOne({
       where: { user_id: userId },
-      relations: ['category', 'user'],
+      relations: ['category', 'subcategory', 'user'],
     });
     if (!profile) {
       throw new NotFoundException('Profil artisan non trouvé.');
@@ -56,12 +61,12 @@ export class UsersService {
     // Try by profile ID first, then by user ID (mobile sends userId)
     let profile = await this.artisanProfileRepository.findOne({
       where: { id: artisanId, is_subscription_active: true },
-      relations: ['category', 'user'],
+      relations: ['category', 'subcategory', 'user'],
     });
     if (!profile) {
       profile = await this.artisanProfileRepository.findOne({
         where: { user: { id: artisanId }, is_subscription_active: true },
-        relations: ['category', 'user'],
+        relations: ['category', 'subcategory', 'user'],
       });
     }
     if (!profile) {
@@ -82,8 +87,54 @@ export class UsersService {
     dto: UpdateArtisanProfileDto,
   ): Promise<ArtisanProfile> {
     const profile = await this.getArtisanProfile(userId);
+    const previousAvailability = profile.is_available;
+
+    if (dto.subcategory_id) {
+      const subcategory = await this.subcategoryRepository.findOne({
+        where: { id: dto.subcategory_id },
+        select: ['id', 'category_id'],
+      });
+
+      if (!subcategory) {
+        throw new NotFoundException('Metier non trouve.');
+      }
+
+      const nextCategoryId = dto.category_id ?? profile.category_id;
+      if (nextCategoryId && subcategory.category_id !== nextCategoryId) {
+        throw new NotFoundException(
+          'La categorie ne correspond pas au metier selectionne.',
+        );
+      }
+
+      dto.category_id = dto.category_id ?? subcategory.category_id;
+    }
+
+    if (
+      dto.category_id &&
+      !dto.subcategory_id &&
+      profile.subcategory_id &&
+      profile.subcategory?.category_id &&
+      profile.subcategory.category_id !== dto.category_id
+    ) {
+      dto.subcategory_id = null;
+    }
+
     Object.assign(profile, dto);
-    return this.artisanProfileRepository.save(profile);
+    const savedProfile = await this.artisanProfileRepository.save(profile);
+
+    if (
+      dto.is_available !== undefined &&
+      previousAvailability !== savedProfile.is_available
+    ) {
+      this.chatGateway
+        .emitParticipantAvailabilityUpdated(
+          savedProfile.user_id,
+          savedProfile.is_available,
+        )
+        .catch(() => {});
+    }
+
+    return savedProfile;
   }
 
   async getArtisanStats(userId: string): Promise<{
@@ -125,7 +176,12 @@ export class UsersService {
     const clientProfile = await this.getClientProfile(clientUserId);
     const favorites = await this.favoriteArtisanRepository.find({
       where: { client_profile_id: clientProfile.id },
-      relations: ['artisan_profile', 'artisan_profile.user', 'artisan_profile.category'],
+      relations: [
+        'artisan_profile',
+        'artisan_profile.user',
+        'artisan_profile.category',
+        'artisan_profile.subcategory',
+      ],
       order: { created_at: 'DESC' },
     });
     return favorites.map((favorite) => {
@@ -145,7 +201,9 @@ export class UsersService {
         is_available: profile.is_available,
         is_subscription_active: profile.is_subscription_active,
         category_id: profile.category_id,
+        subcategory_id: profile.subcategory_id,
         category: profile.category,
+        subcategory: profile.subcategory,
         created_at: profile.created_at,
         updated_at: profile.updated_at,
         user: profile.user
@@ -226,13 +284,13 @@ export class UsersService {
   ): Promise<ArtisanProfile> {
     let profile = await this.artisanProfileRepository.findOne({
       where: { user: { id: artisanIdentifier } },
-      relations: ['user', 'category'],
+      relations: ['user', 'category', 'subcategory'],
     });
 
     if (!profile) {
       profile = await this.artisanProfileRepository.findOne({
         where: { id: artisanIdentifier },
-        relations: ['user', 'category'],
+        relations: ['user', 'category', 'subcategory'],
       });
     }
 

@@ -6,6 +6,7 @@ import '../../data/models/artisan_model.dart';
 import '../../core/utils/formatters.dart';
 import 'rating_stars.dart';
 import 'badge_verified.dart';
+import 'availability_badge.dart';
 
 class ArtisanCard extends StatefulWidget {
   final ArtisanModel artisan;
@@ -85,13 +86,14 @@ class _ArtisanCardState extends State<ArtisanCard> {
                         artisan.profession,
                         style: theme.textTheme.bodySmall,
                       ),
+                      if (!artisan.isAvailable) ...[
+                        const SizedBox(height: 6),
+                        const UnavailableBadge(compact: true),
+                      ],
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          RatingStars(
-                            rating: artisan.averageRating,
-                            size: 14,
-                          ),
+                          RatingStars(rating: artisan.averageRating, size: 14),
                           const SizedBox(width: 6),
                           Text(
                             '(${artisan.totalReviews})',

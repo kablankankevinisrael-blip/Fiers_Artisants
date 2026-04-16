@@ -12,6 +12,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { User } from '../users/entities/user.entity';
 import { ArtisanProfile } from '../users/entities/artisan-profile.entity';
 import { ClientProfile } from '../users/entities/client-profile.entity';
+import { Subcategory } from '../categories/entities/subcategory.entity';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { PinLoginGuardService } from './pin-login-guard.service';
 
@@ -28,7 +29,7 @@ import { PinLoginGuardService } from './pin-login-guard.service';
         },
       }),
     }),
-    TypeOrmModule.forFeature([User, ArtisanProfile, ClientProfile]),
+    TypeOrmModule.forFeature([User, ArtisanProfile, ClientProfile, Subcategory]),
     AnalyticsModule,
   ],
   controllers: [AuthController],

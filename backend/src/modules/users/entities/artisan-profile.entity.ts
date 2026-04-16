@@ -13,6 +13,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { Category } from '../../categories/entities/category.entity';
+import { Subcategory } from '../../categories/entities/subcategory.entity';
 import { Subscription } from '../../subscription/entities/subscription.entity';
 import { Review } from '../../reviews/entities/review.entity';
 
@@ -46,6 +47,14 @@ export class ArtisanProfile {
 
   @Column({ nullable: true })
   category_id: string;
+
+  @ManyToOne(() => Subcategory, { eager: true, nullable: true })
+  @JoinColumn({ name: 'subcategory_id' })
+  subcategory: Subcategory;
+
+  @Column({ nullable: true })
+  @Index()
+  subcategory_id: string;
 
   @Column({ nullable: true })
   city: string;
