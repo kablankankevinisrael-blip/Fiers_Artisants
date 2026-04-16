@@ -6,6 +6,7 @@ class ArtisanModel {
   final String phone;
   final String? email;
   final String profession;
+  final String? businessName;
   final String? description;
   final int experienceYears;
   final String city;
@@ -34,6 +35,7 @@ class ArtisanModel {
     required this.phone,
     this.email,
     required this.profession,
+    this.businessName,
     this.description,
     this.experienceYears = 0,
     required this.city,
@@ -63,6 +65,12 @@ class ArtisanModel {
         json['profile'] ??
         json;
     final user = json['user'] ?? json;
+    final resolvedSubcategoryName =
+        profile['subcategory']?['name'] ?? json['subcategoryName'];
+    final resolvedCategoryName =
+        profile['category']?['name'] ?? json['categoryName'];
+    final resolvedBusinessName =
+        profile['business_name'] ?? json['business_name'];
 
     return ArtisanModel(
       id: profile['id']?.toString() ?? json['id']?.toString() ?? '',
@@ -85,12 +93,12 @@ class ArtisanModel {
           user['phone_number'] ?? user['phone'] ?? json['phone_number'] ?? '',
       email: user['email'] ?? json['email'],
       profession:
-          profile['business_name'] ??
+          resolvedSubcategoryName ??
           profile['profession'] ??
-          profile['subcategory']?['name'] ??
-          profile['category']?['name'] ??
-          json['business_name'] ??
+          resolvedBusinessName ??
+          resolvedCategoryName ??
           '',
+      businessName: resolvedBusinessName,
       description:
           profile['bio'] ??
           profile['description'] ??
@@ -149,13 +157,12 @@ class ArtisanModel {
           profile['category_id']?.toString() ??
           profile['categoryId']?.toString() ??
           json['category_id']?.toString(),
-      categoryName: profile['category']?['name'] ?? json['categoryName'],
+      categoryName: resolvedCategoryName,
       subcategoryId:
           profile['subcategory_id']?.toString() ??
           profile['subcategoryId']?.toString() ??
           json['subcategory_id']?.toString(),
-      subcategoryName:
-          profile['subcategory']?['name'] ?? json['subcategoryName'],
+      subcategoryName: resolvedSubcategoryName,
       distance: _toDouble(json['distance']),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'])
@@ -182,4 +189,22 @@ class ArtisanModel {
   }
 
   String get fullName => '$firstName $lastName';
+
+  String get displayTrade {
+    final trade = subcategoryName?.trim();
+    if (trade != null && trade.isNotEmpty) return trade;
+    return profession;
+  }
+
+  String? get displayCategory {
+    final category = categoryName?.trim();
+    if (category == null || category.isEmpty) return null;
+    return category;
+  }
+
+  String? get displayBusinessName {
+    final business = businessName?.trim();
+    if (business == null || business.isEmpty) return null;
+    return business;
+  }
 }

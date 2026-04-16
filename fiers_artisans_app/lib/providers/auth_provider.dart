@@ -164,14 +164,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String pinCode,
     required String firstName,
     required String lastName,
-    required String profession,
+    required String categoryId,
+    required String subcategoryId,
     required String city,
     required String commune,
+    String? businessName,
     String? email,
     String? description,
     int? experienceYears,
-    String? categoryId,
-    String? subcategoryId,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
@@ -180,14 +180,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         pinCode: pinCode,
         firstName: firstName,
         lastName: lastName,
-        profession: profession,
+        categoryId: categoryId,
+        subcategoryId: subcategoryId,
+        businessName: businessName,
         city: city,
         commune: commune,
         email: email,
         description: description,
         experienceYears: experienceYears,
-        categoryId: categoryId,
-        subcategoryId: subcategoryId,
       );
       final tokens = _extractTokens(data);
       await SecureStorage.saveTokens(

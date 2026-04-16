@@ -83,9 +83,14 @@ class _ArtisanCardState extends State<ArtisanCard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        artisan.profession,
+                        artisan.displayTrade,
                         style: theme.textTheme.bodySmall,
                       ),
+                      if (artisan.displayCategory != null)
+                        Text(
+                          artisan.displayCategory!,
+                          style: theme.textTheme.labelSmall,
+                        ),
                       if (!artisan.isAvailable) ...[
                         const SizedBox(height: 6),
                         const UnavailableBadge(compact: true),

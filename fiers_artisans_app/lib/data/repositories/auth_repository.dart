@@ -22,29 +22,29 @@ class AuthRepository {
     required String pinCode,
     required String firstName,
     required String lastName,
-    required String profession,
+    required String categoryId,
+    required String subcategoryId,
     required String city,
     required String commune,
+    String? businessName,
     String? email,
     String? description,
     int? experienceYears,
-    String? categoryId,
-    String? subcategoryId,
   }) async {
     final body = <String, dynamic>{
       'phone_number': phone,
       'pin_code': pinCode,
       'first_name': firstName,
       'last_name': lastName,
-      'business_name': profession,
+      'category_id': categoryId,
+      'subcategory_id': subcategoryId,
       'city': city,
       'commune': commune,
     };
+    if (businessName != null) body['business_name'] = businessName;
     if (email != null) body['email'] = email;
     if (description != null) body['bio'] = description;
     if (experienceYears != null) body['years_experience'] = experienceYears;
-    if (categoryId != null) body['category_id'] = categoryId;
-    if (subcategoryId != null) body['subcategory_id'] = subcategoryId;
 
     final response = await _api.post(ApiEndpoints.registerArtisan, data: body);
     return response.data;

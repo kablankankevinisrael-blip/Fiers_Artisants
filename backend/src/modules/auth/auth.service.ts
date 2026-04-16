@@ -64,32 +64,28 @@ export class AuthService {
     });
     const savedUser = await this.userRepository.save(user);
 
-    let resolvedCategoryId = dto.category_id;
+    const resolvedCategoryId = dto.category_id;
     const resolvedSubcategoryId = dto.subcategory_id;
 
-    if (resolvedSubcategoryId) {
-      const subcategory = await this.subcategoryRepository.findOne({
-        where: { id: resolvedSubcategoryId },
-        select: ['id', 'category_id'],
-      });
+    const subcategory = await this.subcategoryRepository.findOne({
+      where: { id: resolvedSubcategoryId },
+      select: ['id', 'category_id'],
+    });
 
-      if (!subcategory) {
-        throw new BusinessException(
-          'AUTH_INVALID_SUBCATEGORY',
-          'Metier invalide.',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+    if (!subcategory) {
+      throw new BusinessException(
+        'AUTH_INVALID_SUBCATEGORY',
+        'Metier invalide.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
-      if (resolvedCategoryId && subcategory.category_id !== resolvedCategoryId) {
-        throw new BusinessException(
-          'AUTH_CATEGORY_SUBCATEGORY_MISMATCH',
-          'La categorie ne correspond pas au metier selectionne.',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-
-      resolvedCategoryId = resolvedCategoryId ?? subcategory.category_id;
+    if (subcategory.category_id !== resolvedCategoryId) {
+      throw new BusinessException(
+        'AUTH_CATEGORY_SUBCATEGORY_MISMATCH',
+        'La categorie ne correspond pas au metier selectionne.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     // Créer le profil artisan

@@ -36,6 +36,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   double? _longitude;
   bool _locationLoading = false;
 
+  String _categoryLabel(List<CategoryModel> categories, String? categoryId) {
+    if (categoryId == null) return 'search.all_categories'.tr();
+
+    for (final category in categories) {
+      if (category.id == categoryId) return category.name;
+    }
+    return 'search.all_categories'.tr();
+  }
+
+  String _tradeLabel(List<SubcategoryModel> trades, String? subcategoryId) {
+    if (subcategoryId == null) return 'search.all_trades'.tr();
+
+    for (final trade in trades) {
+      if (trade.id == subcategoryId) return trade.name;
+    }
+    return 'search.all_trades'.tr();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -111,6 +129,59 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
+  Future<_SheetPickerOption?> _showOptionPicker({
+    required BuildContext context,
+    required String title,
+    required List<_SheetPickerOption> options,
+    required String? selectedValue,
+  }) {
+    return showModalBottomSheet<_SheetPickerOption>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(ctx).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                if (options.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'auth.no_categories_available'.tr(),
+                      style: Theme.of(ctx).textTheme.bodyMedium,
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: options.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        final isSelected = option.value == selectedValue;
+
+                        return ListTile(
+                          title: Text(option.label),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_rounded)
+                              : null,
+                          onTap: () => Navigator.pop(ctx, option),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -170,34 +241,59 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
 
           // Category chips
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              physics: const BouncingScrollPhysics(),
-              itemCount: catState.categories.length,
-              itemBuilder: (context, index) {
-                final cat = catState.categories[index];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: CategoryChip(
-                    label: cat.name,
-                    isSelected: _selectedCategoryId == cat.id,
-                    onTap: () {
-                      setState(() {
-                        _selectedCategoryId = _selectedCategoryId == cat.id
-                            ? null
-                            : cat.id;
-                        _selectedSubcategoryId = null;
-                      });
-                      _search();
-                    },
-                  ),
-                );
-              },
+          if (catState.isLoading && catState.categories.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: LinearProgressIndicator(),
+            )
+          else if (catState.categories.isNotEmpty)
+            SizedBox(
+              height: 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                physics: const BouncingScrollPhysics(),
+                itemCount: catState.categories.length,
+                itemBuilder: (context, index) {
+                  final cat = catState.categories[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: CategoryChip(
+                      label: cat.name,
+                      isSelected: _selectedCategoryId == cat.id,
+                      onTap: () {
+                        setState(() {
+                          _selectedCategoryId = _selectedCategoryId == cat.id
+                              ? null
+                              : cat.id;
+                          _selectedSubcategoryId = null;
+                        });
+                        _search();
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
+          if (catState.error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'auth.categories_load_error'.tr(),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        ref.read(categoriesProvider.notifier).refresh(),
+                    child: Text('common.retry'.tr()),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 8),
 
           // Active filter chips
@@ -282,6 +378,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: SkeletonLoader.artisanCard(),
                     ),
                   )
+                : searchState.error != null && searchState.results.isEmpty
+                ? EmptyState(
+                    icon: Icons.error_outline_rounded,
+                    title: 'error.generic'.tr(),
+                    subtitle: searchState.error,
+                    actionLabel: 'common.retry'.tr(),
+                    onAction: _search,
+                  )
                 : searchState.results.isEmpty
                 ? EmptyState(
                     icon: Icons.search_off_rounded,
@@ -314,6 +418,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showFilters() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => Consumer(
         builder: (ctx, modalRef, _) {
           final categoriesState = modalRef.watch(categoriesProvider);
@@ -333,137 +438,288 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               final availableSubcategoriesForSheet =
                   selectedCategoryForSheet?.subcategories ??
                   const <SubcategoryModel>[];
+              final media = MediaQuery.of(ctx);
 
-              return Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'search.filter'.tr(),
-                      style: Theme.of(ctx).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'search.radius'.tr(
-                        namedArgs: {'km': _radius.toStringAsFixed(0)},
-                      ),
-                      style: Theme.of(ctx).textTheme.bodyMedium,
-                    ),
-                    Slider(
-                      value: _radius,
-                      min: 1,
-                      max: _isNearbyPreset
-                          ? _nearbyRadiusKm
-                          : AppConfig.maxSearchRadius,
-                      divisions:
-                          (_isNearbyPreset
-                                  ? _nearbyRadiusKm
-                                  : AppConfig.maxSearchRadius)
-                              .toInt() -
-                          1,
-                      label: '${_radius.toStringAsFixed(0)} km',
-                      onChanged: (v) {
-                        setState(() => _radius = v);
-                        setSheetState(() {});
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String?>(
-                      initialValue: _selectedCategoryId,
-                      decoration: InputDecoration(
-                        labelText: 'home.categories'.tr(),
-                      ),
-                      items: [
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text(
-                            categoriesState.isLoading
-                                ? '${'common.loading'.tr()}...'
-                                : 'search.all_categories'.tr(),
+              return SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+                  child: SizedBox(
+                    height: media.size.height * 0.82,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'search.filter'.tr(),
+                            style: Theme.of(ctx).textTheme.headlineMedium,
                           ),
-                        ),
-                        ...categories.map(
-                          (c) => DropdownMenuItem<String?>(
-                            value: c.id,
-                            child: Text(c.name),
+                          const SizedBox(height: 16),
+                          if (categoriesState.error != null) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'auth.categories_load_error'.tr(),
+                                    style: Theme.of(ctx).textTheme.bodySmall,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => modalRef
+                                      .read(categoriesProvider.notifier)
+                                      .refresh(),
+                                  child: Text('common.retry'.tr()),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'search.radius'.tr(
+                                      namedArgs: {
+                                        'km': _radius.toStringAsFixed(0),
+                                      },
+                                    ),
+                                    style: Theme.of(ctx).textTheme.bodyMedium,
+                                  ),
+                                  Slider(
+                                    value: _radius,
+                                    min: 1,
+                                    max: _isNearbyPreset
+                                        ? _nearbyRadiusKm
+                                        : AppConfig.maxSearchRadius,
+                                    divisions:
+                                        (_isNearbyPreset
+                                                ? _nearbyRadiusKm
+                                                : AppConfig.maxSearchRadius)
+                                            .toInt() -
+                                        1,
+                                    label: '${_radius.toStringAsFixed(0)} km',
+                                    onChanged: (v) {
+                                      setState(() => _radius = v);
+                                      setSheetState(() {});
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _SheetSelectField(
+                                    label: 'home.categories'.tr(),
+                                    icon: Icons.category_outlined,
+                                    text: _categoryLabel(
+                                      categories,
+                                      _selectedCategoryId,
+                                    ),
+                                    enabled:
+                                        !categoriesState.isLoading &&
+                                        categories.isNotEmpty,
+                                    helperText: categoriesState.isLoading
+                                        ? 'common.loading'.tr()
+                                        : (!categoriesState.isLoading &&
+                                              categories.isEmpty)
+                                        ? 'auth.no_categories_available'.tr()
+                                        : null,
+                                    onTap: () async {
+                                      final selected = await _showOptionPicker(
+                                        context: ctx,
+                                        title: 'home.categories'.tr(),
+                                        options: [
+                                          _SheetPickerOption(
+                                            value: null,
+                                            label: 'search.all_categories'.tr(),
+                                          ),
+                                          ...categories.map(
+                                            (c) => _SheetPickerOption(
+                                              value: c.id,
+                                              label: c.name,
+                                            ),
+                                          ),
+                                        ],
+                                        selectedValue: _selectedCategoryId,
+                                      );
+
+                                      if (selected == null || !mounted) return;
+                                      setState(() {
+                                        _selectedCategoryId = selected.value;
+                                        _selectedSubcategoryId = null;
+                                      });
+                                      setSheetState(() {});
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _SheetSelectField(
+                                    label: 'auth.profession'.tr(),
+                                    icon: Icons.handyman_outlined,
+                                    text: _tradeLabel(
+                                      availableSubcategoriesForSheet,
+                                      _selectedSubcategoryId,
+                                    ),
+                                    enabled:
+                                        _selectedCategoryId != null &&
+                                        availableSubcategoriesForSheet
+                                            .isNotEmpty,
+                                    helperText: _selectedCategoryId == null
+                                        ? 'search.select_category_for_trade'
+                                              .tr()
+                                        : availableSubcategoriesForSheet.isEmpty
+                                        ? 'auth.no_professions_available'.tr()
+                                        : null,
+                                    onTap: () async {
+                                      final selected = await _showOptionPicker(
+                                        context: ctx,
+                                        title: 'auth.profession'.tr(),
+                                        options: [
+                                          _SheetPickerOption(
+                                            value: null,
+                                            label: 'search.all_trades'.tr(),
+                                          ),
+                                          ...availableSubcategoriesForSheet.map(
+                                            (s) => _SheetPickerOption(
+                                              value: s.id,
+                                              label: s.name,
+                                            ),
+                                          ),
+                                        ],
+                                        selectedValue: _selectedSubcategoryId,
+                                      );
+
+                                      if (selected == null || !mounted) return;
+                                      setState(() {
+                                        _selectedSubcategoryId = selected.value;
+                                      });
+                                      setSheetState(() {});
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SwitchListTile(
+                                    title: Text('search.top_rated'.tr()),
+                                    subtitle: Text(
+                                      'search.top_rated_desc'.tr(),
+                                    ),
+                                    value: _sortBy == 'rating',
+                                    contentPadding: EdgeInsets.zero,
+                                    onChanged: (v) {
+                                      setState(() {
+                                        _sortBy = v ? 'rating' : null;
+                                        _minRating = v
+                                            ? _topRatedMinRating
+                                            : null;
+                                      });
+                                      setSheetState(() {});
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                      onChanged: (v) {
-                        setState(() {
-                          _selectedCategoryId = v;
-                          _selectedSubcategoryId = null;
-                        });
-                        setSheetState(() {});
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String?>(
-                      initialValue: _selectedSubcategoryId,
-                      decoration: InputDecoration(
-                        labelText: 'auth.profession'.tr(),
-                      ),
-                      items: [
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('search.all_trades'.tr()),
-                        ),
-                        ...availableSubcategoriesForSheet.map(
-                          (s) => DropdownMenuItem<String?>(
-                            value: s.id,
-                            child: Text(s.name),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _search();
+                              },
+                              child: Text('search.apply_filters'.tr()),
+                            ),
                           ),
-                        ),
-                      ],
-                      onChanged: _selectedCategoryId == null
-                          ? null
-                          : (v) {
-                              setState(() => _selectedSubcategoryId = v);
-                              setSheetState(() {});
-                            },
-                    ),
-                    if (_selectedCategoryId == null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'search.select_category_for_trade'.tr(),
-                        style: Theme.of(ctx).textTheme.bodySmall,
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      title: Text('search.top_rated'.tr()),
-                      subtitle: Text('search.top_rated_desc'.tr()),
-                      value: _sortBy == 'rating',
-                      contentPadding: EdgeInsets.zero,
-                      onChanged: (v) {
-                        setState(() {
-                          _sortBy = v ? 'rating' : null;
-                          _minRating = v ? _topRatedMinRating : null;
-                        });
-                        setSheetState(() {});
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _search();
-                        },
-                        child: Text('search.apply_filters'.tr()),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                  ],
+                  ),
                 ),
               );
             },
           );
         },
       ),
+    );
+  }
+}
+
+class _SheetPickerOption {
+  final String? value;
+  final String label;
+
+  const _SheetPickerOption({required this.value, required this.label});
+}
+
+class _SheetSelectField extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String text;
+  final bool enabled;
+  final VoidCallback onTap;
+  final String? helperText;
+
+  const _SheetSelectField({
+    required this.label,
+    required this.icon,
+    required this.text,
+    required this.enabled,
+    required this.onTap,
+    this.helperText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderColor = enabled
+        ? theme.inputDecorationTheme.enabledBorder?.borderSide.color ??
+              theme.colorScheme.outlineVariant
+        : theme.disabledColor.withValues(alpha: 0.4);
+    final iconColor = enabled ? theme.iconTheme.color : theme.disabledColor;
+    final textColor = enabled
+        ? theme.textTheme.bodyLarge?.color
+        : theme.disabledColor;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: enabled ? onTap : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: iconColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.keyboard_arrow_down_rounded, color: iconColor),
+              ],
+            ),
+          ),
+        ),
+        if (helperText != null && helperText!.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(helperText!, style: theme.textTheme.bodySmall),
+        ],
+      ],
     );
   }
 }

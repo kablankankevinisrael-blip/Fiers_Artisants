@@ -344,7 +344,7 @@ class _ClientDashboardState extends ConsumerState<ClientDashboard>
                             child: Column(
                               children: [
                                 Icon(
-                                  Icons.favorite_outline,
+                                  Icons.bookmark_border_rounded,
                                   size: 36,
                                   color: theme.textTheme.bodySmall?.color,
                                 ),

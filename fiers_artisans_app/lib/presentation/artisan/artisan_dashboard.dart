@@ -32,6 +32,9 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
   int _totalReviews = 0;
   int _experienceYears = 0;
   int _profileViews48h = 0;
+  String? _categoryName;
+  String? _subcategoryName;
+  String? _businessName;
   final ApiClient _api = ApiClient();
 
   @override
@@ -166,12 +169,20 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
       final totalRaw = profile['total_reviews'] ?? profile['totalReviews'];
       final experienceRaw =
           profile['years_experience'] ?? profile['experienceYears'];
+      final categoryName =
+          profile['category']?['name'] ?? profile['category_name'];
+      final subcategoryName =
+          profile['subcategory']?['name'] ?? profile['subcategory_name'];
+      final businessName = profile['business_name'];
 
       if (!mounted) return;
       setState(() {
         _avgRating = _toDouble(avgRaw) ?? 0;
         _totalReviews = _toInt(totalRaw) ?? 0;
         _experienceYears = _toInt(experienceRaw) ?? 0;
+        _categoryName = categoryName?.toString();
+        _subcategoryName = subcategoryName?.toString();
+        _businessName = businessName?.toString();
         _isReviewMetricsLoading = false;
       });
     } catch (_) {
@@ -268,15 +279,6 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                                   color: theme.textTheme.bodySmall?.color,
                                 ),
                               ),
-                              if (_experienceYears > 0) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  'artisan.experience'.tr(
-                                    namedArgs: {'years': '$_experienceYears'},
-                                  ),
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -300,6 +302,18 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                           ],
                         ),
                       ],
+                    ),
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: _ArtisanIdentityCard(
+                      categoryName: _categoryName,
+                      subcategoryName: _subcategoryName,
+                      businessName: _businessName,
+                      experienceYears: _experienceYears,
                     ),
                   ),
                 ),
@@ -422,47 +436,65 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.5,
-                      children: [
-                        _ActionTile(
-                          icon: Icons.photo_library_outlined,
-                          label: 'portfolio.title'.tr(),
-                          color: AppTheme.gold,
-                          onTap: () => context.push('/artisan/portfolio'),
-                        ),
-                        _ActionTile(
-                          icon: Icons.verified_outlined,
-                          label: 'artisan.verification.title'.tr(),
-                          color: AppTheme.warning,
-                          onTap: () => context
-                              .push('/artisan/verification')
-                              .then(
-                                (_) => ref
-                                    .read(verificationProvider.notifier)
-                                    .refresh(),
-                              ),
-                        ),
-                        _ActionTile(
-                          icon: Icons.credit_card_outlined,
-                          label: 'subscription.title'.tr(),
-                          color: AppTheme.success,
-                          onTap: () => context.push('/artisan/subscription'),
-                        ),
-                        _ActionTile(
-                          icon: Icons.settings_outlined,
-                          label: 'settings.title'.tr(),
-                          color: isDark
-                              ? const Color(0xFF9E9EA8)
-                              : const Color(0xFF6B6B75),
-                          onTap: () => context.push('/settings'),
-                        ),
-                      ],
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        const crossAxisSpacing = 12.0;
+                        const crossAxisCount = 2;
+                        final tileWidth =
+                            (constraints.maxWidth - crossAxisSpacing) /
+                            crossAxisCount;
+
+                        final textScale = MediaQuery.textScalerOf(
+                          context,
+                        ).scale(1);
+                        final minTileHeight = textScale > 1.1 ? 116.0 : 108.0;
+                        final responsiveAspectRatio =
+                            (tileWidth / minTileHeight).clamp(1.15, 1.5);
+
+                        return GridView.count(
+                          crossAxisCount: crossAxisCount,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: crossAxisSpacing,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: responsiveAspectRatio,
+                          children: [
+                            _ActionTile(
+                              icon: Icons.photo_library_outlined,
+                              label: 'portfolio.title'.tr(),
+                              color: AppTheme.gold,
+                              onTap: () => context.push('/artisan/portfolio'),
+                            ),
+                            _ActionTile(
+                              icon: Icons.verified_outlined,
+                              label: 'artisan.verification.title'.tr(),
+                              color: AppTheme.warning,
+                              onTap: () => context
+                                  .push('/artisan/verification')
+                                  .then(
+                                    (_) => ref
+                                        .read(verificationProvider.notifier)
+                                        .refresh(),
+                                  ),
+                            ),
+                            _ActionTile(
+                              icon: Icons.credit_card_outlined,
+                              label: 'subscription.title'.tr(),
+                              color: AppTheme.success,
+                              onTap: () =>
+                                  context.push('/artisan/subscription'),
+                            ),
+                            _ActionTile(
+                              icon: Icons.settings_outlined,
+                              label: 'settings.title'.tr(),
+                              color: isDark
+                                  ? const Color(0xFF9E9EA8)
+                                  : const Color(0xFF6B6B75),
+                              onTap: () => context.push('/settings'),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -568,6 +600,225 @@ class _ArtisanDashboardState extends ConsumerState<ArtisanDashboard>
 // ═══════════════════════════════════════════════════════════════════
 // COMPONENTS
 // ═══════════════════════════════════════════════════════════════════
+
+class _ArtisanIdentityCard extends StatelessWidget {
+  final String? categoryName;
+  final String? subcategoryName;
+  final String? businessName;
+  final int experienceYears;
+
+  const _ArtisanIdentityCard({
+    required this.categoryName,
+    required this.subcategoryName,
+    required this.businessName,
+    required this.experienceYears,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final category = categoryName?.trim();
+    final subcategory = subcategoryName?.trim();
+    final business = businessName?.trim();
+
+    final categoryLabel = category == null || category.isEmpty
+        ? '...'
+        : category;
+
+    final parts = <String>['${'auth.artisan'.tr()}: $categoryLabel'];
+    if (subcategory != null && subcategory.isNotEmpty) {
+      parts.add(subcategory);
+    }
+    if (business != null &&
+        business.isNotEmpty &&
+        business.toLowerCase() != (subcategory ?? '').toLowerCase()) {
+      parts.add('${'artisan.business_name'.tr()}: $business');
+    }
+    if (experienceYears > 0) {
+      parts.add(
+        'artisan.experience'.tr(namedArgs: {'years': '$experienceYears'}),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.work_outline_rounded,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _LoopingMarquee(
+              text: parts.join('   •   '),
+              textStyle: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              pixelsPerSecond: 34,
+              gap: 40,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoopingMarquee extends StatefulWidget {
+  final String text;
+  final TextStyle? textStyle;
+  final double pixelsPerSecond;
+  final double gap;
+
+  const _LoopingMarquee({
+    required this.text,
+    this.textStyle,
+    this.pixelsPerSecond = 34,
+    this.gap = 36,
+  });
+
+  @override
+  State<_LoopingMarquee> createState() => _LoopingMarqueeState();
+}
+
+class _LoopingMarqueeState extends State<_LoopingMarquee>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _isAnimating = false;
+  double _lastCycleWidth = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void didUpdateWidget(covariant _LoopingMarquee oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text ||
+        oldWidget.pixelsPerSecond != widget.pixelsPerSecond ||
+        oldWidget.gap != widget.gap) {
+      _lastCycleWidth = -1;
+    }
+  }
+
+  void _ensureAnimation(double cycleWidth) {
+    if (cycleWidth <= 0 || widget.pixelsPerSecond <= 0) {
+      if (_isAnimating) {
+        _controller.stop();
+      }
+      _isAnimating = false;
+      return;
+    }
+
+    if (_isAnimating && (_lastCycleWidth - cycleWidth).abs() < 1) {
+      return;
+    }
+
+    final durationMs = ((cycleWidth / widget.pixelsPerSecond) * 1000)
+        .round()
+        .clamp(5000, 45000);
+
+    _lastCycleWidth = cycleWidth;
+    _controller
+      ..duration = Duration(milliseconds: durationMs)
+      ..repeat();
+    _isAnimating = true;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveStyle = DefaultTextStyle.of(
+      context,
+    ).style.merge(widget.textStyle);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textPainter = TextPainter(
+          text: TextSpan(text: widget.text, style: effectiveStyle),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+
+        final textWidth = textPainter.width;
+
+        if (textWidth <= constraints.maxWidth - 2) {
+          if (_isAnimating) {
+            _controller.stop();
+            _isAnimating = false;
+          }
+
+          return Text(
+            widget.text,
+            style: effectiveStyle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+          );
+        }
+
+        final cycleWidth = textWidth + widget.gap;
+        _ensureAnimation(cycleWidth);
+
+        return ClipRect(
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                final offset = -_controller.value * cycleWidth;
+                return Transform.translate(
+                  offset: Offset(offset, 0),
+                  child: child,
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.text,
+                    style: effectiveStyle,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                  SizedBox(width: widget.gap),
+                  Text(
+                    widget.text,
+                    style: effectiveStyle,
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
 class _SubscriptionCard extends StatelessWidget {
   final SubscriptionState subState;

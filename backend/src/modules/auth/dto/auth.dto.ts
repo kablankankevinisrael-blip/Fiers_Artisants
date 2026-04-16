@@ -39,13 +39,11 @@ export class RegisterArtisanDto {
   @Max(60)
   years_experience?: number;
 
-  @IsOptional()
   @IsUUID()
-  category_id?: string;
+  category_id: string;
 
-  @IsOptional()
   @IsUUID()
-  subcategory_id?: string;
+  subcategory_id: string;
 
   @IsOptional()
   @IsString()

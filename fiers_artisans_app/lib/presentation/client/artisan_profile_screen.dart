@@ -104,9 +104,9 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
                         )
                       : Icon(
                           isFavorite
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          color: isFavorite ? AppTheme.error : Colors.white,
+                              ? Icons.bookmark_rounded
+                              : Icons.bookmark_border_rounded,
+                          color: isFavorite ? AppTheme.gold : Colors.white,
                         ),
                   tooltip: 'dashboard.client.favorites'.tr(),
                 ),
@@ -174,11 +174,29 @@ class _ArtisanProfileScreenState extends ConsumerState<ArtisanProfileScreen> {
                 children: [
                   // Profession + badges
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Text(
-                          artisan.profession,
-                          style: theme.textTheme.titleLarge,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              artisan.displayTrade,
+                              style: theme.textTheme.titleLarge,
+                            ),
+                            if (artisan.displayCategory != null)
+                              Text(
+                                artisan.displayCategory!,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            if (artisan.displayBusinessName != null &&
+                                artisan.displayBusinessName !=
+                                    artisan.displayTrade)
+                              Text(
+                                '${'artisan.business_name'.tr()}: ${artisan.displayBusinessName!}',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                          ],
                         ),
                       ),
                       if (artisan.isVerified)

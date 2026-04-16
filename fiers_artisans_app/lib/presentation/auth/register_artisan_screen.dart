@@ -25,7 +25,7 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
   final _phoneCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
   final _confirmPinCtrl = TextEditingController();
-  final _professionCtrl = TextEditingController();
+  final _businessNameCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _communeCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -34,6 +34,7 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
   String? _selectedCategoryId;
   String? _selectedSubcategoryId;
   bool _isLoading = false;
+  bool _submitAttempted = false;
 
   @override
   void initState() {
@@ -48,7 +49,7 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
     _phoneCtrl.dispose();
     _pinCtrl.dispose();
     _confirmPinCtrl.dispose();
-    _professionCtrl.dispose();
+    _businessNameCtrl.dispose();
     _cityCtrl.dispose();
     _communeCtrl.dispose();
     _emailCtrl.dispose();
@@ -58,7 +59,14 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+    setState(() => _submitAttempted = true);
+
+    final formIsValid = _formKey.currentState!.validate();
+    final categoryIsValid = _selectedCategoryId != null;
+    final subcategoryIsValid = _selectedSubcategoryId != null;
+    if (!formIsValid || !categoryIsValid || !subcategoryIsValid) {
+      return;
+    }
 
     setState(() => _isLoading = true);
     final success = await ref
@@ -68,7 +76,11 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
           pinCode: _pinCtrl.text,
           firstName: _firstNameCtrl.text.trim(),
           lastName: _lastNameCtrl.text.trim(),
-          profession: _professionCtrl.text.trim(),
+          categoryId: _selectedCategoryId!,
+          subcategoryId: _selectedSubcategoryId!,
+          businessName: _businessNameCtrl.text.trim().isNotEmpty
+              ? _businessNameCtrl.text.trim()
+              : null,
           city: _cityCtrl.text.trim(),
           commune: _communeCtrl.text.trim(),
           email: _emailCtrl.text.trim().isNotEmpty
@@ -78,8 +90,6 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
               ? _descriptionCtrl.text.trim()
               : null,
           experienceYears: int.tryParse(_experienceCtrl.text),
-          categoryId: _selectedCategoryId,
-          subcategoryId: _selectedSubcategoryId,
         );
     setState(() => _isLoading = false);
 
@@ -98,7 +108,8 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(categoriesProvider).categories;
+    final categoriesState = ref.watch(categoriesProvider);
+    final categories = categoriesState.categories;
     CategoryModel? selectedCategory;
     if (_selectedCategoryId != null) {
       for (final category in categories) {
@@ -159,69 +170,106 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
                 const SizedBox(height: 16),
 
                 AppTextField(
-                  controller: _professionCtrl,
-                  label: 'auth.profession'.tr(),
-                  hint: 'Plombier, Électricien...',
-                  prefixIcon: Icons.work_outline,
+                  controller: _businessNameCtrl,
+                  label: 'auth.business_name'.tr(),
+                  hint: 'auth.business_name_hint'.tr(),
+                  prefixIcon: Icons.storefront_outlined,
                   textInputAction: TextInputAction.next,
-                  validator: (v) => v!.isEmpty ? 'Requis' : null,
                 ),
                 const SizedBox(height: 16),
 
-                // Category dropdown
-                if (categories.isNotEmpty) ...[
-                  Text(
-                    'Catégorie',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedCategoryId,
-                    items: categories
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) {
-                      setState(() {
-                        _selectedCategoryId = v;
-                        _selectedSubcategoryId = null;
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.category_outlined, size: 20),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String?>(
-                    initialValue: _selectedSubcategoryId,
-                    items: [
-                      DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('search.all_trades'.tr()),
-                      ),
-                      ...subcategories.map(
-                        (s) => DropdownMenuItem<String?>(
-                          value: s.id,
-                          child: Text(s.name),
+                Text(
+                  'auth.activity_section'.tr(),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                _SelectField(
+                  label: 'home.categories'.tr(),
+                  icon: Icons.category_outlined,
+                  text: selectedCategory?.name ?? 'search.all_categories'.tr(),
+                  enabled: !categoriesState.isLoading && categories.isNotEmpty,
+                  helperText: categoriesState.isLoading
+                      ? 'common.loading'.tr()
+                      : (!categoriesState.isLoading && categories.isEmpty)
+                      ? 'auth.no_categories_available'.tr()
+                      : null,
+                  errorText: _submitAttempted && _selectedCategoryId == null
+                      ? 'auth.category_required'.tr()
+                      : null,
+                  onTap: () async {
+                    final selected = await _showOptionPicker(
+                      title: 'home.categories'.tr(),
+                      options: categories
+                          .map((c) => _PickerOption(value: c.id, label: c.name))
+                          .toList(),
+                      selectedValue: _selectedCategoryId,
+                    );
+                    if (selected == null || !mounted) return;
+
+                    setState(() {
+                      _selectedCategoryId = selected.value;
+                      _selectedSubcategoryId = null;
+                    });
+                  },
+                ),
+                if (categoriesState.error != null) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'auth.categories_load_error'.tr(),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
+                      TextButton(
+                        onPressed: () =>
+                            ref.read(categoriesProvider.notifier).refresh(),
+                        child: Text('common.retry'.tr()),
+                      ),
                     ],
-                    onChanged: _selectedCategoryId == null
-                        ? null
-                        : (v) => setState(() => _selectedSubcategoryId = v),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.handyman_outlined, size: 20),
-                      labelText: 'search.filter'.tr(),
-                    ),
                   ),
-                  const SizedBox(height: 16),
                 ],
+                const SizedBox(height: 12),
+                _SelectField(
+                  label: 'auth.profession'.tr(),
+                  icon: Icons.handyman_outlined,
+                  text:
+                      subcategories
+                          .where((s) => s.id == _selectedSubcategoryId)
+                          .map((s) => s.name)
+                          .firstOrNull ??
+                      'search.all_trades'.tr(),
+                  enabled:
+                      _selectedCategoryId != null &&
+                      !categoriesState.isLoading &&
+                      subcategories.isNotEmpty,
+                  helperText: _selectedCategoryId == null
+                      ? 'auth.select_category_first'.tr()
+                      : subcategories.isEmpty
+                      ? 'auth.no_professions_available'.tr()
+                      : null,
+                  errorText: _submitAttempted && _selectedSubcategoryId == null
+                      ? 'auth.profession_required'.tr()
+                      : null,
+                  onTap: () async {
+                    final selected = await _showOptionPicker(
+                      title: 'auth.profession'.tr(),
+                      options: subcategories
+                          .map((s) => _PickerOption(value: s.id, label: s.name))
+                          .toList(),
+                      selectedValue: _selectedSubcategoryId,
+                    );
+                    if (selected == null || !mounted) return;
+
+                    setState(() {
+                      _selectedSubcategoryId = selected.value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
 
                 // Location
                 Row(
@@ -314,6 +362,126 @@ class _RegisterArtisanScreenState extends ConsumerState<RegisterArtisanScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<_PickerOption?> _showOptionPicker({
+    required String title,
+    required List<_PickerOption> options,
+    required String? selectedValue,
+  }) {
+    return showModalBottomSheet<_PickerOption>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(ctx).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                if (options.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'auth.no_categories_available'.tr(),
+                      style: Theme.of(ctx).textTheme.bodyMedium,
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: options.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final option = options[index];
+                        final isSelected = option.value == selectedValue;
+
+                        return ListTile(
+                          title: Text(option.label),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_rounded)
+                              : null,
+                          onTap: () => Navigator.pop(ctx, option),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PickerOption {
+  final String value;
+  final String label;
+
+  const _PickerOption({required this.value, required this.label});
+}
+
+class _SelectField extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String text;
+  final bool enabled;
+  final String? helperText;
+  final String? errorText;
+  final VoidCallback onTap;
+
+  const _SelectField({
+    required this.label,
+    required this.icon,
+    required this.text,
+    required this.enabled,
+    required this.onTap,
+    this.helperText,
+    this.errorText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasError = errorText != null && errorText!.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: enabled ? onTap : null,
+          child: InputDecorator(
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, size: 20),
+              suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+              errorText: hasError ? errorText : null,
+              enabled: enabled,
+            ),
+            isEmpty: text.isEmpty,
+            child: Text(
+              text,
+              style: theme.textTheme.bodyLarge,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+        if (helperText != null && helperText!.isNotEmpty && !hasError) ...[
+          const SizedBox(height: 6),
+          Text(helperText!, style: theme.textTheme.bodySmall),
+        ],
+      ],
     );
   }
 }
